@@ -1,0 +1,4 @@
+*.o
+*test*
+*.txt
+webserv
