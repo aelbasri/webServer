@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include "Request.hpp"
 
 #define BUFF_SIZE 1024
 
@@ -62,6 +63,7 @@ void Server::printRequest() const
     {
         int new_fd = accept(_sock, NULL, 0);
         std::cout << "===> connection accepted" << std::endl;
+        
         if (new_fd == -1)
         {
             perror("accept() failed");
@@ -76,6 +78,14 @@ void Server::printRequest() const
             exit(1);
         }
         buff[nBytes] = '\0';
+        /*Parse Request*/
+        Request request;
+
+        //check that ascii
+        std::stringstream bufferStream(buff);
+        request.parseRequestLine(bufferStream);
+        
+        //==============
         std::cout << "Got: (" << buff << ")" << std::endl;
         if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)
         {
