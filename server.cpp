@@ -79,14 +79,41 @@ void Server::printRequest() const
         }
         buff[nBytes] = '\0';
         /*Parse Request*/
+
         Request request;
+        int offset = 0;
+        int state = REQUEST_LINE;
+
+        while(state != 0)
+        {
+            switch (state)
+            {
+                case  REQUEST_LINE :
+                    request.parseRequestLine(buff, offset, nBytes);
+                    state = HEADER;
+                    break;
+                case HEADER :
+                    request.parseHeader(buff, offset, nBytes);
+                    state = BODY;
+                    break;
+                case BODY :
+                    // request.parseBody(buff, offset);
+                    state = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
 
         //check that ascii
-        std::stringstream bufferStream(buff);
-        request.parseRequestLine(bufferStream);
-        
+        // std::stringstream bufferStream(buff);
+        // request.parseRequestLine(bufferStream);
+        // request.parseHeader(bufferStream);   
+
+
+
         //==============
-        std::cout << "Got: (" << buff << ")" << std::endl;
+        // std::cout << "Got: (" << buff << ")" << std::endl;
         if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)
         {
             perror("send() failed");

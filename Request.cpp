@@ -1,5 +1,12 @@
 #include "Request.hpp"
 
+int temporaryPrintError()
+{
+    //throw BadRequestExeption
+    perror("Bad request");
+    return (-1);
+}
+
 bool isWhiteSpace(char c)
 {
     if ((c >= 9 && c <= 13) || c == 32)
@@ -7,42 +14,98 @@ bool isWhiteSpace(char c)
     return (false);
 }
 
-int Request::parseRequestLine(std::stringstream &bufferStream)
+bool parseField(std::string field, std::string &fieldName, std::string &fieldValue)
 {
-    std::string firstLine;
+    size_t len = field.size();
+    size_t i = 0;
+    while (i < len && field[i] != ':')
+    {
+        if (isWhiteSpace(field[i]))
+            return (false);
+        i++;
+    }
+
+    fieldName = field.substr(0, i);
+    fieldValue = field.substr(i + 1, len - i);
+
+    int valueLen = fieldValue.size();
+    if (isWhiteSpace(fieldValue[0]))
+        fieldValue.erase(0, 1);
+    if (isWhiteSpace(fieldValue[valueLen - 2]))
+        fieldValue.erase(valueLen - 2); 
+    valueLen = fieldValue.size();
+    if (isWhiteSpace(fieldValue[0]) || isWhiteSpace(fieldValue[valueLen - 1]))
+        return (false);
+    if (fieldName.empty() || fieldValue.empty())
+        return (false);
+    return(true);
+}
+
+int Request::parseRequestLine(char *buff, int &offset, int nBytes)
+{
+    std::string firstLine("");
     std::vector<std::string> elements;
 
-    getline(bufferStream, firstLine);
-    size_t len = firstLine.size();
-
-    if(firstLine[len - 1] != '\r' || firstLine.empty())
-    {
-        //throw BadRequestExeption
-        perror("Bad request");
-        return (-1);   
-    }
+    while (offset < nBytes && buff[offset] != '\n')
+        firstLine += buff[offset++];
+    if(firstLine[offset - 1] != '\r' || firstLine.empty())
+        return (temporaryPrintError());
     int start = 0;
-    size_t i = 0;
-    for(; i < len - 1; i++)
+    int i = 0;
+    for(; i < offset - 1; i++)
     {
         if (isWhiteSpace(firstLine[start]))
-        {
-            //throw BadRequestExeption
-            perror("Bad request");
-            return (-1);   
-        }
+            return (temporaryPrintError());
         if (isWhiteSpace(firstLine[i]))
         {
             elements.push_back(firstLine.substr(start, i - start));
             start = i + 1;
         }
     }
-    elements.push_back(firstLine.substr(start, i - start));
+    if (i > 0 && isWhiteSpace(firstLine[i - 1]))
+        return (temporaryPrintError());
+    else
+        elements.push_back(firstLine.substr(start, i - start));
+    if (elements.size() != 3)
+        return (temporaryPrintError());
+    else
+    {
+        method = elements[0];
+        requestTarget = elements[1];
+        httpVersion = elements[2];
+    }
+    offset++;
 
-    // //==
-    // for(size_t j = 0; j < elements.size(); j++)
-    // {
-    //     std::cout << "--->" << '{' << elements[j] << '}' << std::endl;
-    // }
+    std::cout << "{" << method  << "}" << std::endl;
+    std::cout << "{" << requestTarget  << "}" << std::endl;
+    std::cout << "{" << httpVersion  << "}" << std::endl;
     return (0);
+}
+
+int Request::parseHeader(char *buff, int &offset, int nBytes)
+{
+    std::string field("");
+
+    while(offset < nBytes)
+    {
+        if (buff[offset] == '\n' && offset - 1 >= 0 && buff[offset - 1] == '\r')
+        {
+            field.erase(field.end() - 1);
+            if(field.empty())
+                break;
+            field += '\0';
+            std::string fieldName;
+            std::string fieldValue;
+            if(!parseField(field, fieldName, fieldValue))
+                return(temporaryPrintError());
+            header.insert(std::make_pair(fieldName, fieldValue));
+            field.clear();
+        }
+        else 
+            field += buff[offset];
+        offset++;
+    }
+    for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
+        std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
+    return(0);
 }
