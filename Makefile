@@ -7,6 +7,9 @@ NAME = webserv
 
 all : $(NAME)
 
+run: re
+	./$(NAME)
+
 %.o : %.cpp 
 	$(CXX) -c $(CFLAGS)  -o $@ $^
 
