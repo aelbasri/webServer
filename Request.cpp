@@ -31,8 +31,8 @@ bool parseField(std::string field, std::string &fieldName, std::string &fieldVal
     int valueLen = fieldValue.size();
     if (isWhiteSpace(fieldValue[0]))
         fieldValue.erase(0, 1);
-    if (isWhiteSpace(fieldValue[valueLen - 2]))
-        fieldValue.erase(valueLen - 2); 
+    if (isWhiteSpace(fieldValue[valueLen - 1]))
+        fieldValue.erase(valueLen - 1); 
     valueLen = fieldValue.size();
     if (isWhiteSpace(fieldValue[0]) || isWhiteSpace(fieldValue[valueLen - 1]))
         return (false);
@@ -93,7 +93,6 @@ int Request::parseHeader(char *buff, int &offset, int nBytes)
             field.erase(field.end() - 1);
             if(field.empty())
                 break;
-            field += '\0';
             std::string fieldName;
             std::string fieldValue;
             if(!parseField(field, fieldName, fieldValue))
@@ -106,6 +105,8 @@ int Request::parseHeader(char *buff, int &offset, int nBytes)
         offset++;
     }
     for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
+    {
         std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
+    }
     return(0);
 }

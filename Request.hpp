@@ -8,17 +8,13 @@
 #include <cstdio>
 #include <map>
 
-#define REQUEST_LINE 1
-#define HEADER 2
-#define BODY 3
-
-/*enum States*/
-/*{*/
-/*    REQUEST_LINE,*/
-/*    HEADER,*/
-/*    BODY,*/
-/*    DONE,*/
-/*};*/
+enum state
+{
+    REQUEST_LINE,
+    HEADER,
+    BODY,
+    DONE
+};
 
 class Request
 {

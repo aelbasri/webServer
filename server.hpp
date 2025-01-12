@@ -1,6 +1,8 @@
 #pragma once
 
+#include <fcntl.h>
 #include <iostream>
+#include <fstream>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <cstring>

@@ -40,6 +40,8 @@ int Server::run()
             continue;
         break;
     }
+
+    freeaddrinfo(res); 
     if (!p)
     {
         perror("bind failed");
@@ -72,37 +74,36 @@ void Server::printRequest() const
         }
         char buff[BUFF_SIZE];
         int nBytes = recv(new_fd, buff, BUFF_SIZE - 1, 0);
-        std::cout << "===> bytes received: " << nBytes << std::endl;
         if (nBytes == -1)
         {
             perror("recv() failed");
             exit(1);
         }
         buff[nBytes] = '\0';
-        std::cout << "===> lWLA" << std::endl;
+        std::cout << "===> bytes received: " << nBytes << std::endl;
+        
         write(1, buff, nBytes);
-        std::cout << "===> lWLA SALAT" << std::endl;
         /*Parse Request*/
 
         Request request;
         int offset = 0;
-        int state = REQUEST_LINE;
+        enum state myState = REQUEST_LINE;
 
-        while(state != 0)
+        while(myState != DONE)
         {
-            switch (state)
+            switch (myState)
             {
                 case  REQUEST_LINE :
                     request.parseRequestLine(buff, offset, nBytes);
-                    state = HEADER;
+                    myState = HEADER;
                     break;
                 case HEADER :
                     request.parseHeader(buff, offset, nBytes);
-                    state = BODY;
+                    myState = BODY;
                     break;
                 case BODY :
                     // request.parseBody(buff, offset);
-                    state = 0;
+                    myState = DONE;
                     break;
                 default:
                     break;
@@ -110,30 +111,19 @@ void Server::printRequest() const
         }
 
         {
-            std::cout << "=============================>" << std::endl;
             char basri[BUFF_SIZE];
-            int count = 0;
+            int count = nBytes - offset;
+            long contentLen = strtol(request.header["Content-Length"].c_str(), NULL, 10);
             int qraya = 0;
-            while ((nBytes = recv(new_fd, basri, BUFF_SIZE, 0)) != -1)
+            while (count < contentLen)
             {
-                count += nBytes;
                 std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
-                /*if (count >= strtod(request.header["Content-Length"], NULL) - 100)*/
-                if (count >= 20000 || nBytes == 0)
+                if((nBytes = recv(new_fd, basri, BUFF_SIZE, 0)) <= 0)
                     break;
-                write(1, basri, nBytes);
+                count += nBytes;
                 qraya++;
             }
-            std::cout << "=============================> END " << qraya << std::endl;
         }
-
-        //check that ascii
-        // std::stringstream bufferStream(buff);
-        // request.parseRequestLine(bufferStream);
-        // request.parseHeader(bufferStream);   
-        //
-
-        //==============
         /*std::cout << "Got: (" << buff << ")" << std::endl;*/
         if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)
         {
@@ -141,6 +131,5 @@ void Server::printRequest() const
             exit(1);
         }
         close(new_fd);
-        std::cout << "khrj==================" << std::endl;
     }
 }
