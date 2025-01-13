@@ -124,8 +124,52 @@ void Server::printRequest() const
                 qraya++;
             }
         }
+
+        
+        const std::string html_content = 
+        "<!DOCTYPE html>\n"
+        "<html lang=\"en\">\n"
+        "<head>\n"
+        "    <meta charset=\"UTF-8\">\n"
+        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        "    <title>Hello World</title>\n"
+        "    <style>\n"
+        "        body {\n"
+        "            font-family: Arial, sans-serif;\n"
+        "            display: flex;\n"
+        "            justify-content: center;\n"
+        "            align-items: center;\n"
+        "            height: 100vh;\n"
+        "            margin: 0;\n"
+        "            background-color: #f0f0f0;\n"
+        "        }\n"
+        "        h1 {\n"
+        "            color: #333;\n"
+        "            padding: 20px;\n"
+        "            border-radius: 5px;\n"
+        "            background-color: white;\n"
+        "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
+        "        }\n"
+        "    </style>\n"
+        "</head>\n"
+        "<body>\n"
+        "    <h1>Hello, World!</h1>\n"
+        "</body>\n"
+        "</html>\n";
+
+        std::ostringstream ss;
+        ss << "HTTP/1.1 200 OK\r\n"
+        << "Content-Type: text/html; charset=UTF-8\r\n"
+        << "Content-Length: " << html_content.length() << "\r\n"
+        << "Connection: close\r\n"
+        << "\r\n"
+        << html_content;
+
+        std::string response = ss.str();
+
         /*std::cout << "Got: (" << buff << ")" << std::endl;*/
-        if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)
+        /*if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)*/
+        if (send(new_fd, response.c_str(), response.size(), 0) == -1)
         {
             perror("send() failed");
             exit(1);
