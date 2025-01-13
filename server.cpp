@@ -72,21 +72,32 @@ void Server::printRequest() const
             perror("accept() failed");
             exit(1);
         }
-        char buff[BUFF_SIZE];
-        int nBytes = recv(new_fd, buff, BUFF_SIZE - 1, 0);
-        if (nBytes == -1)
-        {
-            perror("recv() failed");
-            exit(1);
-        }
-        buff[nBytes] = '\0';
-        std::cout << "===> bytes received: " << nBytes << std::endl;
+
+        // std::ofstream file("requestContent.txt");
+        // char buff[BUFF_SIZE];
+        // int count = 0;
+        // int nBytes = recv(new_fd, buff, BUFF_SIZE - 1, 0);
+        // while ((nBytes = recv(new_fd, buff, BUFF_SIZE - 1, 0)) > 0)
+        // {
+        //     // file << buff;
+        //     // count += nBytes;
+        //     std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
+        //     // write(1, buff, nBytes);
+        // } 
+        // if (nBytes == -1)
+        // {
+        //     perror("recv() failed");
+        //     exit(1);
+        // }
+        // buff[nBytes] = '\0';
+        // std::cout << "===> bytes received: " << nBytes << std::endl;
         
-        write(1, buff, nBytes);
         /*Parse Request*/
 
         Request request;
         int offset = 0;
+        int nBytes = 0;
+        char buff[BUFF_SIZE];
         enum state myState = REQUEST_LINE;
 
         while(myState != DONE)
@@ -94,11 +105,11 @@ void Server::printRequest() const
             switch (myState)
             {
                 case  REQUEST_LINE :
-                    request.parseRequestLine(buff, offset, nBytes);
+                    request.parseRequestLine(new_fd, offset, nBytes);
                     myState = HEADER;
                     break;
                 case HEADER :
-                    request.parseHeader(buff, offset, nBytes);
+                    // request.parseHeader(buff, offset, nBytes);
                     myState = BODY;
                     break;
                 case BODY :
@@ -111,18 +122,18 @@ void Server::printRequest() const
         }
 
         {
-            char basri[BUFF_SIZE];
-            int count = nBytes - offset;
-            long contentLen = strtol(request.header["Content-Length"].c_str(), NULL, 10);
-            int qraya = 0;
-            while (count < contentLen)
-            {
-                std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
-                if((nBytes = recv(new_fd, basri, BUFF_SIZE, 0)) <= 0)
-                    break;
-                count += nBytes;
-                qraya++;
-            }
+            // char basri[BUFF_SIZE];
+            // int count = nBytes - offset;
+            // long contentLen = strtol(request.header["Content-Length"].c_str(), NULL, 10);
+            // int qraya = 0;
+            // while (count < contentLen)
+            // {
+            //     std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
+            //     if((nBytes = recv(new_fd, basri, BUFF_SIZE, 0)) <= 0)
+            //         break;
+            //     count += nBytes;
+            //     qraya++;
+            // }
         }
         /*std::cout << "Got: (" << buff << ")" << std::endl;*/
         if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)
@@ -130,6 +141,7 @@ void Server::printRequest() const
             perror("send() failed");
             exit(1);
         }
+        // file.close();
         close(new_fd);
     }
 }

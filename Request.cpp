@@ -41,13 +41,26 @@ bool parseField(std::string field, std::string &fieldName, std::string &fieldVal
     return(true);
 }
 
-int Request::parseRequestLine(char *buff, int &offset, int nBytes)
+int Request::parseRequestLine(int socket, int &offset, int &nBytes)
 {
     std::string firstLine("");
     std::vector<std::string> elements;
 
-    while (offset < nBytes && buff[offset] != '\n')
-        firstLine += buff[offset++];
+    //Loop reach '\n'
+    int nBytes = 0;
+    char buff[BUFF_SIZE];
+
+    while ((nBytes = recv(socket, buff, BUFF_SIZE - 1, 0)) > 0)
+    {
+        std::cout << "===> bytes received: " << nBytes << std::endl;
+        offset = 0;
+        while (offset < nBytes && buff[offset] != '\n')
+            firstLine += buff[offset++];
+        if(buff[offset] == '\n')
+            break;
+    }
+    
+    // std::cout << "===> daz mn hna " << nBytes << std::endl;
     if(firstLine[offset - 1] != '\r' || firstLine.empty())
         return (temporaryPrintError());
     int start = 0;
@@ -82,7 +95,7 @@ int Request::parseRequestLine(char *buff, int &offset, int nBytes)
     return (0);
 }
 
-int Request::parseHeader(char *buff, int &offset, int nBytes)
+int Request::parseHeader(int socket, int &offset, int &nBytes)
 {
     std::string field("");
 
@@ -103,6 +116,7 @@ int Request::parseHeader(char *buff, int &offset, int nBytes)
         else 
             field += buff[offset];
         offset++;
+
     }
     for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
     {
