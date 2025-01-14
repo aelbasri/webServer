@@ -86,9 +86,9 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     }
     offset++;
 
-    std::cout << "{" << method  << "}" << std::endl;
-    std::cout << "{" << requestTarget  << "}" << std::endl;
-    std::cout << "{" << httpVersion  << "}" << std::endl;
+    // std::cout << "{" << method  << "}" << std::endl;
+    // std::cout << "{" << requestTarget  << "}" << std::endl;
+    // std::cout << "{" << httpVersion  << "}" << std::endl;
     return (0);
 }
 
@@ -115,9 +115,33 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
         offset++;
 
     }
+    // std::cout << "A=====" << std::endl; 
+    // write(1, buffer, (nBytes));
+    // std::cout << "\n=====Z" << std::endl; 
     for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
     {
         std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
     }
     return(0);
+}
+
+int Request::parseBody(int socket, int &offset, int &nBytes)
+{
+    if (header.find("Content-Length") == header.end())
+        return 0;
+    // parse if there is a header 
+    long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
+    std::ofstream file("out.txt", std::ios::binary);
+    if (offset < nBytes)
+        file.write(buffer + offset + 1, nBytes - (offset + 1));
+    int count = nBytes - (offset + 1);
+    while(contentLen > count)
+    {
+        if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+            break;
+        count += nBytes;
+        file.write(buffer, nBytes);
+    }
+    // std::cout << "}}}}>" << count << std::endl;
+    return (0);
 }

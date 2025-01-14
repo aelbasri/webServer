@@ -3,6 +3,5 @@
 *.txt
 webserv
 a.out
-*.html
 *.png
 *.py

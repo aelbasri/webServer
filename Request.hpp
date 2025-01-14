@@ -12,6 +12,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 
 #define BUFF_SIZE 1024
 
@@ -35,9 +38,9 @@ class Request
 
         //header
         /*std::map<std::string, std::string> header;*/
-    public:
         std::map<std::string, std::string> header;
+    public:
         int parseRequestLine(int socket, int &offset, int &nBytes);
         int parseHeader(int socket, int &offset, int &nBytes);
-        // void parseBody(char *buff, int &offset);
+        int parseBody(int socket, int &offset, int &nBytes);
 };
