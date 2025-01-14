@@ -82,7 +82,7 @@ void Server::printRequest() const
         buff[nBytes] = '\0';
         std::cout << "===> bytes received: " << nBytes << std::endl;
         
-        write(1, buff, nBytes);
+        // write(1, buff, nBytes);
         /*Parse Request*/
 
         Request request;
@@ -109,20 +109,35 @@ void Server::printRequest() const
                     break;
             }
         }
+        std::cout << "=====> NOT BODY" << std::endl;
+        write(1, buff, (offset + 1));
+        std::cout << "=======> BODY" << std::endl;
+        write(1, buff + (offset + 1), nBytes - (offset + 1));
+        std::cout << "================" << std::endl;
 
+        // if (header fihom content length)   
         {
             char basri[BUFF_SIZE];
-            int count = nBytes - offset;
+            int count = nBytes - (offset + 1);
             long contentLen = strtol(request.header["Content-Length"].c_str(), NULL, 10);
+            std::ofstream file("out.png", std::ios::binary);
+            file.write(buff + offset + 1, count);
+
             int qraya = 0;
             while (count < contentLen)
             {
-                std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
+                //std::cout << "nbytes: " << nBytes << " and count: " << count <<  std::endl;
                 if((nBytes = recv(new_fd, basri, BUFF_SIZE, 0)) <= 0)
                     break;
+                file.write(basri, nBytes);
                 count += nBytes;
-                qraya++;
+                std::cout << ++qraya << std::endl;
             }
+            file.close();
+        }
+        // else
+        {
+            
         }
 
         
