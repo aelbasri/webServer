@@ -97,7 +97,6 @@ void Server::printRequest() const
         Request request;
         int offset = 0;
         int nBytes = 0;
-        char buff[BUFF_SIZE];
         enum state myState = REQUEST_LINE;
 
         while(myState != DONE)
@@ -109,7 +108,7 @@ void Server::printRequest() const
                     myState = HEADER;
                     break;
                 case HEADER :
-                    // request.parseHeader(buff, offset, nBytes);
+                    request.parseHeader(new_fd, offset, nBytes);
                     myState = BODY;
                     break;
                 case BODY :

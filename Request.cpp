@@ -47,16 +47,13 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     std::vector<std::string> elements;
 
     //Loop reach '\n'
-    int nBytes = 0;
-    char buff[BUFF_SIZE];
-
-    while ((nBytes = recv(socket, buff, BUFF_SIZE - 1, 0)) > 0)
+    while ((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
     {
         std::cout << "===> bytes received: " << nBytes << std::endl;
         offset = 0;
-        while (offset < nBytes && buff[offset] != '\n')
-            firstLine += buff[offset++];
-        if(buff[offset] == '\n')
+        while (offset < nBytes && buffer[offset] != '\n')
+            firstLine += buffer[offset++];
+        if(buffer[offset] == '\n')
             break;
     }
     
@@ -99,9 +96,9 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
 {
     std::string field("");
 
-    while(offset < nBytes)
+    while((offset < nBytes) || (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
     {
-        if (buff[offset] == '\n' && offset - 1 >= 0 && buff[offset - 1] == '\r')
+        if (buffer[offset] == '\n' && offset - 1 >= 0 && buffer[offset - 1] == '\r')
         {
             field.erase(field.end() - 1);
             if(field.empty())
@@ -114,7 +111,7 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
             field.clear();
         }
         else 
-            field += buff[offset];
+            field += buffer[offset];
         offset++;
 
     }

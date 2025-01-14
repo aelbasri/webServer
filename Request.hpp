@@ -25,6 +25,8 @@ enum state
 class Request
 {
     private:
+        char buffer[BUFF_SIZE];
+
         //request line
         std::string method;
         std::string requestTarget;
@@ -34,7 +36,7 @@ class Request
         /*std::map<std::string, std::string> header;*/
     public:
         std::map<std::string, std::string> header;
-        int parseRequestLine(int socket, char **buff, int &offset, int &nBytes);
+        int parseRequestLine(int socket, int &offset, int &nBytes);
         int parseHeader(int socket, int &offset, int &nBytes);
         // void parseBody(char *buff, int &offset);
 };
