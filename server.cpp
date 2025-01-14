@@ -2,7 +2,6 @@
 #include "Request.hpp"
 #include <stdlib.h>
 
-#define BUFF_SIZE 1024
 
 Server::Server() : _host("127.0.0.1"), _port("3000") {}
 
@@ -100,7 +99,7 @@ void Server::printRequest() const
                     break;
             }
         }
-        
+        std::cout << "nik smoooook" << std::endl;
         const std::string html_content = 
         "<!DOCTYPE html>\n"
         "<html lang=\"en\">\n"

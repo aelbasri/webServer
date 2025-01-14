@@ -49,6 +49,7 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     //Loop reach '\n'
     while ((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
     {
+        write(1, buffer , nBytes);
         std::cout << "===> bytes received: " << nBytes << std::endl;
         offset = 0;
         while (offset < nBytes && buffer[offset] != '\n')
@@ -86,9 +87,9 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     }
     offset++;
 
-    // std::cout << "{" << method  << "}" << std::endl;
-    // std::cout << "{" << requestTarget  << "}" << std::endl;
-    // std::cout << "{" << httpVersion  << "}" << std::endl;
+    std::cout << "{" << method  << "}" << std::endl;
+    std::cout << "{" << requestTarget  << "}" << std::endl;
+    std::cout << "{" << httpVersion  << "}" << std::endl;
     return (0);
 }
 
@@ -96,7 +97,7 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
 {
     std::string field("");
 
-    while((offset < nBytes) || (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
+    while(offset < nBytes || (offset = 0)|| (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
     {
         if (buffer[offset] == '\n' && offset - 1 >= 0 && buffer[offset - 1] == '\r')
         {
@@ -127,20 +128,35 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
 {
-    if (header.find("Content-Length") == header.end())
-        return 0;
-    // parse if there is a header 
-    long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
     std::ofstream file("out.txt", std::ios::binary);
+    fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     if (offset < nBytes)
         file.write(buffer + offset + 1, nBytes - (offset + 1));
-    int count = nBytes - (offset + 1);
-    while(contentLen > count)
+    if (header.find("Content-Length") != header.end())
     {
-        if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
-            break;
-        count += nBytes;
-        file.write(buffer, nBytes);
+        // parse if there is a header 
+        long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
+        int count = nBytes - (offset + 1);
+        int qraya = 0;
+        while(contentLen > count)
+        {
+            if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                break;
+            count += nBytes;
+            file.write(buffer, nBytes);
+            std::cout << ++qraya << std::endl;
+        }
+    }
+    else if(header["Transfer-Encoding"] == "chunked")
+    {
+        std::cout << "yoyoyoyoyo"  << std::endl;
+        while(1)
+        {
+            if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                break;
+            // count += nBytes;
+            file.write(buffer, nBytes);
+        }
     }
     // std::cout << "}}}}>" << count << std::endl;
     return (0);
