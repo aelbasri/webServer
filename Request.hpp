@@ -2,12 +2,18 @@
 
 #include <string>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <cstdio>
 #include <map>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+
+#define BUFF_SIZE 1024
 
 enum state
 {
@@ -20,6 +26,8 @@ enum state
 class Request
 {
     private:
+        char buffer[BUFF_SIZE];
+
         //request line
         std::string method;
         std::string requestTarget;
@@ -29,7 +37,7 @@ class Request
         /*std::map<std::string, std::string> header;*/
     public:
         std::map<std::string, std::string> header;
-        int parseRequestLine(char *buff, int &offset, int nBytes);
-        int parseHeader(char *buff, int &offset, int nBytes);
+        int parseRequestLine(int socket, int &offset, int &nBytes);
+        int parseHeader(int socket, int &offset, int &nBytes);
         // void parseBody(char *buff, int &offset);
 };

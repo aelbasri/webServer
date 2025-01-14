@@ -6,6 +6,8 @@
         "istream": "cpp",
         "exception": "cpp",
         "algorithm": "cpp",
+        "cstring": "cpp",
+        "sstream": "cpp",
         "fstream": "cpp",
         "*.tcc": "cpp"
     }
