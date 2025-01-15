@@ -99,7 +99,7 @@ void Server::printRequest() const
                     break;
             }
         }
-        std::cout << "nik smoooook" << std::endl;
+        /*std::cout << "nik smoooook" << std::endl;*/
         const std::string html_content = 
         "<!DOCTYPE html>\n"
         "<html lang=\"en\">\n"

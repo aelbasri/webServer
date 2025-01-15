@@ -1,5 +1,24 @@
 #include "Request.hpp"
 
+int get_length(char *buffer, int &offset, int &nBytes)
+{
+    std::string s_number = "";
+    int start = 0;
+    while (1)
+    {
+        if ((offset + start + 1) >= nBytes || ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n')))
+            break;
+        s_number += buffer[offset + (start++)];
+    }
+    offset += start + 2;
+    std::cout << "Length s: " << s_number << std::endl;
+    int length;
+    std::stringstream ss;
+    ss << std::hex << s_number;
+    ss >> length;
+    return (length);
+}
+
 int temporaryPrintError()
 {
     //throw BadRequestExeption
@@ -128,10 +147,9 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
 {
-    std::ofstream file("out.txt", std::ios::binary);
-    fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-    if (offset < nBytes)
-        file.write(buffer + offset + 1, nBytes - (offset + 1));
+    std::string chi9alwa("");
+    std::ofstream file("out.jpeg", std::ios::binary);
+    /*fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);*/
     if (header.find("Content-Length") != header.end())
     {
         // parse if there is a header 
@@ -149,15 +167,54 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
     }
     else if(header["Transfer-Encoding"] == "chunked")
     {
-        std::cout << "yoyoyoyoyo"  << std::endl;
+        offset++;
         while(1)
         {
-            if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+            if (offset == -1)
+            {
+                if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                {
+                    std::cout << "---- break hna ast" << std::endl;
+                    break;
+                }
+            }
+
+            int len = get_length(buffer, offset, nBytes);
+            std::cout << "Length: " << len << std::endl;
+            if (len == 0)
                 break;
-            // count += nBytes;
-            file.write(buffer, nBytes);
+
+            int consumed = 0;
+            file.write(buffer + offset, nBytes - offset);
+            consumed += nBytes - offset;
+
+            while (consumed < len)
+            {
+                std::cout << "+++ len: " << len << " consumed: " << consumed << std::endl;
+                if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                {
+                    std::cout << "---- break hna" << std::endl;
+                    break;
+                }
+                if (nBytes > (len - consumed))
+                {
+                    file.write(buffer, len - consumed);
+                    offset += (len - consumed) + 3;
+                    std::cout << len - consumed << std::endl;
+                    consumed = len;
+                }
+                else
+                {
+                    file.write(buffer, nBytes);
+                    consumed += nBytes;
+                    offset = -1;
+                    std::cout << "2 " << offset  << std::endl;
+                }
+            }
+            std::cout << "+++ len: " << len << " consumed: " << consumed << " offest: " << offset << std::endl;
         }
     }
-    // std::cout << "}}}}>" << count << std::endl;
+    file.close();
     return (0);
 }
+
