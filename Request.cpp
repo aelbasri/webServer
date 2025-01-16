@@ -106,9 +106,9 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     }
     offset++;
 
-    std::cout << "{" << method  << "}" << std::endl;
-    std::cout << "{" << requestTarget  << "}" << std::endl;
-    std::cout << "{" << httpVersion  << "}" << std::endl;
+    // std::cout << "{" << method  << "}" << std::endl;
+    // std::cout << "{" << requestTarget  << "}" << std::endl;
+    // std::cout << "{" << httpVersion  << "}" << std::endl;
     return (0);
 }
 
@@ -138,32 +138,105 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
     // std::cout << "A=====" << std::endl; 
     // write(1, buffer, (nBytes));
     // std::cout << "\n=====Z" << std::endl; 
-    for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
-    {
-        std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
-    }
+    // for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
+    // {
+    //     std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
+    // }
     return(0);
+}
+int searchEmptyLine(int &count, int &offset, char *buffer, int &flag)
+{
+    if ((offset - 1) >= 0  && buffer[offset] == '\n' && buffer[offset - 1] == '\r')
+    {
+        if (count == 2)
+        {
+            flag = 1;
+            return (1);
+        }
+        count = 0;
+    }
+    count++;
+    offset++;
+    return (0);
 }
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
 {
-    std::string chi9alwa("");
     std::ofstream file("out.jpeg", std::ios::binary);
-    /*fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);*/
+    fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+
     if (header.find("Content-Length") != header.end())
     {
-        // parse if there is a header 
+        offset++;
+        std::string boundary("");
+        size_t pos = header["Content-Type"].find("boundary");
+        if (pos != std::string::npos)
+        {
+            boundary = header["Content-Type"].substr(pos + 9); // "boundary=".size() = 9
+            boundary.insert(0, "--");
+            boundary += "\r\n";
+        }
         long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
-        int count = nBytes - (offset + 1);
+        int flag = 0;
+        int count = 0;
+        while (offset < nBytes)
+        {
+            if(searchEmptyLine(count, offset, buffer, flag))
+                break;
+        }
+        count = 0;
+        if(offset < nBytes)
+        {
+            file.write(buffer + (offset + 1), nBytes - (offset + 1));
+            count = nBytes - (offset + 1);
+        }
+        else
+        {
+            while (1)
+            {
+                if(flag == 1 || (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                    break;
+                offset = 0;    
+                while (offset < nBytes)
+                {
+                    if(searchEmptyLine(count, offset, buffer, flag))
+                        break;
+                }
+            }
+            file.write(buffer + (offset + 1), nBytes - (offset + 1));
+            count = nBytes - (offset + 1);
+        }
         int qraya = 0;
+
+        std::string boundaryCmp("");
+        int boundrySize = boundary.size(); 
+
         while(contentLen > count)
         {
             if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
                 break;
             count += nBytes;
+            int i = 0;
+            while (boundrySize > 0 && i < nBytes)
+            {
+                boundaryCmp += buffer[i];
+                if ((i - 1) >= 0  && buffer[i] == '\n' && buffer[i - 1] == '\r')
+                {
+                    if(boundaryCmp == boundary)
+                    {
+                        contentLen = count;
+                        nBytes = i - (boundary.size() + 1);
+                        break;
+                    }
+                    boundaryCmp.clear();
+                }
+                i++;
+            }
             file.write(buffer, nBytes);
             std::cout << ++qraya << std::endl;
         }
+        file.close();
+
     }
     else if(header["Transfer-Encoding"] == "chunked")
     {
@@ -217,4 +290,3 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
     file.close();
     return (0);
 }
-
