@@ -144,20 +144,61 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
     // }
     return(0);
 }
-int searchEmptyLine(int &count, int &offset, char *buffer, int &flag)
+// int searchEmptyLine(int &count, int &offset, char *buffer, int &flag)
+// {
+//     if ((offset - 1) >= 0  && buffer[offset] == '\n' && buffer[offset - 1] == '\r')
+//     {
+//         if (count == 2)
+//         {
+//             flag = 1;
+//             return (1);
+//         }
+//         count = 0;
+//     }
+//     count++;
+//     offset++;
+//     return (0);
+// }
+
+bool skipHeader(int count, int &offset, char *buffer, int nBytes)
 {
-    if ((offset - 1) >= 0  && buffer[offset] == '\n' && buffer[offset - 1] == '\r')
+    while (offset < nBytes)
     {
-        if (count == 2)
+        if ((offset - 1) >= 0  && buffer[offset] == '\n' && buffer[offset - 1] == '\r')
         {
-            flag = 1;
-            return (1);
+            if (count == 2)
+                return (offset++, false);
+            count = 0;
         }
-        count = 0;
+        count++;
+        offset++;
     }
-    count++;
-    offset++;
-    return (0);
+    return (true);
+}
+
+void loadChunk(std::ofstream &file, std::string &boundaryCmp, std::string &boundary, char *buffer, int &offset, int nBytes, int &consumed)
+{
+    int i = offset;
+    
+    while (i < nBytes)
+    {
+        boundaryCmp += buffer[i];
+        if ((i - 1) >= 0  && buffer[i] == '\n' && buffer[i - 1] == '\r')
+        {
+            if(boundaryCmp == boundary)
+            {
+                if (i >= (int)(boundary.size() + 1))
+                    nBytes = i - (boundary.size() + 1);
+                boundaryCmp.clear();
+                break;
+            }
+            boundaryCmp.clear();
+        }
+        i++;
+    }
+    consumed += nBytes - offset;
+    file.write(buffer + offset, nBytes - offset);
+    offset += nBytes;
 }
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
@@ -177,63 +218,27 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
             boundary += "\r\n";
         }
         long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
-        int flag = 0;
+
+        bool flag = false;
+        int consumed = 0;
         int count = 0;
-        while (offset < nBytes)
+        std::string boundaryCmp = boundary;
+
+        while (consumed < contentLen)
         {
-            if(searchEmptyLine(count, offset, buffer, flag))
-                break;
-        }
-        count = 0;
-        if(offset < nBytes)
-        {
-            file.write(buffer + (offset + 1), nBytes - (offset + 1));
-            count = nBytes - (offset + 1);
-        }
-        else
-        {
-            while (1)
+            if((offset >= nBytes))
             {
-                if(flag == 1 || (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                if ((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
                     break;
-                offset = 0;    
-                while (offset < nBytes)
-                {
-                    if(searchEmptyLine(count, offset, buffer, flag))
-                        break;
-                }
+                else
+                    offset = 0;   
             }
-            file.write(buffer + (offset + 1), nBytes - (offset + 1));
-            count = nBytes - (offset + 1);
-        }
-        int qraya = 0;
-
-        std::string boundaryCmp("");
-        int boundrySize = boundary.size(); 
-
-        while(contentLen > count)
-        {
-            if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
-                break;
-            count += nBytes;
-            int i = 0;
-            while (boundrySize > 0 && i < nBytes)
+            if ((boundary.size() > 0 && boundaryCmp == boundary) || flag)
             {
-                boundaryCmp += buffer[i];
-                if ((i - 1) >= 0  && buffer[i] == '\n' && buffer[i - 1] == '\r')
-                {
-                    if(boundaryCmp == boundary)
-                    {
-                        contentLen = count;
-                        nBytes = i - (boundary.size() + 1);
-                        break;
-                    }
-                    boundaryCmp.clear();
-                }
-                i++;
+                flag = skipHeader(count, offset, buffer, nBytes);
+                boundaryCmp.clear();
             }
-            file.write(buffer, nBytes);
-            std::cout << ++qraya << std::endl;
+            loadChunk(file, boundaryCmp, boundary, buffer, offset, nBytes, consumed);
         }
         file.close();
 
