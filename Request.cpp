@@ -1,24 +1,5 @@
 #include "Request.hpp"
 
-int get_length(char *buffer, int &offset, int &nBytes)
-{
-    std::string s_number = "";
-    int start = 0;
-    while (1)
-    {
-        if ((offset + start + 1) >= nBytes || ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n')))
-            break;
-        s_number += buffer[offset + (start++)];
-    }
-    offset += start + 2;
-    std::cout << "Length s: " << s_number << std::endl;
-    int length;
-    std::stringstream ss;
-    ss << std::hex << s_number;
-    ss >> length;
-    return (length);
-}
-
 int temporaryPrintError()
 {
     //throw BadRequestExeption
@@ -135,30 +116,29 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
         offset++;
 
     }
-    // std::cout << "A=====" << std::endl; 
-    // write(1, buffer, (nBytes));
-    // std::cout << "\n=====Z" << std::endl; 
-    // for(std::map<std::string, std::string>::iterator i = header.begin(); i != header.end(); i++)
-    // {
-    //     std::cout << "{" << i->first << "}" << ":" << "{" << i->second << "}" << std::endl;
-    // }
     return(0);
 }
-// int searchEmptyLine(int &count, int &offset, char *buffer, int &flag)
-// {
-//     if ((offset - 1) >= 0  && buffer[offset] == '\n' && buffer[offset - 1] == '\r')
-//     {
-//         if (count == 2)
-//         {
-//             flag = 1;
-//             return (1);
-//         }
-//         count = 0;
-//     }
-//     count++;
-//     offset++;
-//     return (0);
-// }
+
+//parse body
+
+int get_length(char *buffer, int &offset, int &nBytes)
+{
+    std::string s_number = "";
+    int start = 0;
+    while (1)
+    {
+        if ((offset + start + 1) >= nBytes || ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n')))
+            break;
+        s_number += buffer[offset + (start++)];
+    }
+    offset += start + 2;
+    std::cout << "Length s: " << s_number << std::endl;
+    int length;
+    std::stringstream ss;
+    ss << std::hex << s_number;
+    ss >> length;
+    return (length);
+}
 
 bool skipHeader(int count, int &offset, char *buffer, int nBytes)
 {
@@ -176,19 +156,39 @@ bool skipHeader(int count, int &offset, char *buffer, int nBytes)
     return (true);
 }
 
-void loadChunk(std::ofstream &file, std::string &boundaryCmp, std::string &boundary, char *buffer, int &offset, int nBytes, int &consumed)
+int getChunkSize(int &offset, char *buffer, int &nBytes)
 {
-    int i = offset;
-    
-    while (i < nBytes)
+    std::string s_number = "";
+    while (1)
     {
-        boundaryCmp += buffer[i];
-        if ((i - 1) >= 0  && buffer[i] == '\n' && buffer[i - 1] == '\r')
+        if (offset + 1 >= nBytes || ((buffer[offset] == '\r') && (buffer[offset + 1] == '\n')))
+            break;
+        s_number += buffer[offset++];
+    }
+    offset += 2;
+    std::cout << "Length s: " << s_number << std::endl;
+    int chunkSize;
+    std::stringstream ss;
+    ss << std::hex << s_number;
+    ss >> chunkSize;
+
+    return (chunkSize);
+}
+
+
+void loadChunkBoundry(parseBodyElement &body,std::string &boundaryCmp, std::string &boundary)
+{
+    int i = body.offset;
+    
+    while (i < body.nBytes)
+    {
+        boundaryCmp += body.buffer[i];
+        if ((i - 1) >= 0  && body.buffer[i] == '\n' && body.buffer[i - 1] == '\r')
         {
             if(boundaryCmp == boundary)
             {
                 if (i >= (int)(boundary.size() + 1))
-                    nBytes = i - (boundary.size() + 1);
+                    body.nBytes = i - (boundary.size() + 1);
                 boundaryCmp.clear();
                 break;
             }
@@ -196,19 +196,43 @@ void loadChunk(std::ofstream &file, std::string &boundaryCmp, std::string &bound
         }
         i++;
     }
-    consumed += nBytes - offset;
-    file.write(buffer + offset, nBytes - offset);
-    offset += nBytes;
+    body.consumed += body.nBytes - body.offset;
+    body.file.write(body.buffer + body.offset, body.nBytes - body.offset);
+    body.offset += body.nBytes;
+}
+
+void loadChunk(parseBodyElement &body, int &chunkSize)
+{
+    int toBeConsumed = 0;
+
+    if (body.consumed < chunkSize)
+    {
+        toBeConsumed = chunkSize - body.consumed;
+        if (toBeConsumed > body.nBytes - body.offset)
+            toBeConsumed = body.nBytes - body.offset;
+        
+        body.file.write(body.buffer + body.offset, toBeConsumed);
+        body.consumed = toBeConsumed;
+        body.offset += body.consumed; 
+    }
+    if (body.consumed >= chunkSize)
+        chunkSize = -1;
 }
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
 {
-    std::ofstream file("out.jpeg", std::ios::binary);
+    parseBodyElement body;
+
+    body.offset = ++offset;
+    body.buffer = buffer;
+    body.consumed = 0;
+    body.nBytes = nBytes;
+    body.file.open("out.jpg", std::ios::binary);
+
     fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 
     if (header.find("Content-Length") != header.end())
     {
-        offset++;
         std::string boundary("");
         size_t pos = header["Content-Type"].find("boundary");
         if (pos != std::string::npos)
@@ -220,78 +244,48 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
         long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
 
         bool flag = false;
-        int consumed = 0;
         int count = 0;
         std::string boundaryCmp = boundary;
 
-        while (consumed < contentLen)
+        while (body.consumed < contentLen)
         {
-            if((offset >= nBytes))
+            if((body.offset >= body.nBytes))
             {
-                if ((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
+                if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE - 1, 0)) <= 0)
                     break;
                 else
-                    offset = 0;   
+                    body.offset = 0;   
             }
             if ((boundary.size() > 0 && boundaryCmp == boundary) || flag)
             {
-                flag = skipHeader(count, offset, buffer, nBytes);
+                flag = skipHeader(count, body.offset, body.buffer, body.nBytes);
                 boundaryCmp.clear();
             }
-            loadChunk(file, boundaryCmp, boundary, buffer, offset, nBytes, consumed);
+            loadChunkBoundry(body, boundaryCmp, boundary);
         }
-        file.close();
+        body.file.close();
 
     }
     else if(header["Transfer-Encoding"] == "chunked")
     {
-        offset++;
-        while(1)
+        int chunkSize = -1;
+
+        while (1)
         {
-            if (offset == -1)
+            if((body.offset >= body.nBytes))
             {
-                if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
-                {
-                    std::cout << "---- break hna ast" << std::endl;
+                if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE - 1, 0)) <= 0)
                     break;
-                }
-            }
-
-            int len = get_length(buffer, offset, nBytes);
-            std::cout << "Length: " << len << std::endl;
-            if (len == 0)
-                break;
-
-            int consumed = 0;
-            file.write(buffer + offset, nBytes - offset);
-            consumed += nBytes - offset;
-
-            while (consumed < len)
-            {
-                std::cout << "+++ len: " << len << " consumed: " << consumed << std::endl;
-                if((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) <= 0)
-                {
-                    std::cout << "---- break hna" << std::endl;
-                    break;
-                }
-                if (nBytes > (len - consumed))
-                {
-                    file.write(buffer, len - consumed);
-                    offset += (len - consumed) + 3;
-                    std::cout << len - consumed << std::endl;
-                    consumed = len;
-                }
                 else
-                {
-                    file.write(buffer, nBytes);
-                    consumed += nBytes;
-                    offset = -1;
-                    std::cout << "2 " << offset  << std::endl;
-                }
+                    body.offset = 0;   
             }
-            std::cout << "+++ len: " << len << " consumed: " << consumed << " offest: " << offset << std::endl;
+            if(chunkSize == -1)
+                chunkSize = getChunkSize(body.offset, body.buffer ,body.nBytes);
+            loadChunk(body, chunkSize);
         }
     }
-    file.close();
+    body.file.close();
     return (0);
 }
+
+

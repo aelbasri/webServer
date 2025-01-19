@@ -26,6 +26,15 @@ enum state
     DONE
 };
 
+struct parseBodyElement
+{
+    int offset;
+    int nBytes;
+    int consumed;
+    char *buffer;
+    std::ofstream file;
+};
+
 class Request
 {
     private:
