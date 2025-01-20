@@ -63,8 +63,11 @@ void Server::printRequest() const
 {
     while(1)
     {
-        int new_fd = accept(_sock, NULL, 0);
+        
+        int new_fd = accept(_sock,NULL, 0);
         std::cout << "===> connection accepted" << std::endl;
+
+
         
         if (new_fd == -1)
         {
@@ -100,44 +103,61 @@ void Server::printRequest() const
             }
         }
         /*std::cout << "nik smoooook" << std::endl;*/
-        const std::string html_content = 
-        "<!DOCTYPE html>\n"
-        "<html lang=\"en\">\n"
-        "<head>\n"
-        "    <meta charset=\"UTF-8\">\n"
-        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-        "    <title>Hello World</title>\n"
-        "    <style>\n"
-        "        body {\n"
-        "            font-family: Arial, sans-serif;\n"
-        "            display: flex;\n"
-        "            justify-content: center;\n"
-        "            align-items: center;\n"
-        "            height: 100vh;\n"
-        "            margin: 0;\n"
-        "            background-color: #f0f0f0;\n"
-        "        }\n"
-        "        h1 {\n"
-        "            color: #333;\n"
-        "            padding: 20px;\n"
-        "            border-radius: 5px;\n"
-        "            background-color: white;\n"
-        "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
-        "        }\n"
-        "    </style>\n"
-        "</head>\n"
-        "<body>\n"
-        "    <h1>Hello, World!</h1>\n"
-        "</body>\n"
-        "</html>\n";
+
+        std::string s;
+        std::string fille_content;
+        std::ifstream f("page_error.html");
+
+        if (!f.is_open()) {
+           exit(1);
+        }
+
+
+        while (getline(f, s)){
+            fille_content += s;
+            fille_content.push_back('\n');
+        }
+        f.close();
+
+        // std::cout  << fille_content << std::endl; 
+        const std::string html_content = fille_content;
+        // "<!DOCTYPE html>\n"
+        // "<html lang=\"en\">\n"
+        // "<head>\n"
+        // "    <meta charset=\"UTF-8\">\n"
+        // "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        // "    <title>Hello World</title>\n"
+        // "    <style>\n"
+        // "        body {\n"
+        // "            font-family: Arial, sans-serif;\n"
+        // "            display: flex;\n"
+        // "            justify-content: center;\n"
+        // "            align-items: center;\n"
+        // "            height: 100vh;\n"
+        // "            margin: 0;\n"
+        // "            background-color: #f0f0f0;\n"
+        // "        }\n"
+        // "        h1 {\n"
+        // "            color: #333;\n"
+        // "            padding: 20px;\n"
+        // "            border-radius: 5px;\n"
+        // "            background-color: white;\n"
+        // "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
+        // "        }\n"
+        // "    </style>\n"
+        // "</head>\n"
+        // "<body>\n"
+        // "    <h1>Hello, World!</h1>\n"
+        // "</body>\n"
+        // "</html>\n";
 
         std::ostringstream ss;
         ss << "HTTP/1.1 200 OK\r\n"
         << "Content-Type: text/html; charset=UTF-8\r\n"
-        << "Content-Length: " << html_content.length() << "\r\n"
+        << "Content-Length: " << fille_content.length() << "\r\n"
         << "Connection: close\r\n"
         << "\r\n"
-        << html_content;
+        << fille_content;
 
         std::string response = ss.str();
 
