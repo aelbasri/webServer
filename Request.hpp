@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdio>
 #include <map>
+#include <cmath>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -16,7 +17,7 @@
 #include <stdlib.h>
 
 
-#define BUFF_SIZE 50
+#define BUFF_SIZE 1025
 
 enum state
 {

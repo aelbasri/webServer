@@ -121,26 +121,8 @@ int Request::parseHeader(int socket, int &offset, int &nBytes)
 
 //parse body
 
-int get_length(char *buffer, int &offset, int &nBytes)
-{
-    std::string s_number = "";
-    int start = 0;
-    while (1)
-    {
-        if ((offset + start + 1) >= nBytes || ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n')))
-            break;
-        s_number += buffer[offset + (start++)];
-    }
-    offset += start + 2;
-    std::cout << "Length s: " << s_number << std::endl;
-    int length;
-    std::stringstream ss;
-    ss << std::hex << s_number;
-    ss >> length;
-    return (length);
-}
 
-bool skipHeader(int count, int &offset, char *buffer, int nBytes)
+bool skipHeader(int &count, int &offset, char *buffer, int nBytes)
 {
     while (offset < nBytes)
     {
@@ -156,50 +138,34 @@ bool skipHeader(int count, int &offset, char *buffer, int nBytes)
     return (true);
 }
 
-int getChunkSize(int &offset, char *buffer, int &nBytes)
+int getChunkSize(int &offset, char *buffer, int &nBytes, std::string &s_number)
 {
-    std::string s_number = "";
+    int start = 0;
     while (1)
     {
-        if (offset + 1 >= nBytes || ((buffer[offset] == '\r') && (buffer[offset + 1] == '\n')))
+        if ((offset + start + 1) >= nBytes)
+        {
+            offset += start;
+            return (-1);
+        }
+        if ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n'))
             break;
-        s_number += buffer[offset++];
+        s_number += buffer[offset + (start++)];
     }
-    offset += 2;
-    std::cout << "Length s: " << s_number << std::endl;
-    int chunkSize;
+    offset += start + 2;
+    offset = std::min(offset, nBytes);
+    int length;
     std::stringstream ss;
     ss << std::hex << s_number;
-    ss >> chunkSize;
-
-    return (chunkSize);
+    ss >> length;
+    std::cout << "Length s: " << s_number << std::endl;
+    std::cout << "buffer: " << buffer[offset] << std::endl;
+    std::cout << "Length machi S: " << length << std::endl;
+    s_number = "";
+    return (length);
 }
 
 
-void loadChunkBoundry(parseBodyElement &body,std::string &boundaryCmp, std::string &boundary)
-{
-    int i = body.offset;
-    
-    while (i < body.nBytes)
-    {
-        boundaryCmp += body.buffer[i];
-        if ((i - 1) >= 0  && body.buffer[i] == '\n' && body.buffer[i - 1] == '\r')
-        {
-            if(boundaryCmp == boundary)
-            {
-                if (i >= (int)(boundary.size() + 1))
-                    body.nBytes = i - (boundary.size() + 1);
-                boundaryCmp.clear();
-                break;
-            }
-            boundaryCmp.clear();
-        }
-        i++;
-    }
-    body.consumed += body.nBytes - body.offset;
-    body.file.write(body.buffer + body.offset, body.nBytes - body.offset);
-    body.offset += body.nBytes;
-}
 
 void loadChunk(parseBodyElement &body, int &chunkSize)
 {
@@ -212,11 +178,15 @@ void loadChunk(parseBodyElement &body, int &chunkSize)
             toBeConsumed = body.nBytes - body.offset;
         
         body.file.write(body.buffer + body.offset, toBeConsumed);
-        body.consumed = toBeConsumed;
-        body.offset += body.consumed; 
+        body.consumed += toBeConsumed;
+        body.offset += toBeConsumed; 
     }
     if (body.consumed >= chunkSize)
+    {
+        body.offset += 2;
+        body.consumed = 0;
         chunkSize = -1;
+    }
 }
 
 int Request::parseBody(int socket, int &offset, int &nBytes)
@@ -233,54 +203,65 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
 
     if (header.find("Content-Length") != header.end())
     {
-        std::string boundary("");
-        size_t pos = header["Content-Type"].find("boundary");
-        if (pos != std::string::npos)
-        {
-            boundary = header["Content-Type"].substr(pos + 9); // "boundary=".size() = 9
-            boundary.insert(0, "--");
-            boundary += "\r\n";
-        }
-        long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
+        // std::string boundary("");
+        // size_t pos = header["Content-Type"].find("boundary");
+        // if (pos != std::string::npos)
+        // {
+        //     boundary = header["Content-Type"].substr(pos + 9); // "boundary=".size() = 9
+        //     boundary.insert(0, "--");
+        //     boundary += "\r\n";
+        // }
+        // long contentLen = strtol(header["Content-Length"].c_str(), NULL, 10);
 
-        bool flag = false;
-        int count = 0;
-        std::string boundaryCmp = boundary;
+        // bool flag = false;
+        // int count = 0;
+        // std::string boundaryCmp("");
 
-        while (body.consumed < contentLen)
-        {
-            if((body.offset >= body.nBytes))
-            {
-                if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE - 1, 0)) <= 0)
-                    break;
-                else
-                    body.offset = 0;   
-            }
-            if ((boundary.size() > 0 && boundaryCmp == boundary) || flag)
-            {
-                flag = skipHeader(count, body.offset, body.buffer, body.nBytes);
-                boundaryCmp.clear();
-            }
-            loadChunkBoundry(body, boundaryCmp, boundary);
-        }
-        body.file.close();
+        // /*the idea is to build a small state machine 
+        //   start first state "what you read you write", switch to boundary state
+        //   if the charachter equal the start of boundry break if the character not match
+        //   the character in boundary , switch to header state when
+        //   you face CRLF ana repeat until consumed == contenLen*/ 
+        // if (offset < nBytes)
+        //     write(1, buffer + offset, nBytes - offset);
+        // while (body.consumed < contentLen)
+        // {
+        //     if((body.offset >= body.nBytes))
+        //     {
+        //         if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE, 0)) <= 0)
+        //             break;
+        //         else
+        //             body.offset = 0;   
+        //     }
+        //     if (flag)
+        //     {
+        //         std::cout << "khask tdkhl lhna 2mrat" << std::endl;
+        //         flag = skipHeader(count, body.offset, body.buffer, body.nBytes);
+        //         boundaryCmp.clear();
+        //     }
+        //     loadChunkBoundry(body, boundaryCmp, boundary, flag);
+        // }
 
+        // std::cout << "<=====>" << boundaryCmp << std::endl;
+        // body.file.close();
     }
     else if(header["Transfer-Encoding"] == "chunked")
     {
         int chunkSize = -1;
-
+        std::string s_number = "";
         while (1)
         {
             if((body.offset >= body.nBytes))
             {
-                if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE - 1, 0)) <= 0)
+                if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE, 0)) <= 0)
                     break;
                 else
                     body.offset = 0;   
             }
             if(chunkSize == -1)
-                chunkSize = getChunkSize(body.offset, body.buffer ,body.nBytes);
+                chunkSize = getChunkSize(body.offset, body.buffer ,body.nBytes, s_number);
+            if (chunkSize == 0)
+                break;
             loadChunk(body, chunkSize);
         }
     }
