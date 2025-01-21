@@ -141,15 +141,30 @@ bool skipHeader(int &count, int &offset, char *buffer, int nBytes)
 int getChunkSize(int &offset, char *buffer, int &nBytes, std::string &s_number)
 {
     int start = 0;
+    // std::cout << "offset: " << s_number << " <> " << offset << " <> " << nBytes << std::endl;
     while (1)
     {
-        if ((offset + start + 1) >= nBytes)
+        if ((offset + start) > nBytes)
         {
+            // s_number += buffer[offset + start];
+            offset = nBytes;
+            return(-1);
+        }
+        if ((offset + start + 1) > nBytes)
+        {
+            // s_number += buffer[offset + start];
             offset += start;
             return (-1);
         }
         if ((buffer[offset + start] == '\r') && (buffer[offset + start + 1] == '\n'))
+        {
+            if(s_number.empty())
+            {
+                offset += start + 2;
+                return(-1);
+            }
             break;
+        }
         s_number += buffer[offset + (start++)];
     }
     offset += start + 2;
@@ -158,9 +173,9 @@ int getChunkSize(int &offset, char *buffer, int &nBytes, std::string &s_number)
     std::stringstream ss;
     ss << std::hex << s_number;
     ss >> length;
-    std::cout << "Length s: " << s_number << std::endl;
-    std::cout << "buffer: " << buffer[offset] << std::endl;
-    std::cout << "Length machi S: " << length << std::endl;
+    // std::cout << "Length s: " << s_number << std::endl;
+    // std::cout << "buffer: " << buffer[offset - 1] << " <> " << offset << "<>" << nBytes << std::endl;
+    // std::cout << "Length machi S: " << length << std::endl;
     s_number = "";
     return (length);
 }

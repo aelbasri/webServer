@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 
-#define BUFF_SIZE 1025
+#define BUFF_SIZE 1024
 
 enum state
 {
