@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/21 18:29:53 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/21 19:20:33 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,9 @@
 
 using namespace std;
 
-location::location(){}
+location::location(){
+    std::cout << " ----------------constru " << std::endl;
+}
 
 location::~location(){}
 
@@ -24,7 +26,9 @@ error_pages::~error_pages(){}
 
 server::server(){}
 
-server::~server(){}
+server::~server(){
+    delete [] _location;
+}
 
 void err(){
     std::cerr << "error " << std::endl;
@@ -72,11 +76,38 @@ std::string server::Get_max_body_size(){
     return(_max_body_size);
 }
 
+int server::Get_nembre_of_location(){
+    return(_nembre_of_location);
+}
+
+void server::Set_nembre_of_location(int __nembre_of_location){
+    _nembre_of_location = __nembre_of_location;
+}
+
+void server::new_location(){
+    _location = new location[_nembre_of_location];
+}
+
+int server::CheckNumberOfLocation(){
+    std::string sentence = "location";
+    int cont = 0;
+    size_t pos = 0;
+    int lenOfSentence = sentence.size();
+    while (((pos = _content.find(sentence, pos)) != (size_t)std::string::npos) && !sentence.empty()) {
+            pos += sentence.length();
+            cont++;
+    }
+    return cont;
+}
+
 void config_file::getServer(){
     for (size_t i = 0; i < _nembre_of_server; i++)
     {
         std::cout << "---------------------------------sever n "<< i <<" ------------------------------------" << std::endl;
        std::cout << _server[i].Get_content() << std::endl;
+
+       std::cout << "nembr of location is  :   " << _server[i].Get_nembre_of_location() << std::endl;
+       
     }
     
 }
@@ -101,7 +132,10 @@ void config_file::loadContentServer() {
         _server[i].Set_content(serverContent);        
         if (nextServerPos != std::string::npos)
             pos = nextServerPos;
+       _server[i].Set_nembre_of_location(_server[i].CheckNumberOfLocation());
+       _server[i].new_location();
     }
+    
 }
 
 void loidingFile(config_file *Conf){
