@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/21 18:08:20 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/21 18:29:53 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,63 +81,28 @@ void config_file::getServer(){
     
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void config_file::loadContentServer(){
-    int j = 0;
-    size_t pos = 0;
-    size_t start;
+void config_file::loadContentServer() {
     std::string sentence = "server:";
-
-    pos += sentence.length() ;
-    for (size_t i = 0; i < _nembre_of_server && j < _nembre_of_server; i++)
-    {
-        start = pos;
-        while (pos = _fileContent.find(sentence, pos)){
-
-
-            // if (pos == std::string::npos) break;
-            
-            pos = _fileContent.find(sentence, pos) -1;
-            
-            // std::cout << pos << std::endl;
-            std::cout << "the start :" << start << std::endl;
-            std::cout << "the pos :" << pos - 1 << std::endl;
-            // if (i != 1 &&( pos == std::string::npos))
-            _server[i].Set_content(_fileContent.substr(start ,  pos - 1));
-                // pos += _fileContent.length();
-            pos ++;
-            // pos =+ 1;
+    size_t pos = 0;
+    
+    for (size_t i = 0; i < _nembre_of_server; i++) {
+        pos = _fileContent.find(sentence, pos);
+        if (pos == std::string::npos)
             break;
-        }        
+        
+        pos += sentence.length();
+        size_t nextServerPos = _fileContent.find(sentence, pos);        
+        std::string serverContent;
+        if (nextServerPos != std::string::npos)
+            serverContent = _fileContent.substr(pos, nextServerPos - pos);
+        else 
+            serverContent = _fileContent.substr(pos);
+        
+        _server[i].Set_content(serverContent);        
+        if (nextServerPos != std::string::npos)
+            pos = nextServerPos;
     }
 }
-
 
 void loidingFile(config_file *Conf){
     string s;
@@ -207,10 +172,7 @@ int main() {
     Conf.loadContentServer();
     Conf.getServer();
     
-    
-    // std::cout << Conf.get_nembre_of_server() << std::endl;
-    // std::cout << "thtani "<< server[0].Get_content() << std::endl;
-    // server->loadingDataserver(Conf);
+
     
     return 0;
 }
