@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:29 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/20 17:52:16 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/21 12:55:57 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,15 @@
 
 #include <iostream>
 #include <fstream>
+#include <iostream>
+#include <algorithm>
+#include <cctype>
+#include <string>
 
 // #define nullptr  0
+
+
+class config_file ;
 
 class location
 {
@@ -46,7 +53,7 @@ public:
 
 };
 
-class server 
+class server : public error_pages , public location
 {
 private:
     std::string _name;
@@ -56,16 +63,26 @@ private:
 public:
     server();
     virtual ~server();
+
+    void loadingDataserver(config_file Conf);
 };
 
-class config_file : public server , public error_pages , public location
+
+
+class config_file 
 {
 private:
-   std::string _fileContent;
+    int     _nembre_of_server;
+    std::string _fileContent;
+    server *_server;
 public:
-    std::string& setFileContent();
+    
     config_file();
     ~config_file();
+  
+    int get_nembre_of_server();
+    std::string& setFileContent();
+    int CheckNumberOfServer();
 };
 
 
