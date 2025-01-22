@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 14:12:15 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 18:28:58 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ void config_file::getServer(){
     {
         
         std::cout << "---------------------------------sever n "<< i <<" ------------------------------------" << std::endl;
-       std::cout << _server[i].Get_content() << std::endl;
+    //    std::cout << _server[i].Get_content() << std::endl;
 
        std::cout << "nembr of location is  :   " << _server[i].Get_nembre_of_location() << std::endl;
 
@@ -32,6 +32,12 @@ void config_file::getServer(){
        std::cout << "def name  :   " << _server[i].Get_name() << std::endl;
        std::cout << "def max budy  :   " << _server[i].Get_max_body_size() << std::endl;
        std::cout << "def port  :   " << _server[i].Get_port() << std::endl;
+       
+       std::cout <<  "_Forbidden  : " <<_server[i].GetForbiddent() << std::endl;
+       std::cout <<  "_NotFound  : " <<_server[i].GetNotFound() << std::endl;
+       std::cout <<  "_MethodNotAllowed  : " <<_server[i].GetMethodNotAllowed() << std::endl;
+       std::cout <<  "_default  : " <<_server[i].GetDefault() << std::endl;
+
     }
     
 }
@@ -119,12 +125,17 @@ int config_file::CheckNumberOfServer(){
 }
 
 int main() {
+    try
+    {
+        config_file Conf; 
+        Conf.loadContentServer();
+        Conf.getServer();
 
-    config_file Conf; 
-    Conf.loadContentServer();
-    Conf.getServer();
-    
+     }
+     catch (runtime_error e)
+     {
+         cout << "Runtime error: " << e.what();
+     }
 
-    
     return 0;
 }
