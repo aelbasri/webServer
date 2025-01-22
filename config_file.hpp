@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:29 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/21 19:19:32 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/21 20:04:46 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,7 +88,6 @@ public:
 };
 
 
-
 class config_file 
 {
 private:
@@ -106,9 +105,5 @@ public:
     std::string& setFileContent();
     int CheckNumberOfServer();
 };
-
-
-
-
 
 
