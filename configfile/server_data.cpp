@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 18:22:25 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 23:09:47 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,11 @@
 
 server::server():_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size("1m"){}
 
-server::~server(){
-    delete [] _location;
+server::~server() {
+    if (_location) {
+        // delete[] _location;
+        _location = NULL;
+    }
 }
 
 void server::Set_content(std::string __content){
@@ -67,7 +70,7 @@ void server::Set_nembre_of_location(int __nembre_of_location){
 }
 
 void server::new_location(){
-    _location = new location[_nembre_of_location];
+    // _location = new location[_nembre_of_location];
 }
 
 int server::CheckNumberOfLocation(){
@@ -80,6 +83,49 @@ int server::CheckNumberOfLocation(){
             cont++;
     }
     return cont;
+}
+
+std::string escapeSpaces(const std::string& input) {
+    std::string result;
+    bool insideQuotes = false;
+    
+    for (size_t i = 0; i < input.length(); ++i) {
+        char c = input[i];
+        if (c == '"') {
+            insideQuotes = !insideQuotes;
+            result += c; 
+        }
+        else if ((c == ' ' || c == '\t') && !insideQuotes) {
+            continue; 
+        }
+        else {
+            result += c;
+        }
+    }
+    return result;
+}
+
+
+std::string trim(const std::string& input) {
+    if (input.empty()) {
+        return "";
+    }
+    
+    size_t start = 0;
+    size_t end = input.length() - 1;
+    
+    while (start < input.length() && isspace(input[start])) {
+        ++start;
+    }
+    
+    if (start == input.length()) {
+        return "";
+    }
+    while (end > start && isspace(input[end])) {
+        --end;
+    }
+    
+    return input.substr(start, end - start + 1);
 }
 
 std::vector<std::string> StringToLines(const std::string& inputString) {
@@ -101,6 +147,47 @@ std::vector<std::string> StringToLines(const std::string& inputString) {
     return result;
 }
 
+bool isValidHost(const std::string& host) {
+    if (host.empty() || host.length() > 15) {
+        return false;
+    }
+
+    int dots = 0;
+    int value = 0;
+    int segment = 0;
+    
+    for (size_t i = 0; i < host.length(); ++i) {
+        char c = host[i];
+        
+        if (c == '.') {
+            if (segment == 0 || i == host.length() - 1) {
+                return false;
+            }            
+            if (value > 255) {
+                return false;
+            }
+            value = 0;
+            segment = 0;
+            dots++;
+            
+            if (dots > 3) {
+                return false;
+            }
+        }
+        else if (isdigit(c)) {
+            value = value * 10 + (c - '0');
+            segment++;
+            if (segment > 3) {
+                return false;
+            }
+        }
+        else {
+            return false; 
+        }
+    }
+    
+    return dots == 3 && value <= 255 && segment > 0;
+}
 
 void server::loadingErrorIndex(std::vector<std::string> lines, int i){
         size_t found_at;
@@ -156,7 +243,8 @@ void server::loadingDataserver(config_file *Conf){
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'name' formatted not as expected");
             }
-            _name = lines[i].substr(found_at + 1);            
+            _name = lines[i].substr(found_at + 1);      
+            _name = trim(_name);      
         } 
         else if (lines[i].find("host") != string::npos) {
             found_at = lines[i].find(':');
@@ -164,7 +252,11 @@ void server::loadingDataserver(config_file *Conf){
                 throw runtime_error("line containing 'host' formatted not as expected");
             }
             _host = lines[i].substr(found_at + 1);
-        }
+            _host = trim(_host);
+            if (isValidHost(_host) == false)
+                throw runtime_error("line containing 'host' formatted not as expected");
+                // exit(1);
+        }   
         else if (lines[i].find("port") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
