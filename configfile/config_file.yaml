@@ -19,29 +19,13 @@ server :
       - PUT
       - DELETE
 
-  location 
-  
-  
-  
-  
-  /upload :
+  location /upload :
     root_directory: ""
     allowed_methods:
       - GET
       - POST
       - PUT
       - DELETE
-    index  : 
-    
-    location
-    
-    
-    
-    
-    
-    
-    index.htm index.html
+    index  : index.htm index.html
     max_body_size : 50m
     upload_dir : ""
-
-
