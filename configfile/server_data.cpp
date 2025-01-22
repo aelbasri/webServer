@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 11:39:50 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 14:55:00 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,80 @@ int server::CheckNumberOfLocation(){
     return cont;
 }
 
-void server::loadingDataserver(config_file Conf){
-    std::cout << Conf.setFileContent()<< std::endl;
+std::vector<std::string> StringToLines(const std::string& inputString) {
+    std::vector<std::string> result;
+    std::string temp;
+    int markbegin = 0;
+    int markend = 0;
+
+    for (int i = 0; i < inputString.length(); ++i) {     
+        if (inputString[i] == '\n') {
+            markend = i;
+            result.push_back(inputString.substr(markbegin, markend - markbegin));
+            markbegin = i + 1;  // Skip the newline character
+        }
+    }
+    if (markbegin < inputString.length()) {
+        result.push_back(inputString.substr(markbegin));
+    }
+
+    return result;
+}
+
+void server::loadingDataserver(config_file *Conf){
+        int i = 0;
+
+        size_t found_at;
+        int start;
+
+
+        
+        std::vector<std::string> lines = StringToLines(_content);
+
+        for (std::vector<std::string>::size_type i = 0; i < lines.size(); ++i) {
+        // if (lines[i].find("host") != string::npos) {
+        //     found_at = lines[i].find(':');
+            cout << "================|"<< lines[i]<<"|===========================" << endl;
+            // // while (std::isprint(_content[i]))
+            // // {
+            // //     cout << "ha ana ---===---==--=" << endl;
+            // // }
+            
+            // if (found_at == string::npos) {
+            //     throw runtime_error("line containing 'BEST_KNOWN' formatted not as expected");
+            // }
+            // _name = lines[i].substr(found_at + 1);
+            // break;
+            
+        // } 
+        // else if (_content.find("host") != string::npos) {
+        //     found_at = _content.find(':');
+
+        //     if (found_at == string::npos) {
+        //         throw runtime_error("line containing 'DIMENSION' formatted not as expected");
+        //     }
+
+        //     _host.substr(found_at + 1);
+        //     break;
+            
+        // } 
+        // else if (line.find("NODE_COORD_SECTION") != string::npos) {
+
+        //     if (dimension == -1 || best_known == -1) {
+        //         throw runtime_error("dimension and best known result should have already been read");
+        //     }
+
+        //     unsigned index;
+        //     double x, y;
+
+        //     while (file >> index >> x >> y) {
+        //         unique_ptr <Node> p(new Node(index, x, y));
+        //         nodes.push_back(move(p));
+        //     }
+
+        //     break;
+        // }
+        // i++;
+    }
+    // std::cout << Conf->setFileContent()<< std::endl;
 }
