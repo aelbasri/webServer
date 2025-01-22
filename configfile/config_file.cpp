@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 18:28:58 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 18:35:15 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ void config_file::loadContentServer() {
         _server[i].Set_nembre_of_location(_server[i].CheckNumberOfLocation());
         _server[i].new_location();
         _server[i].loadingDataserver(this);
-       
     }
     
 }
@@ -90,14 +89,12 @@ void loidingFile(config_file *Conf){
     f.close();
 }
 
-
 config_file::config_file(){
     loidingFile(this);
     _nembre_of_server = CheckNumberOfServer();
     _server =  new server[_nembre_of_server];
     
 }
-
 
 int config_file::get_nembre_of_server(){
     return(_nembre_of_server);
@@ -134,7 +131,7 @@ int main() {
      }
      catch (runtime_error e)
      {
-         cout << "Runtime error: " << e.what();
+         cout << "L***A JAAAY!: " << e.what();
      }
 
     return 0;
