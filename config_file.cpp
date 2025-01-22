@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/21 19:20:33 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 10:00:20 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,15 @@ location::location(){
     std::cout << " ----------------constru " << std::endl;
 }
 
-location::~location(){}
+location::~location(){
+    cout << "destructer location is caled" << endl;
+}
 
 error_pages::error_pages(){}
 
 error_pages::~error_pages(){}
 
-server::server(){}
+server::server():_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size("1m"){}
 
 server::~server(){
     delete [] _location;
@@ -107,7 +109,12 @@ void config_file::getServer(){
        std::cout << _server[i].Get_content() << std::endl;
 
        std::cout << "nembr of location is  :   " << _server[i].Get_nembre_of_location() << std::endl;
+
        
+       std::cout << "def host  :   " << _server[i].Get_host() << std::endl;
+       std::cout << "def name  :   " << _server[i].Get_name() << std::endl;
+       std::cout << "def max budy  :   " << _server[i].Get_max_body_size() << std::endl;
+       std::cout << "def port  :   " << _server[i].Get_port() << std::endl;
     }
     
 }
