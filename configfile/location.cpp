@@ -6,16 +6,12 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:52:58 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 10:54:24 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 18:36:21 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "location.hpp"
 
-location::location(){
-    std::cout << " ----------------constru " << std::endl;
-}
+location::location(){}
 
-location::~location(){
-    cout << "destructer location is caled" << endl;
-}
+location::~location(){}
