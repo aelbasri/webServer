@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 18:35:15 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 23:08:27 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void config_file::getServer(){
 }
 
 void config_file::loadContentServer() {
-    std::string sentence = "server:";
+    std::string sentence = "id";
     size_t pos = 0;
     
     for (size_t i = 0; i < _nembre_of_server; i++) {
@@ -80,8 +80,7 @@ void loidingFile(config_file *Conf){
     }
     
     while (getline(f, s)){
-        s.erase(std::remove_if(s.begin(), s.end(), ::isspace),
-        s.end());
+
         Conf->setFileContent() += s;
         if (!s.empty())
             Conf->setFileContent().push_back('\n');
@@ -101,7 +100,10 @@ int config_file::get_nembre_of_server(){
 }
 
 config_file::~config_file(){
-    delete[] _server;
+    if (_server){
+        delete[] _server;
+        _server = NULL;
+    }
 }
 
 std::string& config_file::setFileContent(){
@@ -110,7 +112,7 @@ std::string& config_file::setFileContent(){
 
 
 int config_file::CheckNumberOfServer(){
-    std::string sentence = "server:";
+    std::string sentence = "id";
     int words = 0;
     size_t pos = 0;
     int lenOfSentence = sentence.size();
