@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:57:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 11:39:41 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 14:08:25 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ public:
     server();
     virtual ~server();
 
-    void loadingDataserver(config_file Conf);
+    void loadingDataserver(config_file *Conf);
     int CheckNumberOfLocation();
     
 };
