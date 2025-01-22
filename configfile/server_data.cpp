@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 14:55:00 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 18:22:25 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,70 +92,99 @@ std::vector<std::string> StringToLines(const std::string& inputString) {
         if (inputString[i] == '\n') {
             markend = i;
             result.push_back(inputString.substr(markbegin, markend - markbegin));
-            markbegin = i + 1;  // Skip the newline character
+            markbegin = i + 1;
         }
     }
     if (markbegin < inputString.length()) {
         result.push_back(inputString.substr(markbegin));
     }
-
     return result;
 }
 
-void server::loadingDataserver(config_file *Conf){
-        int i = 0;
 
+void server::loadingErrorIndex(std::vector<std::string> lines, int i){
         size_t found_at;
-        int start;
 
+        while ( i < lines.size() ){
+        if (lines[i].find("#") != string::npos){
+            i++;
+            continue;
+        }
+        if (lines[i].find("404") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing '404' formatted not as expected");
+            }
+            SetNotfound(lines[i].substr(found_at + 1));            
+        }
+        else if (lines[i].find("403") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing '403' formatted not as expected");
+            }
+            SetForbiden(lines[i].substr(found_at + 1));
+        }
+        else if (lines[i].find("405") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing '405' formatted not as expected");
+            }
+            SetMethodNotAllowed(lines[i].substr(found_at + 1));
+        }
+        else if (lines[i].find("default") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'default' formatted not as expected");
+            }
+            SetDefault(lines[i].substr(found_at + 1));
+        }
+        i++;
+    }
+}
 
-        
+void server::loadingDataserver(config_file *Conf){
+        size_t found_at;
+        std::string target;
+
         std::vector<std::string> lines = StringToLines(_content);
 
         for (std::vector<std::string>::size_type i = 0; i < lines.size(); ++i) {
-        // if (lines[i].find("host") != string::npos) {
-        //     found_at = lines[i].find(':');
-            cout << "================|"<< lines[i]<<"|===========================" << endl;
-            // // while (std::isprint(_content[i]))
-            // // {
-            // //     cout << "ha ana ---===---==--=" << endl;
-            // // }
-            
-            // if (found_at == string::npos) {
-            //     throw runtime_error("line containing 'BEST_KNOWN' formatted not as expected");
-            // }
-            // _name = lines[i].substr(found_at + 1);
-            // break;
-            
-        // } 
-        // else if (_content.find("host") != string::npos) {
-        //     found_at = _content.find(':');
-
-        //     if (found_at == string::npos) {
-        //         throw runtime_error("line containing 'DIMENSION' formatted not as expected");
-        //     }
-
-        //     _host.substr(found_at + 1);
-        //     break;
-            
-        // } 
-        // else if (line.find("NODE_COORD_SECTION") != string::npos) {
-
-        //     if (dimension == -1 || best_known == -1) {
-        //         throw runtime_error("dimension and best known result should have already been read");
-        //     }
-
-        //     unsigned index;
-        //     double x, y;
-
-        //     while (file >> index >> x >> y) {
-        //         unique_ptr <Node> p(new Node(index, x, y));
-        //         nodes.push_back(move(p));
-        //     }
-
-        //     break;
-        // }
-        // i++;
+        if (lines[i].find("#") != string::npos)
+            continue;
+        if (lines[i].find("name") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'name' formatted not as expected");
+            }
+            _name = lines[i].substr(found_at + 1);            
+        } 
+        else if (lines[i].find("host") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'host' formatted not as expected");
+            }
+            _host = lines[i].substr(found_at + 1);
+        }
+        else if (lines[i].find("port") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'port' formatted not as expected");
+            }
+            _port = lines[i].substr(found_at + 1);
+        }
+        else if (lines[i].find("max_body_size") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'max_body_size' formatted not as expected");
+            }
+            _max_body_size = lines[i].substr(found_at + 1);
+        }
+        else if (lines[i].find("error_pages") != string::npos){
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'location' formatted not as expected");
+            }
+            loadingErrorIndex(lines , i);
+        }
     }
-    // std::cout << Conf->setFileContent()<< std::endl;
 }
