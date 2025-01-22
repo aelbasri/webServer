@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:50:32 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 11:39:46 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/22 17:45:51 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,4 +27,15 @@ public:
     error_pages();
     virtual ~error_pages();
 
+
+    void SetForbiden(std::string __Forbidden);
+    void SetNotfound(std::string __NotFound);
+    void SetMethodNotAllowed(std::string __MethodNotAllowed);
+    void SetDefault(std::string __default);
+    
+
+    std::string GetForbiddent();
+    std::string GetNotFound();
+    std::string GetMethodNotAllowed();
+    std::string GetDefault();
 };
