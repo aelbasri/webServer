@@ -1,14 +1,14 @@
 
 server :
-  - id : server1            
+  - id: server1          
     name: my-web-server1
-    host: 0.0.0               .0.0
-    port:                 8080
-    max_body_size : "50m"
+    host: 127.0.0.1
+    port:                8080
+    max_body_size :      1
 
     error_pages:
       404: /errors/404.html
-      403: /errors/40.html
+      403: /errors/403.html
       405:  /errors/405.html
       default: /errors/default.html
 
@@ -29,14 +29,13 @@ server :
         - PUT
         - DELETE
       index  : index.htm index.html
-      max_body_size : 50m
       upload_dir : ""
 
   - id : server2            
-    name: "my-web-   server"
-    host: "0.0.0.0"
-    port: "8080"
-    max_body_size : "50m"
+    name: my-web-   server
+    host: 127.0.0.0
+    port: 8080
+    max_body_size : 1
 
     error_pages:
       404: /errors/404.html
@@ -61,5 +60,4 @@ server :
         - PUT
         - DELETE
       index  : index.htm index.html
-      max_body_size : 50m
       upload_dir : ""
