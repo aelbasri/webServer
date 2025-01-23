@@ -12,33 +12,41 @@ server :
       405:  /errors/405.html
       default: /errors/default.html
 
-    location :
-      type : "/" 
-      root_directory: ""
-      # allowed_methods:
-      #   - GET
-      #   - POST
-      #   - PUT
-      #   - DELETE
-
+    location14 :
+      type : /
+      root_directory: iiiiiiiiiii
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
+      index  : index.htm index.html
+      upload_dir :  hala madrid
+      
     location1 :
       type : zara
-      root_directory: ""
-      # allowed_methods:
-      #   - GET
-      #   - POST
-      #   - PUT
-      #   - DELETE
+      root_directory: ooooooooooooo
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
       index  : index.htm index.html
-      upload_dir : "hala madrid"
+      upload_dir :  hala madrid
     
     location2 :
       type : upload
-      root_directory: "hala madrid"
-      # allowed_methods:
-      #   - GET
-      #   - POST
-      #   - PUT
-      #   - DELETE
+      root_directory:  hala kkkkk              
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
       index  : index.htm index.html
-      upload_dir : "hala madrid"
+      upload_dir : hala madrid
+    location5 :
+      type : upload
+      root_directory:  hala llllllllllllll              
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
+      index  : index.htm index.html
+      upload_dir : hala madrid
