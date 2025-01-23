@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:52:58 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 16:09:36 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 20:28:17 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,12 @@ void location::SetRoot_directory(std::string __root_directory){
     _root_directory = __root_directory;
 }
 
-void location::SetAllowed_methods(int i, std::string target){
-    _allowed_methods[i] = target;
+void location::SetAllowed_methods(std::vector<std::string> &target){
+    _allowed_methods = target;
 }
 
-std::string location::GetAllowed_methods(int i){
-    return _allowed_methods[i];
+std::vector<std::string>  location::GetAllowed_methods(){
+    return _allowed_methods;
 }
 
 void location::SetMax_body_size(long long __max_body_size){
