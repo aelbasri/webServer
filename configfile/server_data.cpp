@@ -6,17 +6,19 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 12:31:25 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 16:44:42 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "server_data.hpp"
 
-server::server():_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
+server::server():_indixL(0),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){
+
+}
 
 server::~server() {
     if (_location) {
-        // delete[] _location;
+        delete[] _location;
         _location = NULL;
     }
 }
@@ -70,7 +72,7 @@ void server::Set_nembre_of_location(int __nembre_of_location){
 }
 
 void server::new_location(){
-    // _location = new location[_nembre_of_location];
+    _location = new location[_nembre_of_location];
 }
 
 int server::CheckNumberOfLocation(){
@@ -247,9 +249,9 @@ bool isValidHost(const std::string& host) {
     return dots == 3 && value <= 255 && segment > 0;
 }
 
-void server::loadingErrorIndex(std::vector<std::string> lines, int i){
+void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
         size_t found_at;
-
+        i++;
         while ( i < lines.size() ){
         if (lines[i].find("#") != string::npos){
             i++;
@@ -283,9 +285,73 @@ void server::loadingErrorIndex(std::vector<std::string> lines, int i){
             }
             SetDefault(lines[i].substr(found_at + 1));
         }
+        else
+            break;
         i++;
     }
+    cout << "============== Eroor ======>>"<< lines[i] << endl;
+
 }
+
+
+
+
+
+void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
+    size_t found_at;
+    i++;
+
+    while(i < lines.size() ) {
+        if (lines[i].find("#") != string::npos){
+            i++;
+            continue;
+        }
+        if (lines[i].find("type") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'type' formatted not as expected");
+            }
+            _location[_indixL].SetType_of_location(lines[i].substr(found_at + 1));            
+        }
+        else if (lines[i].find("root_directory") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'root_directory' formatted not as expected");
+            }
+            _location[_indixL].SetRoot_directory(lines[i].substr(found_at + 1));
+        }
+        else if (lines[i].find("index") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'index' formatted not as expected");
+            }
+            _location[_indixL].SetIndex(lines[i].substr(found_at + 1));
+        }
+        else
+            break;
+        i++;
+    }
+    
+    _indixL ++;
+
+}
+
+void server::Getlocation(){
+    for (size_t i = 0; i < _nembre_of_location; i++)
+    {
+        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
+        
+        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
+        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
+        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+
+        
+    }
+    
+}
+
+
+
 
 void server::loadingDataserver(config_file *Conf){
         size_t found_at;
@@ -293,7 +359,8 @@ void server::loadingDataserver(config_file *Conf){
 
         std::vector<std::string> lines = StringToLines(_content);
 
-        for (std::vector<std::string>::size_type i = 0; i < lines.size(); ++i) {
+        for (std::vector<std::string>::size_type i = 0; i < lines.size(); i++) {
+
         if (lines[i].find("#") != string::npos)
             continue;
         if (lines[i].find("name") != string::npos) {
@@ -344,5 +411,14 @@ void server::loadingDataserver(config_file *Conf){
             }
             loadingErrorIndex(lines , i);
         }
+        if (lines[i].find("location") != string::npos){
+            
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'location' formatted not as expected");
+            }
+            loadingLocationContent(lines ,i);
+        }
     }
+    Getlocation();
 }
