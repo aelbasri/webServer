@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:53:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 16:09:39 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 20:28:36 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,12 +32,12 @@ public:
     void SetType_of_location(std::string __type_of_location);
     void SetIndex(std::string __index);
     void SetRoot_directory(std::string __root_directory);
-    void SetAllowed_methods(int i, std::string target);
+    void SetAllowed_methods(std::vector<std::string> &target);
     void SetUpload_dir(std::string __upload_dir);
     void SetMax_body_size(long long __max_body_size);
 
 
-    std::string GetAllowed_methods(int i);
+    std::vector<std::string> GetAllowed_methods();
     std::string GetType_of_location();    
     std::string GetIndex();
     std::string GetRoot_directory();    
