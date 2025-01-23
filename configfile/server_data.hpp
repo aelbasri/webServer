@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:57:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 17:54:33 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 11:33:22 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ private:
     std::string _name;
     std::string _host;
     std::string _port;
-    std::string _max_body_size;
+    long long _max_body_size;
 public:
     void new_location();
     void Set_nembre_of_location(int _nembre_of_location);
@@ -34,14 +34,14 @@ public:
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
     void Set_port(std::string __port);
-    void Set_max_body_size(std::string __max_body_size); 
+    void Set_max_body_size(long long __max_body_size); 
     
     int Get_nembre_of_location();
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
     std::string Get_port();
-    std::string Get_max_body_size();
+    long long Get_max_body_size();
 
     server();
     virtual ~server();
