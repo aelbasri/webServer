@@ -6,13 +6,13 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 23:09:47 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 12:31:25 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "server_data.hpp"
 
-server::server():_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size("1m"){}
+server::server():_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
 
 server::~server() {
     if (_location) {
@@ -37,7 +37,7 @@ void server::Set_port(std::string __port){
     _port = __port;
 }
 
-void server::Set_max_body_size(std::string __max_body_size){
+void server::Set_max_body_size(long long __max_body_size){
     _max_body_size = __max_body_size;
 }
 
@@ -57,7 +57,7 @@ std::string server::Get_port(){
     return(_port);
 }
 
-std::string server::Get_max_body_size(){
+long long server::Get_max_body_size(){
     return(_max_body_size);
 }
 
@@ -145,6 +145,64 @@ std::vector<std::string> StringToLines(const std::string& inputString) {
         result.push_back(inputString.substr(markbegin));
     }
     return result;
+}
+
+bool parseBodySize(const std::string& sizeStr, long long& bytes) {
+    if (sizeStr.empty()) return false;
+    char unit;
+    std::string numPart;
+    if (!isdigit(sizeStr[sizeStr.length() - 1])){
+        unit = sizeStr[sizeStr.length() - 1];
+        numPart = sizeStr.substr(0, sizeStr.length() - 1);
+    }
+    else{
+        unit = 'm';
+        numPart = sizeStr.substr(0, sizeStr.length());
+    }
+    long long value = 0;
+    for (size_t i = 0; i < numPart.length(); ++i) {
+        if (!isdigit(numPart[i])) return false;
+        value = value * 10 + (numPart[i] - '0');
+    }
+    if (sizeStr == "m"){
+             bytes = 1048576;
+            return (true);
+    }
+    else if (sizeStr == "k"){
+            bytes = 1024;
+            return (true);
+    }
+    else if (sizeStr == "g"){
+          bytes = 1073741824;
+        return (true);
+    }
+    switch (unit) {
+        case 'm': 
+            bytes = value * 1024 * 1024;
+            return true;
+        case 'k': 
+            bytes = value * 1024;
+            return true;
+        case 'g': 
+            bytes = value * 1024 * 1024 * 1024;
+            return true;
+        default:
+            if (isdigit(unit)) {
+                bytes = value;
+                return true;
+            }
+            return false;
+    }
+}
+
+bool isValidPort(const std::string& port) {
+    for (size_t i = 0; i < port.length(); ++i) {
+        if (!isdigit(port[i])) {
+            return false;
+        }
+    }
+    int portNum = atoi(port.c_str());
+    return portNum > 0 && portNum <= 65535;
 }
 
 bool isValidHost(const std::string& host) {
@@ -253,23 +311,31 @@ void server::loadingDataserver(config_file *Conf){
             }
             _host = lines[i].substr(found_at + 1);
             _host = trim(_host);
-            if (isValidHost(_host) == false)
-                throw runtime_error("line containing 'host' formatted not as expected");
-                // exit(1);
-        }   
+            if (isValidHost(_host) == false){
+                throw runtime_error("line containing 'host' formatted not as expected : " + _host);
+            } 
+        }
         else if (lines[i].find("port") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'port' formatted not as expected");
             }
             _port = lines[i].substr(found_at + 1);
+            _port = trim(_port);
+            if (isValidPort(_port) == false){
+                throw runtime_error("line containing 'port' formatted not as expected : " + _port);
+            } 
         }
         else if (lines[i].find("max_body_size") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'max_body_size' formatted not as expected");
             }
-            _max_body_size = lines[i].substr(found_at + 1);
+            std::string tmp_ = lines[i].substr(found_at + 1);
+            tmp_ = escapeSpaces(tmp_);
+            if (parseBodySize( tmp_, _max_body_size) == false)
+                throw runtime_error("line containing 'max_body_size' formatted not as expected : " + tmp_ );
+                
         }
         else if (lines[i].find("error_pages") != string::npos){
             found_at = lines[i].find(':');
