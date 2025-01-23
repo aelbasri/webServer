@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:57:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 11:33:22 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 16:01:47 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 class server : public error_pages
 {
 private:
+    size_t _indixL;
     int     _nembre_of_location;
     location *_location;
     std::string _content;
@@ -46,7 +47,10 @@ public:
     server();
     virtual ~server();
 
+
+    void Getlocation();
+    void loadingLocationContent(std::vector<std::string> lines,size_t &i);
     void loadingDataserver(config_file *Conf);
     int CheckNumberOfLocation();
-    void loadingErrorIndex(std::vector<std::string> lines, int i);
+    void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
 };
