@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 16:44:42 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 21:15:16 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -293,15 +293,68 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
 
 }
 
+std::string removeWhitespace(const std::string& input) {
+    std::string result;
+    
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (!isspace(input[i])) {
+            result += input[i];
+        }
+    }
+    return result;
+}
 
+void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
+    std::string tmp_;
+    size_t found_at;
+    i++;
+
+    std::vector<std::string>  _allowed_methods;
+    while (i < lines.size()) {
+        if (lines[i].find("#") != string::npos) {
+            i++;
+            continue;
+        }
+        if (lines[i].find("GET") != string::npos) {
+            tmp_ =  removeWhitespace(lines[i]);
+            found_at = tmp_.find('-');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'GET' formatted not as expected : " + lines[i]);
+            }
+            _allowed_methods.push_back("GET");
+        }
+        else if (lines[i].find("POST") != string::npos) {
+            tmp_ =  removeWhitespace(lines[i]);
+            found_at = tmp_.find('-');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'POST' formatted not as expected : " + lines[i]);
+            }
+            _allowed_methods.push_back("POST");
+        }
+        else if (lines[i].find("DELETE") != string::npos) {
+            tmp_ =  removeWhitespace(lines[i]);
+            found_at = tmp_.find('-');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'DELETE' formatted not as expected : " + lines[i]);
+            }
+            _allowed_methods.push_back("DELETE");
+        }
+        else
+            break;
+        i++;
+    }
+    _location[_indixL].SetAllowed_methods(_allowed_methods);
+}
 
 
 
 void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     size_t found_at;
-    i++;
+    std::string tmp_;
 
-    while(i < lines.size() ) {
+
+    std::cout << "the index is : " <<_indixL << endl;
+    while(i++ < lines.size() ) {
         if (lines[i].find("#") != string::npos){
             i++;
             continue;
@@ -311,40 +364,59 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'type' formatted not as expected");
             }
-            _location[_indixL].SetType_of_location(lines[i].substr(found_at + 1));            
+            tmp_ = lines[i].substr(found_at + 1);
+            tmp_ = trim(tmp_);
+            _location[_indixL].SetType_of_location(tmp_);
+
         }
         else if (lines[i].find("root_directory") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'root_directory' formatted not as expected");
             }
-            _location[_indixL].SetRoot_directory(lines[i].substr(found_at + 1));
+            tmp_ = lines[i].substr(found_at + 1);
+            tmp_ = trim(tmp_);
+            _location[_indixL].SetRoot_directory(tmp_);
+
         }
         else if (lines[i].find("index") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
                 throw runtime_error("line containing 'index' formatted not as expected");
             }
-            _location[_indixL].SetIndex(lines[i].substr(found_at + 1));
+            tmp_ = lines[i].substr(found_at + 1);
+            tmp_ = trim(tmp_);
+            _location[_indixL].SetIndex(tmp_);
+
         }
-        else
+        else if (lines[i].find("allowed_methods") != string::npos) {
+            found_at = lines[i].find(':');
+            if (found_at == string::npos) {
+                throw runtime_error("line containing 'index' formatted not as expected");
+            }
+            LoidingAllowedMethods(lines , i);
+        }
+        else{
+            _indixL ++;
             break;
-        i++;
+        }
+
     }
-    
-    _indixL ++;
+    std::cout << "the content is : " << lines[i] << endl;
 
 }
 
 void server::Getlocation(){
+    // std::string<>
     for (size_t i = 0; i < _nembre_of_location; i++)
     {
         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-        
         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
         std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
         std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
-
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
+            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
+        }
         
     }
     
@@ -359,10 +431,14 @@ void server::loadingDataserver(config_file *Conf){
 
         std::vector<std::string> lines = StringToLines(_content);
 
-        for (std::vector<std::string>::size_type i = 0; i < lines.size(); i++) {
+        for (std::vector<std::string>::size_type i = 0; i < lines.size(); ++i) {
 
-        if (lines[i].find("#") != string::npos)
-            continue;
+        // if (lines[i].find("#") != string::npos)
+        //     continue;
+
+
+
+
         if (lines[i].find("name") != string::npos) {
             found_at = lines[i].find(':');
             if (found_at == string::npos) {
