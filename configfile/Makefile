@@ -10,7 +10,7 @@ all : $(NAME)
 
 
 run : re
-	./$(NAME)
+	 ./$(NAME)
 %.o : %.cpp 
 	@c++ -c $(CFLAGS)  -o $@ $^
 
