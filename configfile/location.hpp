@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:53:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 10:53:44 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 11:31:53 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ private:
     std::string _type_of_location;
     std::string _root_directory;
     std::string _allowed_methods;
-    std::string _max_body_size;
+    long long _max_body_size;
     std::string _upload_dir;
     
 public:
