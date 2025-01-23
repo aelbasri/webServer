@@ -14,23 +14,22 @@ server :
 
     location14 :
       type : /
-      root_directory: iiiiiiiiiii
+      root_directory: /root2
       allowed_methods:
         - POST
         - DELETE
         - GET
-      index  : index.htm index.html
+      index  : index2.htm index2.html
       upload_dir :  hala madrid
       
     location1 :
       type : zara
-      root_directory: ooooooooooooo
+      root_directory: /root1
       allowed_methods:
         - POST
-        - DELETE
-        - GET
-      index  : index.htm index.html
-      upload_dir :  hala madrid
+
+      index  : index1.htm index1.html
+      upload_dir :  /upload2
     
     location2 :
       type : upload
@@ -40,13 +39,13 @@ server :
         - DELETE
         - GET
       index  : index.htm index.html
-      upload_dir : hala madrid
+      upload_dir : /upload1
     location5 :
       type : upload
-      root_directory:  hala llllllllllllll              
       allowed_methods:
         - POST
         - DELETE
         - GET
+      root_directory: /root              
       index  : index.htm index.html
-      upload_dir : hala madrid
+      upload_dir : /upload
