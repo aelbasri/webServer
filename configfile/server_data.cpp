@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 21:15:16 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/23 22:07:30 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -289,7 +289,7 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
             break;
         i++;
     }
-    cout << "============== Eroor ======>>"<< lines[i] << endl;
+    // cout << "============== Eroor ======>>"<< lines[i] << endl;
 
 }
 
@@ -307,10 +307,9 @@ std::string removeWhitespace(const std::string& input) {
 void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
     std::string tmp_;
     size_t found_at;
-    i++;
 
     std::vector<std::string>  _allowed_methods;
-    while (i < lines.size()) {
+    while (i++ < lines.size()) {
         if (lines[i].find("#") != string::npos) {
             i++;
             continue;
@@ -341,7 +340,6 @@ void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
         }
         else
             break;
-        i++;
     }
     _location[_indixL].SetAllowed_methods(_allowed_methods);
 }
@@ -353,7 +351,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     std::string tmp_;
 
 
-    std::cout << "the index is : " <<_indixL << endl;
+    // std::cout << "the index is : " <<_indixL << endl;
     while(i++ < lines.size() ) {
         if (lines[i].find("#") != string::npos){
             i++;
@@ -395,6 +393,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
                 throw runtime_error("line containing 'index' formatted not as expected");
             }
             LoidingAllowedMethods(lines , i);
+            i--;
         }
         else{
             _indixL ++;
@@ -402,7 +401,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         }
 
     }
-    std::cout << "the content is : " << lines[i] << endl;
+    // std::cout << "the content is : " << lines[i] << endl;
 
 }
 
