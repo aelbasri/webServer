@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:29 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/22 14:39:17 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 17:13:21 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <cctype>
 #include <string>
 #include <vector>
+#include <map>
 
 // #define nullptr  0
 
