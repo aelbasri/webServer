@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:57:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 19:48:57 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 16:58:03 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 #include "error_pages.hpp"
 #include "location.hpp"
-
 
 
 class server : public error_pages
@@ -56,3 +55,13 @@ public:
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
 };
+
+
+
+std::string trim(const std::string& input);
+std::vector<std::string> StringToLines(const std::string& inputString);
+bool parseBodySize(const std::string& sizeStr, long long& bytes);
+bool isValidPort(const std::string& port);
+bool isValidHost(const std::string& host);
+std::string removeWhitespace(const std::string& input);
+std::string escapeSpaces(const std::string& input);
