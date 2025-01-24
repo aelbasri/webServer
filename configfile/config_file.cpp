@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 16:34:24 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 14:34:42 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,6 @@ void config_file::loadContentServer() {
         pos = _fileContent.find(sentence, pos);
         if (pos == std::string::npos)
             break;
-        
         pos += sentence.length();
         size_t nextServerPos = _fileContent.find(sentence, pos);        
         std::string serverContent;
@@ -78,7 +77,6 @@ void loidingFile(config_file *Conf){
     if (!f.is_open()) {
         err();
     }
-    
     while (getline(f, s)){
 
         Conf->setFileContent() += s;
