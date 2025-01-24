@@ -1,5 +1,6 @@
 #include "server.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 #include <stdlib.h>
 
 
@@ -131,23 +132,44 @@ void Server::printRequest() const
         "</body>\n"
         "</html>\n";
 
-        std::ostringstream ss;
-        ss << "HTTP/1.1 200 OK\r\n"
-        << "Content-Type: text/html; charset=UTF-8\r\n"
-        << "Content-Length: " << html_content.length() << "\r\n"
-        << "Connection: close\r\n"
-        << "\r\n"
-        << html_content;
+        /* Use the Response class */
+        Response response;
+        std::string version = "HTTP/1.1";
+        int status = 200;
+        std::string reasonPhrase = "OK";
+        std::string contentType = "text/html; charset=UTF-8";
+        std::stringstream ss;
+        ss << html_content.size();
+        std::string contentLength = ss.str();
+        std::string connection = "close";
 
-        std::string response = ss.str();
+        response.setHttpVersion(version);
+        response.setStatusCode(status);
+        response.setReasonPhrase(reasonPhrase);
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Content-Length"), contentLength);
+        response.addHeader(std::string("Connection"), connection);
+        response.setTextBody(html_content);
+        response.sendResponse(new_fd);
 
+        /*std::ostringstream ss;*/
+        /*ss << "HTTP/1.1 200 OK\r\n"*/
+        /*<< "Content-Type: text/html; charset=UTF-8\r\n"*/
+        /*<< "Content-Length: " << html_content.length() << "\r\n"*/
+        /*<< "Connection: close\r\n"*/
+        /*<< "\r\n"*/
+        /*<< html_content;*/
+        /**/
+        /*std::string response = ss.str();*/
+        /**/
         /*std::cout << "Got: (" << buff << ")" << std::endl;*/
         /*if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)*/
-        if (send(new_fd, response.c_str(), response.size(), 0) == -1)
-        {
-            perror("send() failed");
-            exit(1);
-        }
+        /*if (send(new_fd, response.c_str(), response.size(), 0) == -1)*/
+        /*{*/
+        /*    perror("send() failed");*/
+        /*    exit(1);*/
+        /*}*/
+
         // file.close();
         close(new_fd);
     }

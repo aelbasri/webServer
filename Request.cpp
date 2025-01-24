@@ -87,6 +87,9 @@ int Request::parseRequestLine(int socket, int &offset, int &nBytes)
     }
     offset++;
 
+    // parseMethod();
+    // parseRequestTarget();
+    // parseHttpVersion();
     // std::cout << "{" << method  << "}" << std::endl;
     // std::cout << "{" << requestTarget  << "}" << std::endl;
     // std::cout << "{" << httpVersion  << "}" << std::endl;
