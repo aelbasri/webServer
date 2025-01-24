@@ -31,7 +31,7 @@ class Response
 
         // body
         std::string _textBody;
-        /*std::ifstream _fileBody;*/
+        std::string _file;
 
     public:
         void setHttpVersion(const std::string &version);
@@ -39,6 +39,7 @@ class Response
         void setReasonPhrase(const std::string &phrase);
         void addHeader(const std::string &key, std::string &value);
         void setTextBody(const std::string &body);
-        /*void setFileBody(std::string &filepath);*/
+        void setFile(const std::string &filepath);
+        void setContentLength(void); 
         void sendResponse(int socket) const;
 };

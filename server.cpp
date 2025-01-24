@@ -3,6 +3,8 @@
 #include "Response.hpp"
 #include <stdlib.h>
 
+#define FILE_PATH "./assets/page.html"
+
 
 Server::Server() : _host("127.0.0.1"), _port("3000") {}
 
@@ -138,8 +140,18 @@ void Server::printRequest() const
         int status = 200;
         std::string reasonPhrase = "OK";
         std::string contentType = "text/html; charset=UTF-8";
+
         std::stringstream ss;
-        ss << html_content.size();
+        {
+            // _textBody size
+            /*response.setTextBody(html_content);*/
+            /*ss << _textBody.size();*/
+        }
+        {
+            // _file size
+            response.setFile(FILE_PATH);
+            /*ss << _file.size();*/
+        }
         std::string contentLength = ss.str();
         std::string connection = "close";
 
@@ -147,9 +159,9 @@ void Server::printRequest() const
         response.setStatusCode(status);
         response.setReasonPhrase(reasonPhrase);
         response.addHeader(std::string("Content-Type"), contentType);
-        response.addHeader(std::string("Content-Length"), contentLength);
+        /*response.addHeader(std::string("Content-Length"), contentLength);*/
+        response.setContentLength();
         response.addHeader(std::string("Connection"), connection);
-        response.setTextBody(html_content);
         response.sendResponse(new_fd);
 
         /*std::ostringstream ss;*/

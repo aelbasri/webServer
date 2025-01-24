@@ -22,7 +22,35 @@ void Response::addHeader(const std::string &key, std::string &value)
 
 void Response::setTextBody(const std::string &body)
 {
+    _file = "";
     _textBody = body;
+}
+
+void Response::setFile(const std::string &filepath)
+{
+    _textBody = "";
+    std::ifstream f(filepath.c_str());
+    if (f.is_open())
+    {
+        /*std::cout << "sending file..." << std::endl;*/
+        std::stringstream fileStream;
+        fileStream << f.rdbuf();
+        _file = fileStream.str();
+    }
+    else
+        _file = "";
+    // else throw exception (or declare file not found somehow)
+}
+
+void Response::setContentLength()
+{
+    std::stringstream ss;
+    if (!_file.empty())
+        ss << _file.size();
+    else
+        ss << _textBody.size();
+    std::string len = ss.str();
+    addHeader(std::string("Content-Length"), len);
 }
 
 void Response::sendResponse(int clientSocket) const
@@ -38,7 +66,11 @@ void Response::sendResponse(int clientSocket) const
         responseStream << it->first << ": " << it->second << "\r\n";
     }
     responseStream << "\r\n";
-    responseStream << _textBody;
+    if (!_file.empty())
+        responseStream << _file;
+    else if (!_textBody.empty())
+        responseStream << _textBody;
+
     std::string response = responseStream.str();
 
     // Send the response in chunks
