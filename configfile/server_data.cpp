@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 17:24:55 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 20:53:48 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,20 +93,20 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
     std::string key;
     std::string value;
     map<std::string , std::string> er;
-    map<std::string, std::string>::iterator itr;
-
+    std::map<std::string , std::string>::iterator it = er.begin();
     while (i++ < lines.size()) {
         size_t found_at = lines[i].find(':');
-        if (found_at == std::string::npos) 
-            continue;
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
-        if (isValidEroorValue(value)){
-            er->first() = key;
-            er->first() = value;
-            itr++;
+        if (found_at == std::string::npos) 
+            continue;
+        if (isValidEroorValue(key)){
+            er.insert (it, std::pair<std::string , std::string>(key,value)); 
         }
+        else
+            break;
     }
+    SetErr(er);
 }
 
 void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
@@ -152,7 +152,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
             _location[_indixL].SetRoot_directory(value);
         }
         else if (key == "index") {
-            _location[_indixL].SetIndex(key);
+            _location[_indixL].SetIndex(value);
         }
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
@@ -220,10 +220,14 @@ void server::loadingDataserver(config_file *Conf){
         }
         else if (key == "error_pages") {
             loadingErrorIndex(lines, i);
+            i--;
         }
         else if (key == "location") {
             loadingLocationContent(lines, i);
         }
+        // else
+        //     throw std::runtime_error("Invalid KEY: " + key);
+            
     }
     Getlocation();
 }
