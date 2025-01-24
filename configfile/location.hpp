@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:53:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/23 20:28:36 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 16:59:31 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,5 +44,4 @@ public:
     std::string GetUpload_dir();
     long long GetMax_body_size();
     
-    // void loadContenLocation();
 };
