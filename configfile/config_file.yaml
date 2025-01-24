@@ -2,14 +2,14 @@
 server :
   - id :  server1   
     name:           name
-    host: 0.0.0.78
-    port:   8080
+    host: 0.0.0.45
+    port:   450
     max_body_size :       1
 
     error_pages:
       410: /errors/404.html
       420: /errors/403.html
-      430:  /errors/405.html
+      430:  /errors/4045.html
 
     location :
       type : /
@@ -24,11 +24,10 @@ server :
     location :
       type : zara
       root_directory: /root1
-      allowed_methods:
-        - POST
+      # allowed_methods:
+        # - POST
 
       index  : index1.htm index1.html
-      # upload_dir :  /upload2
     
     location :
       type : upload
@@ -38,7 +37,7 @@ server :
         - DELETE
         - GET
       index  : index.htm index.html
-      # upload_dir : /upload1
+
     location :
       type : upload
       allowed_methods:
@@ -47,7 +46,7 @@ server :
         - GET
       root_directory: /root              
       index  : index.htm index.html
-      # upload_dir : /upload
+
   - id :  server2     
     name:           name
     host: 0.0.0.78
@@ -68,7 +67,7 @@ server :
         - GET
       index  : index2.htm index2.html
       upload_dir :  hala madrid
-      
+      53..0
     location :
       type : zara
       root_directory: /root1
@@ -76,23 +75,23 @@ server :
         - POST
 
       index  : index1.htm index1.html
-      # upload_dir :  /upload2
+
     
     location :
-      type : upload
+      type : upload1
       root_directory:  hala kkkkk              
       allowed_methods:
         - POST
         - DELETE
         - GET
       index  : index.htm index.html
-      # upload_dir : /upload1
+
     location :
-      type : upload
+      type : upload2
       allowed_methods:
         - POST
         - DELETE
         - GET
       root_directory: /root              
       index  : index.htm index.html
-      # upload_dir : /upload
+
