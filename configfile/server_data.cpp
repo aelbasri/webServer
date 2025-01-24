@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 16:52:57 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 17:24:55 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,8 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
+    map<std::string , std::string> er;
+    map<std::string, std::string>::iterator itr;
 
     while (i++ < lines.size()) {
         size_t found_at = lines[i].find(':');
@@ -99,7 +101,11 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
             continue;
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
-        break;
+        if (isValidEroorValue(value)){
+            er->first() = key;
+            er->first() = value;
+            itr++;
+        }
     }
 }
 
