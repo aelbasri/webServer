@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/24 16:50:17 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 17:10:17 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 20:42:27 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,13 +102,17 @@ bool parseBodySize(const std::string& sizeStr, long long& bytes) {
 }
 
 bool isValidEroorValue(const std::string& value) {
-    for (size_t i = 0; i < port.length(); ++i) {
+    for (size_t i = 0; i < value.length(); ++i) {
         if (!isdigit(value[i])) {
             return false;
         }
     }
     int portNum = atoi(value.c_str());
-    return portNum >= 300 && portNum <= 599;
+    if (portNum < 300 || portNum > 599)
+        throw std::runtime_error("value of error must be between 300 and 599 : " + value);
+    else 
+        return true;
+
 }
 bool isValidPort(const std::string& port) {
     for (size_t i = 0; i < port.length(); ++i) {
