@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 20:53:48 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/24 22:37:33 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ server::server():_indixL(0),_name("localhost"), _host("127.0.0.0"),_port("80"),_
 server::~server() {
     if (_location) {
         delete[] _location;
-        _location = NULL;
+        // _location = NULL;
     }
 }
 
@@ -224,6 +224,7 @@ void server::loadingDataserver(config_file *Conf){
         }
         else if (key == "location") {
             loadingLocationContent(lines, i);
+            i--;
         }
         // else
         //     throw std::runtime_error("Invalid KEY: " + key);
