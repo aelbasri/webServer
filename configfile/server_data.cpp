@@ -114,8 +114,7 @@ void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
 
     std::vector<std::string>  _allowed_methods;
     while (i++ < lines.size()) {
-        if (lines[i].find("#") != std::string::npos) 
-            continue;
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         found_at = lines[i].find('-');
         if (found_at == std::string::npos) 
             break;
@@ -135,11 +134,8 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     std::string value;
     
     while(i++ < lines.size() ) {
-        if (lines[i].find("#") != std::string::npos) 
-            continue;
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         found_at = lines[i].find(':');
-        // if (found_at == std::string::npos) 
-        //     throw std::runtime_error("Invalid key: " + lines[i]);
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
 
@@ -177,43 +173,35 @@ void server::Getlocation(){
     }
 }
 
-void Cheak(std::string& key) {
+void CheckKey(const std::string& key) {
     std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location"};
+    std::vector<std::string> validKeys(arr, arr + sizeof(arr)/sizeof(arr[0]));
 
-    std::vector<std::string> Check(arr, arr + sizeof(arr)/sizeof(arr[0]));
     std::string trimmedKey = trim(key);
     
-    if (trimmedKey.empty())
-        return;
+    if (trimmedKey.empty()) return;
     
-    std::vector<std::string>::const_iterator it = 
-        std::find(Check.begin(), Check.end(), trimmedKey);
-    
-    if (it == Check.end()) {
-        throw std::runtime_error("Invalid Key: " + trimmedKey);        
+    if (std::find(validKeys.begin(), validKeys.end(), trimmedKey) == validKeys.end()) {
+        throw std::runtime_error("Invalid Key: " + trimmedKey);
     }
 }
 
-
 void server::loadingDataserver(config_file *Conf){
-        int flage = 0;
-        size_t found_at;
-        std::string key;
-        std::string value;
-        std::vector<std::string> lines = StringToLines(_content);
+    size_t found_at;
+    std::string key;
+    std::string value;
+    std::vector<std::string> lines = StringToLines(_content);
 
-        for (size_t i = 1; i < lines.size(); ++i) {
+    for (size_t i = 1; i < lines.size(); ++i) {
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
 
-        if (lines[i].find("#") != std::string::npos) 
-            continue;
-        // if ()
         found_at = lines[i].find(':');
-        if (found_at == std::string::npos) 
-            continue;;
+        if (found_at == std::string::npos) continue;
 
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
-        Cheak(key);
+        
+        CheckKey(key);  
 
         if (key == "name") {
             _name = value;
@@ -246,4 +234,3 @@ void server::loadingDataserver(config_file *Conf){
     }
     Getlocation();
 }
-
