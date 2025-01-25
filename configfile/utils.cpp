@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/24 16:50:17 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 20:42:27 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/25 11:31:03 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,7 +166,7 @@ bool isValidHost(const std::string& host) {
     return dots == 3 && value <= 255 && segment > 0;
 }
 
-std::string removeWhitespace(const std::string& input) {
+std::string removeWhitespace(const std::string input) {
     std::string result;
     
     for (size_t i = 0; i < input.length(); ++i) {
@@ -177,7 +177,7 @@ std::string removeWhitespace(const std::string& input) {
     return result;
 }
 
-std::string escapeSpaces(const std::string& input) {
+std::string escapeSpaces(const std::string input) {
     std::string result;
     bool insideQuotes = false;
     

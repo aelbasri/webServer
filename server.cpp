@@ -7,77 +7,9 @@ Server::Server() : _host("127.0.0.1"), _port("3000") {}
 
 Server::Server(std::string host, std::string port) : _host(host), _port(port) {}
 
-int Server::run()
+void handle_request(int new_fd)
 {
-    struct addrinfo hints;
-    struct addrinfo *res ,*p;
-    int yes = 1;
-    int addI;
-
-    memset(&hints, 0,  sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((addI = getaddrinfo(NULL, _port.c_str(), &hints, &res)) != 0)
-    {
-        std::cerr << gai_strerror(addI) << std::endl;
-        return -1;
-    }
-
-    for(p = res; p; p = p->ai_next)
-    {
-        if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-            continue;
-        if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
-        {
-            perror("setsockopt");
-            return (-1);
-            /*exit(1);*/
-        }
-        //bind
-        if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
-            continue;
-        break;
-    }
-
-    freeaddrinfo(res); 
-    if (!p)
-    {
-        perror("bind failed");
-        return (-1);
-        /*exit(1);*/
-    }
-
-    if (listen(_sock, 10) == -1)
-    {
-        perror("listen() failed");
-        return (-1);
-        /*exit(1);*/
-    }
-
-    std::cout << "Server is listening on " << _host << ":" << _port << std::endl; 
-    return (0);
-}
-
-void Server::printRequest() const
-{
-    while(1)
-    {
-        
-        int new_fd = accept(_sock,NULL, 0);
-        std::cout << "===> connection accepted" << std::endl;
-
-
-        
-        if (new_fd == -1)
-        {
-            perror("accept() failed");
-            exit(1);
-        }
-        
-        /*Parse Request*/
-
-        Request request;
+    Request request;
         int offset = 0;
         int nBytes = 0;
         enum state myState = REQUEST_LINE;
@@ -168,7 +100,80 @@ void Server::printRequest() const
             perror("send() failed");
             exit(1);
         }
-        // file.close();
+
+}
+
+int Server::run()
+{
+    struct addrinfo hints;
+    struct addrinfo *res ,*p;
+    int yes = 1;
+    int addI;
+
+    memset(&hints, 0,  sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((addI = getaddrinfo(NULL, _port.c_str(), &hints, &res)) != 0)
+    {
+        std::cerr << gai_strerror(addI) << std::endl;
+        return -1;
+    }
+
+    for(p = res; p; p = p->ai_next)
+    {
+        if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+            continue;
+        if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+        {
+            perror("setsockopt");
+            return (-1);
+            /*exit(1);*/
+        }
+        //bind
+        if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
+            continue;
+        break;
+    }
+
+    freeaddrinfo(res); 
+    if (!p)
+    {
+        perror("bind failed");
+        return (-1);
+        /*exit(1);*/
+    }
+
+    if (listen(_sock, 10) == -1)
+    {
+        perror("listen() failed");
+        return (-1);
+        /*exit(1);*/
+    }
+
+    std::cout << "Server is listening on " << _host << ":" << _port << std::endl; 
+    return (0);
+}
+
+
+void Server::printRequest() const
+{
+    while(1)
+    {
+        
+        int new_fd = accept(_sock,NULL, 0);
+        std::cout << "===> connection accepted" << std::endl;
+
+
+        
+        if (new_fd == -1)
+        {
+            perror("accept() failed");
+            exit(1);
+        }
+        
+        /*Parse Request*/
+        handle_request(new_fd);
         close(new_fd);
     }
 }

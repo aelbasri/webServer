@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/20 13:45:21 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 20:57:10 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/25 13:08:47 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ void err(){
 
 
 void config_file::getServer(){
+
     std::map<std::string, std::string> mymap;
 
     std::map<std::string, std::string>::iterator it;
@@ -28,20 +29,19 @@ void config_file::getServer(){
         std::cout << "---------------------------------sever n "<< i <<" ------------------------------------" << std::endl;
     //    std::cout << _server[i].Get_content() << std::endl;
 
-       std::cout << "nembr of location is  :   " << _server[i].Get_nembre_of_location() << std::endl;
 
        
        std::cout << "def host  :   " << _server[i].Get_host() << std::endl;
        std::cout << "def name  :   " << _server[i].Get_name() << std::endl;
        std::cout << "def max budy  :   " << _server[i].Get_max_body_size() << std::endl;
        std::cout << "def port  :   " << _server[i].Get_port() << std::endl;
+
+       std::cout << "nembr of location is  :   " << _server[i].Get_nembre_of_location() << std::endl;
+
         std::cout << "-------error_pages"<< i <<" ---------" << std::endl;
        mymap = _server[i].GetErr();
         for (it=mymap.begin(); it!=mymap.end(); ++it)
           std::cout << it->first << " => " << it->second << '\n';
-    //    std::cout <<  "_Forbidden  : " <<_server[i].GetForbiddent() << std::endl;
-    //    std::cout <<  "_NotFound  : " <<_server[i].GetNotFound() << std::endl;
-    //    std::cout <<  "_MethodNotAllowed  : " <<_server[i].GetMethodNotAllowed() << std::endl;
     //    std::cout <<  "_default  : " <<_server[i].GetDefault() << std::endl;
 
     }
@@ -49,14 +49,14 @@ void config_file::getServer(){
 }
 
 void config_file::loadContentServer() {
-    std::string sentence = "- id";
+    std::string sentence = "server";
     size_t pos = 0;
     
     for (size_t i = 0; i < _nembre_of_server; i++) {
         pos = _fileContent.find(sentence, pos);
         if (pos == std::string::npos)
             break;
-        pos += sentence.length();
+        pos += sentence.length() + 1;
         size_t nextServerPos = _fileContent.find(sentence, pos);        
         std::string serverContent;
         if (nextServerPos != std::string::npos)
@@ -71,6 +71,7 @@ void config_file::loadContentServer() {
         _server[i].new_location();
         _server[i].loadingDataserver(this);
     }
+
     
 }
 
@@ -116,11 +117,16 @@ std::string& config_file::setFileContent(){
 
 
 int config_file::CheckNumberOfServer(){
-    std::string sentence = "- id";
+    std::string sentence = "server:";
     int words = 0;
     size_t pos = 0;
     int lenOfSentence = sentence.size();
-    while (((pos = _fileContent.find(sentence, pos)) != (size_t)std::string::npos) && !sentence.empty()) {
+
+    std::string tmp;
+
+    tmp = escapeSpaces(_fileContent);
+
+    while (((pos = tmp.find(sentence, pos)) != (size_t)std::string::npos) && !sentence.empty()) {
             pos += sentence.length();
             words++;
     }

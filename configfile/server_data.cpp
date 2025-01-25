@@ -6,20 +6,18 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 22:37:33 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/25 12:13:26 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "server_data.hpp"
 
-server::server():_indixL(0),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){
-
-}
+server::server():_location(NULL),_indixL(0),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
 
 server::~server() {
     if (_location) {
         delete[] _location;
-        // _location = NULL;
+        _location = NULL;
     }
 }
 
@@ -135,13 +133,13 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
-
+    
     while(i++ < lines.size() ) {
         if (lines[i].find("#") != std::string::npos) 
             continue;
         found_at = lines[i].find(':');
-        if (found_at == std::string::npos) 
-            continue;
+        // if (found_at == std::string::npos) 
+        //     throw std::runtime_error("Invalid key: " + lines[i]);
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
 
@@ -182,21 +180,27 @@ void server::Getlocation(){
 }
 
 void server::loadingDataserver(config_file *Conf){
+        int flage = 0;
         size_t found_at;
         std::string key;
         std::string value;
         std::vector<std::string> lines = StringToLines(_content);
 
         for (size_t i = 0; i < lines.size(); ++i) {
+            // throw std::runtime_error("Invalid KEY: " + lines[i]);
+
         if (lines[i].find("#") != std::string::npos) 
             continue;
-
+        // if ()
         found_at = lines[i].find(':');
-        if (found_at == std::string::npos) 
-            continue;
+        // if (found_at == std::string::npos) 
+        //     break;;
 
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
+
+        if (key == "id")
+            continue;
 
         if (key == "name") {
             _name = value;
@@ -227,7 +231,7 @@ void server::loadingDataserver(config_file *Conf){
             i--;
         }
         // else
-        //     throw std::runtime_error("Invalid KEY: " + key);
+        //     throw std::runtime_error("Invalid KEY: " + lines[i]);
             
     }
     Getlocation();
