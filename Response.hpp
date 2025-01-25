@@ -43,3 +43,5 @@ class Response
         void setContentLength(void); 
         void sendResponse(int socket) const;
 };
+
+std::string getMimeType(const std::string& filename);
