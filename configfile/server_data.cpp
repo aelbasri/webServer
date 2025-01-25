@@ -173,11 +173,27 @@ void server::Getlocation(){
         std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        }
-        
+        }   
     }
-    
 }
+
+void Cheak(std::string& key) {
+    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location"};
+
+    std::vector<std::string> Check(arr, arr + sizeof(arr)/sizeof(arr[0]));
+    std::string trimmedKey = trim(key);
+    
+    if (trimmedKey.empty())
+        return;
+    
+    std::vector<std::string>::const_iterator it = 
+        std::find(Check.begin(), Check.end(), trimmedKey);
+    
+    if (it == Check.end()) {
+        throw std::runtime_error("Invalid Key: " + trimmedKey);        
+    }
+}
+
 
 void server::loadingDataserver(config_file *Conf){
         int flage = 0;
@@ -186,21 +202,18 @@ void server::loadingDataserver(config_file *Conf){
         std::string value;
         std::vector<std::string> lines = StringToLines(_content);
 
-        for (size_t i = 0; i < lines.size(); ++i) {
-            // throw std::runtime_error("Invalid KEY: " + lines[i]);
+        for (size_t i = 1; i < lines.size(); ++i) {
 
         if (lines[i].find("#") != std::string::npos) 
             continue;
         // if ()
         found_at = lines[i].find(':');
-        // if (found_at == std::string::npos) 
-        //     break;;
+        if (found_at == std::string::npos) 
+            continue;;
 
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
-
-        if (key == "id")
-            continue;
+        Cheak(key);
 
         if (key == "name") {
             _name = value;
@@ -229,10 +242,7 @@ void server::loadingDataserver(config_file *Conf){
         else if (key == "location") {
             loadingLocationContent(lines, i);
             i--;
-        }
-        // else
-        //     throw std::runtime_error("Invalid KEY: " + lines[i]);
-            
+        }   
     }
     Getlocation();
 }
