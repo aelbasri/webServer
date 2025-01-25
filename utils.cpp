@@ -2,8 +2,8 @@
 
 std::map<std::string, std::string> initializeMimeTypes() {
     std::map<std::string, std::string> mimeTypes;
-    mimeTypes[".html"] = "text/html";
-    mimeTypes[".htm"] = "text/html";
+    mimeTypes[".html"] = "text/html; charset=UTF-8";
+    mimeTypes[".htm"] = "text/html; charset=UTF-8";
     mimeTypes[".css"] = "text/css";
     mimeTypes[".js"] = "application/javascript";
     mimeTypes[".json"] = "application/json";

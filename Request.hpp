@@ -50,6 +50,9 @@ class Request
         /*std::map<std::string, std::string> header;*/
         std::map<std::string, std::string> header;
     public:
+        std::string getRequestTarget(void) const;
+        std::string getMethod(void) const;
+        std::string getHttpVersion(void) const;
         int parseRequestLine(int socket, int &offset, int &nBytes);
         int parseHeader(int socket, int &offset, int &nBytes);
         int parseBody(int socket, int &offset, int &nBytes);

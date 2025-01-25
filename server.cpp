@@ -10,6 +10,11 @@ Server::Server() : _host("127.0.0.1"), _port("3000") {}
 
 Server::Server(std::string host, std::string port) : _host(host), _port(port) {}
 
+const char* Server::InternalServerError::what() const throw()
+{
+    return("Saad Ka3i, 3lach??");
+}
+
 int Server::run()
 {
     struct addrinfo hints;
@@ -62,6 +67,56 @@ int Server::run()
     return (0);
 }
 
+void send_res(Request &request, int new_fd)
+{
+    Response response;
+    std::string path("./assets");
+    
+    if (request.getRequestTarget() == "/")
+        path += "/index.html";
+    else
+        path += request.getRequestTarget();
+    std::ifstream file(path.c_str());
+
+                    std::cout << "PATH: "  << path << std::endl;
+
+
+    //int res = access(path.c_str(), F_OK | R_OK);
+    if (!file.good()) {
+        std::cout << "iror nat found" << std::endl;
+        path = "./assets/404.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(404);
+        response.setReasonPhrase("Not Found");
+        response.setFile(path);
+
+        response.setContentLength();
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+    }
+    else
+    {
+        std::cout << "saad t3asb "  << path << std::endl;
+
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(200);
+        response.setReasonPhrase("OK");
+        response.setFile(path);
+
+        response.setContentLength();
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+    }
+}
+
 void Server::printRequest() const
 {
     while(1)
@@ -77,112 +132,91 @@ void Server::printRequest() const
         
         /*Parse Request*/
 
-        Request request;
-        int offset = 0;
-        int nBytes = 0;
-        enum state myState = REQUEST_LINE;
-
-        while(myState != DONE)
+        try
         {
-            switch (myState)
+            Request request;
+            int offset = 0;
+            int nBytes = 0;
+            enum state myState = REQUEST_LINE;
+
+
+            while(myState != DONE)
             {
-                case  REQUEST_LINE :
-                    request.parseRequestLine(new_fd, offset, nBytes);
-                    myState = HEADER;
-                    break;
-                case HEADER :
-                    request.parseHeader(new_fd, offset, nBytes);
-                    myState = BODY;
-                    break;
-                case BODY :
-                    request.parseBody(new_fd, offset, nBytes);
-                    myState = DONE;
-                    break;
-                default:
-                    break;
+                switch (myState)
+                {
+                    case  REQUEST_LINE :
+                        request.parseRequestLine(new_fd, offset, nBytes);
+                        myState = HEADER;
+                        break;
+                    case HEADER :
+                        request.parseHeader(new_fd, offset, nBytes);
+                        myState = BODY;
+                        break;
+                    case BODY :
+                        request.parseBody(new_fd, offset, nBytes);
+                        myState = DONE;
+                        break;
+                    default:
+                        break;
+                }
             }
+                        throw Server::InternalServerError(); 
+
+            send_res(request, new_fd);
         }
-        /*std::cout << "nik smoooook" << std::endl;*/
-        const std::string html_content = 
-        "<!DOCTYPE html>\n"
-        "<html lang=\"en\">\n"
-        "<head>\n"
-        "    <meta charset=\"UTF-8\">\n"
-        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-        "    <title>Hello World</title>\n"
-        "    <style>\n"
-        "        body {\n"
-        "            font-family: Arial, sans-serif;\n"
-        "            display: flex;\n"
-        "            justify-content: center;\n"
-        "            align-items: center;\n"
-        "            height: 100vh;\n"
-        "            margin: 0;\n"
-        "            background-color: #f0f0f0;\n"
-        "        }\n"
-        "        h1 {\n"
-        "            color: #333;\n"
-        "            padding: 20px;\n"
-        "            border-radius: 5px;\n"
-        "            background-color: white;\n"
-        "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
-        "        }\n"
-        "    </style>\n"
-        "</head>\n"
-        "<body>\n"
-        "    <h1>Hello, World!</h1>\n"
-        "</body>\n"
-        "</html>\n";
+        catch(const std::exception& e)
+        {
+            Response response;
+            std::cout << "Saad 500Error" << std::endl;
+            std::string path = "./assets/50x.html";
+            std::string connection = "close";
+            std::string contentType = getMimeType(path);
+
+            response.setHttpVersion(HTTP_VERSION);
+            response.setStatusCode(500);
+            response.setReasonPhrase("Internal Server Error");
+            response.setFile(path);
+
+            response.setContentLength();
+            response.addHeader(std::string("Content-Type"), contentType);
+            response.addHeader(std::string("Connection"), connection);
+            response.sendResponse(new_fd);
+            // std::cerr << e.what() << std::endl;
+        }
+    
+        
 
         /* Use the Response class */
-        Response response;
-        std::string version = "HTTP/1.1";
-        int status = 200;
-        std::string reasonPhrase = "OK";
-        std::string contentType = "text/html; charset=UTF-8";
+        // Response response;
+        // std::string version = "HTTP/1.1";
+        // int status = 200;
+        // std::string reasonPhrase = "OK";
+        // std::string contentType = "text/html; charset=UTF-8";
 
-        std::stringstream ss;
-        {
-            // _textBody size
-            /*response.setTextBody(html_content);*/
-            /*ss << _textBody.size();*/
-        }
-        {
-            // _file size
-            response.setFile(FILE_PATH);
-            /*ss << _file.size();*/
-        }
-        std::string contentLength = ss.str();
-        std::string connection = "close";
+        // std::stringstream ss;
+        // {
+        //     // _textBody size
+        //     /*response.setTextBody(html_content);*/
+        //     /*ss << _textBody.size();*/
+        // }
+        // {
+        //     // _file size
+        //     response.setFile(FILE_PATH);
+        //     /*ss << _file.size();*/
+        // }
+        // std::string contentLength = ss.str();
+        // std::string connection = "close";
 
-        response.setHttpVersion(version);
-        response.setStatusCode(status);
-        response.setReasonPhrase(reasonPhrase);
-        response.addHeader(std::string("Content-Type"), contentType);
-        /*response.addHeader(std::string("Content-Length"), contentLength);*/
-        response.setContentLength();
-        response.addHeader(std::string("Connection"), connection);
-        response.sendResponse(new_fd);
+        // response.setHttpVersion(version);
+        // response.setStatusCode(status);
+        // response.setReasonPhrase(reasonPhrase);
+        // response.addHeader(std::string("Content-Type"), contentType);
+        // /*response.addHeader(std::string("Content-Length"), contentLength);*/
+        // response.setContentLength();
+        // response.addHeader(std::string("Connection"), connection);
+        // response.sendResponse(new_fd);
 
-        /*std::ostringstream ss;*/
-        /*ss << "HTTP/1.1 200 OK\r\n"*/
-        /*<< "Content-Type: text/html; charset=UTF-8\r\n"*/
-        /*<< "Content-Length: " << html_content.length() << "\r\n"*/
-        /*<< "Connection: close\r\n"*/
-        /*<< "\r\n"*/
-        /*<< html_content;*/
-        /**/
-        /*std::string response = ss.str();*/
-        /**/
-        /*std::cout << "Got: (" << buff << ")" << std::endl;*/
-        /*if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)*/
-        /*if (send(new_fd, response.c_str(), response.size(), 0) == -1)*/
-        /*{*/
-        /*    perror("send() failed");*/
-        /*    exit(1);*/
-        /*}*/
 
-        // file.close();
         close(new_fd);
     }
 }

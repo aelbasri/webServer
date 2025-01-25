@@ -1,5 +1,18 @@
 #include "Request.hpp"
 
+std::string Request::getRequestTarget(void) const
+{
+    return(requestTarget);
+}
+std::string Request::getMethod(void) const
+{
+    return(method);
+}
+std::string Request::getHttpVersion(void) const
+{
+    return (httpVersion);
+}
+
 int temporaryPrintError()
 {
     //throw BadRequestExeption

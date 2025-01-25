@@ -27,4 +27,10 @@ class Server
 
         int run();
         void printRequest() const;
+    public:
+        class InternalServerError : public std::exception
+        {
+            public:
+                const char* what() const throw(); 
+        };
 };

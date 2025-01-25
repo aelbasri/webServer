@@ -38,7 +38,10 @@ void Response::setFile(const std::string &filepath)
         _file = fileStream.str();
     }
     else
+    {
         _file = "";
+        std::cout << "ERROROORORO\n";
+    }
     // else throw exception (or declare file not found somehow)
 }
 
