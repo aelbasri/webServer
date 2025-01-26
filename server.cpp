@@ -160,7 +160,7 @@ void Server::printRequest() const
                         break;
                 }
             }
-                        throw Server::InternalServerError(); 
+            throw Server::InternalServerError(); 
 
             send_res(request, new_fd);
         }
