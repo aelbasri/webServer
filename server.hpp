@@ -13,18 +13,21 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "configfile/config_file.hpp"
+
+
 class Server
 {
     private:
-        std::string _host;
-        std::string _port;
-        int         _sock;
+        config_file _data;
+
 
     public:
         Server();
-        Server(std::string host, std::string port);
+        // Server();
         /*~Server();*/
-
+    void test();
         int run();
         void printRequest() const;
 };
+
