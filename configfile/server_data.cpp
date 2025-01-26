@@ -92,7 +92,8 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
     std::string value;
     map<std::string , std::string> er;
     std::map<std::string , std::string>::iterator it = er.begin();
-    while (i++ < lines.size()) {
+    while (i++ < lines.size() -1) {
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         size_t found_at = lines[i].find(':');
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
@@ -113,14 +114,14 @@ void server::LoidingAllowedMethods(std::vector<std::string> lines, size_t &i) {
     std::string value;
 
     std::vector<std::string>  _allowed_methods;
-    while (i++ < lines.size()) {
+    while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         found_at = lines[i].find('-');
         if (found_at == std::string::npos) 
             break;
         value = trim(lines[i].substr(found_at + 1));
         
-        if (value == "GET" || "DELETE" || "POST")
+        if (value == "GET" || value == "DELETE" || value == "POST")
             _allowed_methods.push_back(value);
         else
             break;
@@ -133,9 +134,10 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     std::string key;
     std::string value;
     
-    while(i++ < lines.size() ) {
+    while(i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         found_at = lines[i].find(':');
+
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
 
@@ -160,7 +162,6 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
 }
 
 void server::Getlocation(){
-    // std::string<>
     for (size_t i = 0; i < _nembre_of_location; i++)
     {
         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
@@ -196,7 +197,8 @@ void server::loadingDataserver(config_file *Conf){
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
 
         found_at = lines[i].find(':');
-        if (found_at == std::string::npos) continue;
+        if (found_at == std::string::npos) 
+            throw std::runtime_error("Invalid ppp: " + lines[i]);
 
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
