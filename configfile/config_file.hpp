@@ -21,7 +21,7 @@
 #include <vector>
 #include <map>
 
-// #define nullptr  0
+#define nullptr  0
 
 class error_pages;
 class config_file;
@@ -40,15 +40,16 @@ using namespace std;
 class config_file 
 {
 private:
-    int     _nembre_of_server;
+    size_t     _nembre_of_server;
     std::string _fileContent;
     server *_server;
 public:
     
     config_file();
+    config_file(std::string file);
     ~config_file();
   
-    void getServer();
+    server *getServer();
     void loadContentServer();
     int get_nembre_of_server();
     std::string& setFileContent();
@@ -64,3 +65,4 @@ bool isValidPort(const std::string& port);
 bool isValidHost(const std::string& host);
 std::string removeWhitespace(const std::string input);
 std::string escapeSpaces(const std::string input);
+void CheckKey(const std::string& key);
