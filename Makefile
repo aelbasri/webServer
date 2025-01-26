@@ -1,6 +1,7 @@
 CXX = c++
 CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
-SRCS = server.cpp main.cpp Request.cpp
+SRCS = server.cpp main.cpp Request.cpp \
+		$(addprefix configfile/, config_file.cpp error_pages.cpp server_data.cpp location.cpp utils.cpp)
 OBJS = $(SRCS:.cpp=.o)
 HEDERS = server.hpp Request.hpp
 NAME = webserv
