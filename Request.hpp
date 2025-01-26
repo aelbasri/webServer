@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdio>
 #include <map>
+#include <cmath>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -16,7 +17,7 @@
 #include <stdlib.h>
 
 
-#define BUFF_SIZE 50
+#define BUFF_SIZE 1024
 
 enum state
 {
@@ -49,6 +50,9 @@ class Request
         /*std::map<std::string, std::string> header;*/
         std::map<std::string, std::string> header;
     public:
+        std::string getRequestTarget(void) const;
+        std::string getMethod(void) const;
+        std::string getHttpVersion(void) const;
         int parseRequestLine(int socket, int &offset, int &nBytes);
         int parseHeader(int socket, int &offset, int &nBytes);
         int parseBody(int socket, int &offset, int &nBytes);

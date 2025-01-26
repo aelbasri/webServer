@@ -8,6 +8,6 @@ int main()
     std::cout << getpid() << std::endl;
     if (server.run() == -1)
         exit(1);
-    server.printRequest();
+    server.creatPoll();
     return (0);
 }

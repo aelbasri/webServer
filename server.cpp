@@ -1,11 +1,19 @@
 #include "server.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 #include <stdlib.h>
+
+#define FILE_PATH "./assets/page.html"
 
 
 Server::Server() : _host("127.0.0.1"), _port("3000") {}
 
 Server::Server(std::string host, std::string port) : _host(host), _port(port) {}
+
+const char* Server::InternalServerError::what() const throw()
+{
+    return("Saad Ka3i, 3lach??");
+}
 
 int Server::run()
 {
@@ -59,28 +67,84 @@ int Server::run()
     return (0);
 }
 
-void Server::printRequest() const
+void send_res(Request &request, int new_fd)
 {
-    while(1)
+    Response response;
+    std::string path("./assets");
+    
+    if (request.getRequestTarget() == "/")
+        path += "/index.html";
+    else
+        path += request.getRequestTarget();
+    std::ifstream file(path.c_str());
+
+    std::cout << "PATH: "  << path << std::endl;
+
+    if (request.getRequestTarget() == "/redirection")
     {
-        
-        int new_fd = accept(_sock,NULL, 0);
-        std::cout << "===> connection accepted" << std::endl;
+	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
 
+        std::cout << "Ridddddaryrikchn" << std::endl;
+        path = "./assets/302.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
 
-        
-        if (new_fd == -1)
-        {
-            perror("accept() failed");
-            exit(1);
-        }
-        
-        /*Parse Request*/
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(302);
+        response.setReasonPhrase("Moved Temporarily");
+        response.setFile(path);
 
+        response.setContentLength();
+        response.addHeader(std::string("Location"), location);
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+    }
+    else if (!file.good()) {
+        std::cout << "iror nat found" << std::endl;
+        path = "./assets/404.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(404);
+        response.setReasonPhrase("Not Found");
+        response.setFile(path);
+
+        response.setContentLength();
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+    }
+    else
+    {
+        std::cout << "saad t3asb "  << path << std::endl;
+
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(200);
+        response.setReasonPhrase("OK");
+        response.setFile(path);
+
+        response.setContentLength();
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+    }
+}
+
+void handle_request(int new_fd)
+{
+    /*Parse Request*/
+    try
+    {
         Request request;
         int offset = 0;
         int nBytes = 0;
         enum state myState = REQUEST_LINE;
+
 
         while(myState != DONE)
         {
@@ -102,73 +166,92 @@ void Server::printRequest() const
                     break;
             }
         }
-        /*std::cout << "nik smoooook" << std::endl;*/
-
-        std::string s;
-        std::string fille_content;
-        std::ifstream f("page_error.html");
-
-        if (!f.is_open()) {
-           exit(1);
-        }
-
-
-        while (getline(f, s)){
-            fille_content += s;
-            fille_content.push_back('\n');
-        }
-        f.close();
-
-        // std::cout  << fille_content << std::endl; 
-        const std::string html_content = fille_content;
-        // "<!DOCTYPE html>\n"
-        // "<html lang=\"en\">\n"
-        // "<head>\n"
-        // "    <meta charset=\"UTF-8\">\n"
-        // "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-        // "    <title>Hello World</title>\n"
-        // "    <style>\n"
-        // "        body {\n"
-        // "            font-family: Arial, sans-serif;\n"
-        // "            display: flex;\n"
-        // "            justify-content: center;\n"
-        // "            align-items: center;\n"
-        // "            height: 100vh;\n"
-        // "            margin: 0;\n"
-        // "            background-color: #f0f0f0;\n"
-        // "        }\n"
-        // "        h1 {\n"
-        // "            color: #333;\n"
-        // "            padding: 20px;\n"
-        // "            border-radius: 5px;\n"
-        // "            background-color: white;\n"
-        // "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
-        // "        }\n"
-        // "    </style>\n"
-        // "</head>\n"
-        // "<body>\n"
-        // "    <h1>Hello, World!</h1>\n"
-        // "</body>\n"
-        // "</html>\n";
-
-        std::ostringstream ss;
-        ss << "HTTP/1.1 200 OK\r\n"
-        << "Content-Type: text/html; charset=UTF-8\r\n"
-        << "Content-Length: " << fille_content.length() << "\r\n"
-        << "Connection: close\r\n"
-        << "\r\n"
-        << fille_content;
-
-        std::string response = ss.str();
-
-        /*std::cout << "Got: (" << buff << ")" << std::endl;*/
-        /*if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)*/
-        if (send(new_fd, response.c_str(), response.size(), 0) == -1)
-        {
-            perror("send() failed");
-            exit(1);
-        }
-        // file.close();
-        close(new_fd);
+        //throw Server::InternalServerError();
+        send_res(request, new_fd);
     }
+    catch(const std::exception& e)
+    {
+        Response response;
+        std::cout << "Saad 500Error" << std::endl;
+        std::string path = "./assets/50x.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(500);
+        response.setReasonPhrase("Internal Server Error");
+        response.setFile(path);
+
+        response.setContentLength();
+        response.addHeader(std::string("Content-Type"), contentType);
+        response.addHeader(std::string("Connection"), connection);
+        response.sendResponse(new_fd);
+        // std::cerr << e.what() << std::endl;
+    }
+}
+
+#define MAX_EVENT 5
+
+void Server::creatPoll() const
+{
+    struct epoll_event ev;
+    struct epoll_event evlist[MAX_EVENT];
+    int ep = epoll_create(1);
+    if (ep == -1)
+    {
+        // Throw exception
+        std::cout << "epoll" << std::endl;
+        return;
+    }
+
+    ev.data.fd = _sock;
+    ev.events = EPOLLIN;
+    if (epoll_ctl(ep, EPOLL_CTL_ADD, _sock, &ev) == -1)
+    {
+        // Throw exception
+        return;
+    }
+
+    while(1)
+    {
+        int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
+        if(nbrReady < 0)
+        {
+            // Throw exception
+            return;
+        }
+        for(int i = 0; i < nbrReady; i++)
+        {
+            if(evlist[i].events & EPOLLIN)
+            {
+                if (evlist[i].data.fd == _sock)
+                {
+                    int new_fd = accept(_sock, NULL,  0);
+                    ev.data.fd = new_fd;
+                    ev.events = EPOLLIN;
+                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
+                    {
+                        // Throw exception
+                        return;
+                    }
+                }
+                else
+                {
+                    handle_request(evlist[i].data.fd);
+                    close(evlist[i].data.fd);
+                }
+            }
+        }
+    }
+        // int new_fd = accept(_sock, NULL,  0);
+        // std::cout << "===> connection accepted" << std::endl;
+        // if (new_fd == -1)
+        // {
+        //     //generate connection error
+        //     perror("accept() failed");
+        //     exit(1);
+        // }
+        // // Connection connection;
+        // handle_request(new_fd);
+        // close(new_fd);
 }

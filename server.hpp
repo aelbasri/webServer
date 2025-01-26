@@ -12,10 +12,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <vector>
+#include <sys/epoll.h>
+#include "Connection.hpp"
+
 
 class Server
 {
     private:
+        std::vector<Connection> connections;
         std::string _host;
         std::string _port;
         int         _sock;
@@ -26,5 +31,11 @@ class Server
         /*~Server();*/
 
         int run();
-        void printRequest() const;
+        void creatPoll() const;
+    public:
+        class InternalServerError : public std::exception
+        {
+            public:
+                const char* what() const throw(); 
+        };
 };
