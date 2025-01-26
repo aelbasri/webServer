@@ -10,6 +10,7 @@
         "sstream": "cpp",
         "fstream": "cpp",
         "*.tcc": "cpp",
-        "stdexcept": "cpp"
+        "stdexcept": "cpp",
+        "new": "cpp"
     }
 }

@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "config_file.hpp"
+#include "../server.hpp"
 
 class location
 {

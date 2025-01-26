@@ -139,7 +139,7 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
-    map<std::string , std::string> er;
+    std::map<std::string , std::string> er;
     std::map<std::string , std::string>::iterator it = er.begin();
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
@@ -210,18 +210,18 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     }
 }
 
-// void server::Getlocation(){
-//     for (size_t i = 0; i < _nembre_of_location; i++)
-//     {
-//         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-//         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-//         std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-//         std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
-//         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
-//             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-//         }   
-//     }
-// }
+void server::Getlocation(){
+    for (int i = 0; i < _nembre_of_location; i++)
+    {
+        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
+        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
+        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
+        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
+            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
+        }   
+    }
+}
 
 void server::loadingDataserver(){
     size_t found_at;
@@ -270,5 +270,5 @@ void server::loadingDataserver(){
             i--;
         }   
     }
-    // Getlocation();
+    Getlocation();
 }

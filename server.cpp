@@ -2,109 +2,101 @@
 #include "Request.hpp"
 #include <stdlib.h>
 
+servers::servers():_server(nullptr){}
 
-Server::Server(){}
+servers::~servers(){
+    if (_server){
+        delete[] _server;
+        _server = NULL;
+    }
+}
 
+servers::servers(std::string file): _server(nullptr){
+    loidingFile(file);
+    _nembre_of_server = CheckNumberOfServer();
+    _server =  new server[_nembre_of_server];
+    
+}
 
+void err(){
+    std::cerr << "error of open" << std::endl;
+    exit(1);
+}
 
-void handle_request(int new_fd)
-{
-    Request request;
-        int offset = 0;
-        int nBytes = 0;
-        enum state myState = REQUEST_LINE;
+server *servers::getServer(){
+    return(_server);
+}
 
-        while(myState != DONE)
-        {
-            switch (myState)
-            {
-                case  REQUEST_LINE :
-                    request.parseRequestLine(new_fd, offset, nBytes);
-                    myState = HEADER;
-                    break;
-                case HEADER :
-                    request.parseHeader(new_fd, offset, nBytes);
-                    myState = BODY;
-                    break;
-                case BODY :
-                    request.parseBody(new_fd, offset, nBytes);
-                    myState = DONE;
-                    break;
-                default:
-                    break;
-            }
-        }
-        /*std::cout << "nik smoooook" << std::endl;*/
+void servers::loadContentServer() {
+    std::string sentence = "server";
+    size_t pos = 0;
+    
+    for (size_t i = 0; i < _nembre_of_server; i++) {
+        pos = _fileContent.find(sentence, pos);
+        if (pos == std::string::npos)
+            break;
+        pos += sentence.length() + 1;
+        size_t nextServerPos = _fileContent.find(sentence, pos);        
+        std::string serverContent;
+        if (nextServerPos != std::string::npos)
+            serverContent = _fileContent.substr(pos, nextServerPos - pos);
+        else 
+            serverContent = _fileContent.substr(pos);
+        
+        _server[i].Set_content(serverContent);        
+        if (nextServerPos != std::string::npos)
+            pos = nextServerPos;
+        _server[i].Set_nembre_of_location(_server[i].CheckNumberOfLocation());
+        _server[i].new_location();
+        _server[i].loadingDataserver();
+    }
+}
 
-        std::string s;
-        std::string fille_content;
-        std::ifstream f("page_error.html");
+void servers::loidingFile(std::string file){
+    std::string s;
+    std::string strCRLF = "\r\n";
 
-        if (!f.is_open()) {
-           exit(1);
-        }
+    std::ifstream f(file.c_str());
 
+    if (!f.is_open()) {
+        err();
+    }
+    while (getline(f, s)){
 
-        while (getline(f, s)){
-            fille_content += s;
-            fille_content.push_back('\n');
-        }
-        f.close();
+        setFileContent() += s;
+        if (!s.empty())
+            setFileContent().push_back('\n');
+    }
+    f.close();
+}
 
-        // std::cout  << fille_content << std::endl; 
-        const std::string html_content = fille_content;
-        // "<!DOCTYPE html>\n"
-        // "<html lang=\"en\">\n"
-        // "<head>\n"
-        // "    <meta charset=\"UTF-8\">\n"
-        // "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-        // "    <title>Hello World</title>\n"
-        // "    <style>\n"
-        // "        body {\n"
-        // "            font-family: Arial, sans-serif;\n"
-        // "            display: flex;\n"
-        // "            justify-content: center;\n"
-        // "            align-items: center;\n"
-        // "            height: 100vh;\n"
-        // "            margin: 0;\n"
-        // "            background-color: #f0f0f0;\n"
-        // "        }\n"
-        // "        h1 {\n"
-        // "            color: #333;\n"
-        // "            padding: 20px;\n"
-        // "            border-radius: 5px;\n"
-        // "            background-color: white;\n"
-        // "            box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n"
-        // "        }\n"
-        // "    </style>\n"
-        // "</head>\n"
-        // "<body>\n"
-        // "    <h1>Hello, World!</h1>\n"
-        // "</body>\n"
-        // "</html>\n";
+int servers::get_nembre_of_server(){
+    return(_nembre_of_server);
+}
 
-        std::ostringstream ss;
-        ss << "HTTP/1.1 200 OK\r\n"
-        << "Content-Type: text/html; charset=UTF-8\r\n"
-        << "Content-Length: " << fille_content.length() << "\r\n"
-        << "Connection: close\r\n"
-        << "\r\n"
-        << fille_content;
+std::string& servers::setFileContent(){
+    return(_fileContent);
+}
 
-        std::string response = ss.str();
+int servers::CheckNumberOfServer(){
+    std::string sentence = "server:";
+    int words = 0;
+    size_t pos = 0;
 
-        /*std::cout << "Got: (" << buff << ")" << std::endl;*/
-        /*if (send(new_fd, "Hello Webserv!", strlen("Hello Webserv!"), 0) == -1)*/
-        if (send(new_fd, response.c_str(), response.size(), 0) == -1)
-        {
-            perror("send() failed");
-            exit(1);
-        }
+    std::string tmp;
 
+    tmp = escapeSpaces(_fileContent);
+
+    while (((pos = tmp.find(sentence, pos)) != (size_t)std::string::npos) && !sentence.empty()) {
+            pos += sentence.length();
+            words++;
+    }
+    return words;
 }
 
 
-int Server::run()
+
+int servers::run()
 {
 
 
@@ -113,24 +105,21 @@ int Server::run()
 
     std::map<std::string, std::string> mymap;
     std::map<std::string, std::string>::iterator it;
-    config_file Conf("config_file.yaml"); 
 
-    Conf.loadContentServer();
-    _data = Conf;
-    server *_server = _data.getServer();
-    int NbServer = _data.get_nembre_of_server();
-    cout << "nembre of server is : " << NbServer << endl;
+
+    server *_server = getServer();
+    int NbServer = get_nembre_of_server();
+    std::cout << "nembre of server is : " << NbServer << std::endl;
 
 
 
     for (int i = 0; i < NbServer ; i++)
     {
-        cout << "-------- server n "<< i << "-----------" << endl;
-        cout << "name : " << _server[i].Get_name() << endl; 
-        cout << "host : " << _server[i].Get_host() << endl; 
-        cout << "port : " << _server[i].Get_port() << endl; 
-        cout << "max budy : " << _server[i].Get_max_body_size() << endl; 
-
+        std::cout << "-------- server n "<< i << "-----------" << std::endl;
+        std::cout << "name : " << _server[i].Get_name() << std::endl; 
+        std::cout << "host : " << _server[i].Get_host() << std::endl; 
+        std::cout << "port : " << _server[i].Get_port() << std::endl; 
+        std::cout << "max budy : " << _server[i].Get_max_body_size() << std::endl; 
         std::cout << "-------error_pages"<< i <<" ---------" << std::endl;
         mymap = _server[i].GetErr();
         for (it=mymap.begin(); it!=mymap.end(); ++it)
@@ -193,7 +182,7 @@ int Server::run()
 }
 
 
-void Server::printRequest() const
+void servers::printRequest() const
 {
     while(1)
     {

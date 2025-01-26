@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "config_file.hpp"
+#include "../server.hpp"
 
 
 void CheckKey(const std::string& key) {

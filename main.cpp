@@ -3,20 +3,18 @@
 
 int main()
 {
-    Server _servrer;
-
     try
     {
-        Server server;
-        std::cout << getpid() << std::endl;
-        server.run();
-        exit(0);
-        // server.printRequest();
+        servers _Server("config_file.yaml");
+        _Server.loadContentServer();
+        _Server.run();
+        // exit(0);
+        _Server.printRequest();
 
      }
-     catch (runtime_error e)
+     catch (std::runtime_error e)
      {
-         cout << "L***A JAAAY!: " << e.what();
+         std::cout << "L***A JAAAY!: " << e.what();
      }
     return (0);
 }
