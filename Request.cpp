@@ -54,6 +54,7 @@ bool parseField(std::string field, std::string &fieldName, std::string &fieldVal
     return(true);
 }
 
+
 int Request::parseRequestLine(int socket, int &offset, int &nBytes)
 {
     std::string firstLine("");
