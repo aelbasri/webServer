@@ -12,6 +12,20 @@
 
 #include "config_file.hpp"
 
+
+void CheckKey(const std::string& key) {
+    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location"};
+    std::vector<std::string> validKeys(arr, arr + sizeof(arr)/sizeof(arr[0]));
+
+    std::string trimmedKey = trim(key);
+    
+    if (trimmedKey.empty()) return;
+    
+    if (std::find(validKeys.begin(), validKeys.end(), trimmedKey) == validKeys.end()) {
+        throw std::runtime_error("Invalid Key: " + trimmedKey);
+    }
+}
+
 std::string trim(const std::string& input) {
     if (input.empty()) {
         return "";
@@ -37,10 +51,10 @@ std::string trim(const std::string& input) {
 std::vector<std::string> StringToLines(const std::string& inputString) {
     std::vector<std::string> result;
     std::string temp;
-    int markbegin = 0;
+    unsigned long markbegin = 0;
     int markend = 0;
 
-    for (int i = 0; i < inputString.length(); ++i) {     
+    for (unsigned long i = 0; i < inputString.length(); ++i) {     
         if (inputString[i] == '\n') {
             markend = i;
             result.push_back(inputString.substr(markbegin, markend - markbegin));
