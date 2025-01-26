@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:57:03 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/24 17:11:17 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/01/25 11:22:46 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,28 @@
 #include "error_pages.hpp"
 #include "location.hpp"
 
+#include <fcntl.h>
+#include <iostream>
+#include <fstream>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <cstring>
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <vector>
+#include <sys/epoll.h>
+
+
+#include "../Request.hpp"
+#include "../Response.hpp"
+
+#define MAX_EVENT 5
+#define FILE_PATH "./assets/page.html"
 
 class server : public error_pages
 {
@@ -27,6 +49,12 @@ private:
     std::string _host;
     std::string _port;
     long long _max_body_size;
+
+    int         _sock;
+    struct addrinfo hints;
+    struct addrinfo *res ,*p;
+    int addI;
+
 public:
     void new_location();
     void Set_nembre_of_location(int _nembre_of_location);
@@ -34,7 +62,13 @@ public:
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
     void Set_port(std::string __port);
-    void Set_max_body_size(long long __max_body_size); 
+    void Set_max_body_size(long long __max_body_size);
+    void setSock(int sock);
+    void setRes(struct addrinfo* newRes);
+    void setP(struct addrinfo* newP);
+    void setAddI(int newAddI);
+    // void Set
+
     
     int Get_nembre_of_location();
     std::string Get_content();
@@ -42,6 +76,13 @@ public:
     std::string Get_host(); 
     std::string Get_port();
     long long Get_max_body_size();
+
+    int getSock() ;
+    struct addrinfo &getHints() ;
+    void setHints( struct addrinfo& newHints);
+    struct addrinfo* &getRes();
+    struct addrinfo* &getP();
+    int getAddI();
 
     server();
     virtual ~server();
@@ -51,17 +92,18 @@ public:
     void Getlocation();
     void LoidingAllowedMethods(std::vector<std::string> lines,size_t &i);
     void loadingLocationContent(std::vector<std::string> lines,size_t &i);
-    void loadingDataserver(config_file *Conf);
+    void loadingDataserver();
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
+    int run();
+    void creatPoll() const;
+
+    public:
+        class InternalServerError : public std::exception
+        {
+            public:
+                const char* what() const throw(); 
+        };
 };
 
 
-bool isValidEroorValue(const std::string& value);
-std::string trim(const std::string& input);
-std::vector<std::string> StringToLines(const std::string& inputString);
-bool parseBodySize(const std::string& sizeStr, long long& bytes);
-bool isValidPort(const std::string& port);
-bool isValidHost(const std::string& host);
-std::string removeWhitespace(const std::string& input);
-std::string escapeSpaces(const std::string& input);

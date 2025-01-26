@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "config_file.hpp"
+#include "../Conf.hpp"
 
 class location
 {
@@ -35,7 +35,6 @@ public:
     void SetAllowed_methods(std::vector<std::string> &target);
     void SetUpload_dir(std::string __upload_dir);
     void SetMax_body_size(long long __max_body_size);
-
 
     std::vector<std::string> GetAllowed_methods();
     std::string GetType_of_location();    
