@@ -12,7 +12,7 @@
 
 #include "server_data.hpp"
 
-server::server():_location(NULL),_indixL(0),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
+server::server():_indixL(0),_location(nullptr),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
 
 server::~server() {
     if (_location) {
@@ -73,11 +73,60 @@ void server::new_location(){
     _location = new location[_nembre_of_location];
 }
 
+
+int server::getSock()  {
+    return _sock;
+}
+
+    // Setter for _sock
+void server::setSock(int sock) {
+   _sock = sock;
+}
+
+    // Getter for hints
+struct addrinfo &server::getHints()  {
+    return hints;
+}
+
+    // Setter for hints
+void server::setHints( struct addrinfo& newHints) {
+    hints = newHints;
+}
+
+    // Getter for res
+struct addrinfo* &server::getRes() {
+    return res;
+}
+
+    // Setter for res
+void server::setRes(struct addrinfo* newRes) {
+    res = newRes;
+}
+
+    // Getter for p
+struct addrinfo* &server::getP() {
+    return p;
+}
+
+    // Setter for p
+void server::setP(struct addrinfo* newP) {
+    p = newP;
+}
+
+    // Getter for addI
+int server::getAddI()  {
+    return addI;
+}
+
+    // Setter for addI
+void server::setAddI(int newAddI) {
+    addI = newAddI;
+}
 int server::CheckNumberOfLocation(){
     std::string sentence = "location";
     int cont = 0;
     size_t pos = 0;
-    int lenOfSentence = sentence.size();
+
     while (((pos = _content.find(sentence, pos)) != (size_t)std::string::npos) && !sentence.empty()) {
             pos += sentence.length();
             cont++;
@@ -94,7 +143,7 @@ void server::loadingErrorIndex(std::vector<std::string> lines, size_t &i){
     std::map<std::string , std::string>::iterator it = er.begin();
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
-        size_t found_at = lines[i].find(':');
+        found_at = lines[i].find(':');
         key = trim(lines[i].substr(0, found_at));
         value = trim(lines[i].substr(found_at + 1));
         if (found_at == std::string::npos) 
@@ -161,33 +210,20 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     }
 }
 
-void server::Getlocation(){
-    for (size_t i = 0; i < _nembre_of_location; i++)
-    {
-        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
-        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
-            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        }   
-    }
-}
+// void server::Getlocation(){
+//     for (size_t i = 0; i < _nembre_of_location; i++)
+//     {
+//         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
+//         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
+//         std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
+//         std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+//         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
+//             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
+//         }   
+//     }
+// }
 
-void CheckKey(const std::string& key) {
-    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location"};
-    std::vector<std::string> validKeys(arr, arr + sizeof(arr)/sizeof(arr[0]));
-
-    std::string trimmedKey = trim(key);
-    
-    if (trimmedKey.empty()) return;
-    
-    if (std::find(validKeys.begin(), validKeys.end(), trimmedKey) == validKeys.end()) {
-        throw std::runtime_error("Invalid Key: " + trimmedKey);
-    }
-}
-
-void server::loadingDataserver(config_file *Conf){
+void server::loadingDataserver(){
     size_t found_at;
     std::string key;
     std::string value;
@@ -234,5 +270,5 @@ void server::loadingDataserver(config_file *Conf){
             i--;
         }   
     }
-    Getlocation();
+    // Getlocation();
 }
