@@ -3,11 +3,20 @@
 
 int main()
 {
-    Server server;
+    Server _servrer;
 
-    std::cout << getpid() << std::endl;
-    if (server.run() == -1)
-        exit(1);
-    server.printRequest();
+    try
+    {
+        Server server;
+        std::cout << getpid() << std::endl;
+        server.run();
+        exit(0);
+        // server.printRequest();
+
+     }
+     catch (runtime_error e)
+     {
+         cout << "L***A JAAAY!: " << e.what();
+     }
     return (0);
 }
