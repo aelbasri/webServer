@@ -2,6 +2,7 @@
 #include "Conf.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Connection.hpp"
 #include "configfile/server_data.hpp"
 #include <stdlib.h>
 
@@ -122,6 +123,8 @@ void Config::creatPoll()
         }
     }
 
+    // std::map<int, Connection> connections;
+
     while(1)
     {
         int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
@@ -132,12 +135,13 @@ void Config::creatPoll()
         }
         for(int i = 0; i < nbrReady; i++)
         {
+            int _fd = evlist[i].data.fd;
             if(evlist[i].events & EPOLLIN)
             {
                 int server_fd = -1;
                 for(size_t j = 0; j < _nembre_of_server; j++)
                 {
-                    if (evlist[i].data.fd == _server[j].getSock())
+                    if (_fd == _server[j].getSock())
                     {
                         server_fd = _server[j].getSock();
                         break;
@@ -153,12 +157,26 @@ void Config::creatPoll()
                         // Throw exception
                         return;
                     }
+                    // connections[new_fd] = Connection(new_fd);
                 }
                 else
                 {
-                    handle_request(evlist[i].data.fd);
-                    close(evlist[i].data.fd);
+
+                    //connections[_fd].sockRead();
+
+                    handle_request(_fd);
+                    close(_fd);
+                    /*if (connections[evlist[i].data.fd].close())
+                    {
+                        // remove vector
+                        close(_fd);
+                    }*/
                 }
+            }
+            else if(evlist[i].events & EPOLLOUT)
+            {
+                // send response
+                //connections[_fd].sockWrite();
             }
         }
     }

@@ -33,6 +33,9 @@ class Response
         std::string _textBody;
         std::string _file;
 
+        std::string _response;
+        size_t _totalBytesSent;
+        bool _sent;
 
     public:
         Response () : _response(""), _totalBytesSent(0), _sent(false) {};

@@ -46,6 +46,10 @@ class Request
         std::string requestTarget;
         std::string httpVersion;
 
+        // bool is_comlete;
+        // state stat;
+        // int sock;
+
         //header
         /*std::map<std::string, std::string> header;*/
         std::map<std::string, std::string> header;
