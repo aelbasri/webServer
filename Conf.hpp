@@ -51,7 +51,7 @@ public:
     int get_nembre_of_server();
     std::string& setFileContent();
     int CheckNumberOfServer();
-
+    void creatPoll();
 
     int SetupServers();
 };

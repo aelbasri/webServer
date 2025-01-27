@@ -2,6 +2,7 @@
 #include "Conf.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "configfile/server_data.hpp"
 #include <stdlib.h>
 
 Config::Config():_server(nullptr){}
@@ -96,6 +97,73 @@ int Config::CheckNumberOfServer(){
     return words;
 }
 
+void Config::creatPoll()
+{
+    // struct epoll_event ev;
+    struct epoll_event evlist[MAX_EVENT];
+
+    int ep = epoll_create(1);
+    if (ep == -1)
+    {
+        // Throw exception
+        std::cout << "epoll" << std::endl;
+        return;
+    }
+
+    for(size_t i = 0; i < _nembre_of_server; i++)
+    {
+        struct epoll_event ev;
+        ev.data.fd = _server[i].getSock();
+        ev.events = EPOLLIN;
+        if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock(), &ev) == -1)
+        {
+            // Throw exception )
+            return;
+        }
+    }
+
+    while(1)
+    {
+        int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
+        if(nbrReady < 0)
+        {
+            // Throw exception
+            return;
+        }
+        for(int i = 0; i < nbrReady; i++)
+        {
+            if(evlist[i].events & EPOLLIN)
+            {
+                int server_fd = -1;
+                for(size_t j = 0; j < _nembre_of_server; j++)
+                {
+                    if (evlist[i].data.fd == _server[j].getSock())
+                    {
+                        server_fd = _server[j].getSock();
+                        break;
+                    }
+                }
+                if (server_fd != -1)
+                {
+                    int new_fd = accept(server_fd, NULL,  0);
+                    evlist[i].data.fd = new_fd;
+                    evlist[i].events = EPOLLIN;
+                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &evlist[i]) == -1)
+                    {
+                        // Throw exception
+                        return;
+                    }
+                }
+                else
+                {
+                    handle_request(evlist[i].data.fd);
+                    close(evlist[i].data.fd);
+                }
+            }
+        }
+    }
+}
+
 int Config::SetupServers()
 {
     std::cout << " _nembre_of_server : ============"<< _nembre_of_server << std::endl; 
@@ -103,11 +171,11 @@ int Config::SetupServers()
     {
         std::cout << "i: ============"<< i << std::endl; 
         std::cout << getpid() << std::endl;
-                
+
         if (_server[i].run() == -1)
             exit(1);
-        _server[i].creatPoll();
     }
+    creatPoll();
     return (0);
 }
 

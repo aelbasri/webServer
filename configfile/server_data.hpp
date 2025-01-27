@@ -96,7 +96,6 @@ public:
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
     int run();
-    void creatPoll() const;
 
     public:
         class InternalServerError : public std::exception
@@ -106,4 +105,4 @@ public:
         };
 };
 
-
+void handle_request(int fd);

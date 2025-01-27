@@ -213,13 +213,13 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
 void server::Getlocation(){
     for (int i = 0; i < _nembre_of_location; i++)
     {
-        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
-        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
-            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        }   
+        // std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
+        // std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
+        // std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
+        // std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        // for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
+        //     std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
+        // }   
     }
 }
 
@@ -294,7 +294,7 @@ int server::run()
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((addI = getaddrinfo(NULL, _port.c_str(), &hints, &res)) != 0)
+    if ((addI = getaddrinfo(_host.c_str(), _port.c_str(), &hints, &res)) != 0)
     {
         std::cerr << gai_strerror(addI) << std::endl;
         return -1;
@@ -456,71 +456,4 @@ void handle_request(int new_fd)
         response.sendResponse(new_fd);
         // std::cerr << e.what() << std::endl;
     }
-}
-
-
-void server::creatPoll() const
-{
-    struct epoll_event ev;
-    struct epoll_event evlist[MAX_EVENT];
-
-
-    int ep = epoll_create(1);
-    if (ep == -1)
-    {
-        // Throw exception
-        std::cout << "epoll" << std::endl;
-        return;
-    }
-
-    ev.data.fd = _sock;
-    ev.events = EPOLLIN;
-    if (epoll_ctl(ep, EPOLL_CTL_ADD, _sock, &ev) == -1)
-    {
-        // Throw exception
-        return;
-    }
-
-    while(1)
-    {
-        int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
-        if(nbrReady < 0)
-        {
-            // Throw exception
-            return;
-        }
-        for(int i = 0; i < nbrReady; i++)
-        {
-            if(evlist[i].events & EPOLLIN)
-            {
-                if (evlist[i].data.fd == _sock)
-                {
-                    int new_fd = accept(_sock, NULL,  0);
-                    ev.data.fd = new_fd;
-                    ev.events = EPOLLIN;
-                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
-                    {
-                        // Throw exception
-                        return;
-                    }
-                }
-                else
-                {
-                    handle_request(evlist[i].data.fd);
-                    close(evlist[i].data.fd);
-                }
-            }
-        }
-    }
-        // int new_fd = accept(_sock, NULL,  0);
-        // std::cout << "===> connection accepted" << std::endl;
-        // if (new_fd == -1)
-        // {
-        //     //generate connection error
-        //     perror("accept() failed");
-        //     exit(1);
-        // }
-        // // Connection connection;
-        // handle_request(new_fd);
-        // close(new_fd);
 }
