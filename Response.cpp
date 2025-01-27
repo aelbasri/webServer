@@ -56,37 +56,47 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-void Response::sendResponse(int clientSocket) const
+#define RESPONSE_CHUNCK_SIZE 100
+
+int Response::sendResponse(int clientSocket)
 {
-    // Build the response line
-    std::ostringstream responseStream;
-    responseStream << _httpVersion << " " << _statusCode << " " << _reasonPhrase << "\r\n";
+    if (_sent)
+        return (1);
 
-    // Add headers
-    std::map<std::string, std::string>::const_iterator it;
-    for (it = _headers.begin(); it != _headers.end(); it++)
+    if (_response.empty())
     {
-        responseStream << it->first << ": " << it->second << "\r\n";
-    }
-    responseStream << "\r\n";
-    if (!_file.empty())
-        responseStream << _file;
-    else if (!_textBody.empty())
-        responseStream << _textBody;
+        // Build the response line
+        std::ostringstream responseStream;
+        responseStream << _httpVersion << " " << _statusCode << " " << _reasonPhrase << "\r\n";
 
-    std::string response = responseStream.str();
+        // Add headers
+        std::map<std::string, std::string>::const_iterator it;
+        for (it = _headers.begin(); it != _headers.end(); it++)
+        {
+            responseStream << it->first << ": " << it->second << "\r\n";
+        }
+        responseStream << "\r\n";
+        if (!_file.empty())
+            responseStream << _file;
+        else if (!_textBody.empty())
+            responseStream << _textBody;
+
+        _response = responseStream.str();
+    }
 
     // Send the response in chunks
-    size_t totalBytesSent = 0;
-    while (totalBytesSent < response.size())
+    /*ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, _response.size() - _totalBytesSent, 0);*/
+    size_t remaining = _response.size() - _totalBytesSent;
+    ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, (RESPONSE_CHUNCK_SIZE < remaining) ? RESPONSE_CHUNCK_SIZE : remaining, 0);
+    if (bytesSent == -1)
     {
-        ssize_t bytesSent = send(clientSocket, response.c_str() + totalBytesSent, response.size() - totalBytesSent, 0);
-        if (bytesSent == -1)
-        {
-            perror("Failed to send response");
-            return;
-        }
-        totalBytesSent += bytesSent;
+        perror("Failed to send response");
+        return (-1);
     }
+    _totalBytesSent += bytesSent;
+    std::cout << "***********Sent: " << _totalBytesSent << std::endl;
+    if (_totalBytesSent == _response.size())
+        _sent = true;
+    return (_sent);
 }
 
