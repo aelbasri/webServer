@@ -33,7 +33,9 @@ class Response
         std::string _textBody;
         std::string _file;
 
+
     public:
+        Response () : _response(""), _totalBytesSent(0), _sent(false) {};
         void setHttpVersion(const std::string &version);
         void setStatusCode(int status);
         void setReasonPhrase(const std::string &phrase);
@@ -41,7 +43,7 @@ class Response
         void setTextBody(const std::string &body);
         void setFile(const std::string &filepath);
         void setContentLength(void); 
-        void sendResponse(int socket) const;
+        int sendResponse(int socket);
 };
 
 std::string getMimeType(const std::string& filename);

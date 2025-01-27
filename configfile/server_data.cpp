@@ -366,7 +366,10 @@ void send_res(Request &request, int new_fd)
         response.addHeader(std::string("Location"), location);
         response.addHeader(std::string("Content-Type"), contentType);
         response.addHeader(std::string("Connection"), connection);
-        response.sendResponse(new_fd);
+        /*response.sendResponse(new_fd);*/
+        int sent = 0;
+        while (!sent)
+            sent = response.sendResponse(new_fd);
     }
     else if (!file.good()) {
         std::cout << "iror nat found" << std::endl;
@@ -382,7 +385,10 @@ void send_res(Request &request, int new_fd)
         response.setContentLength();
         response.addHeader(std::string("Content-Type"), contentType);
         response.addHeader(std::string("Connection"), connection);
-        response.sendResponse(new_fd);
+        /*response.sendResponse(new_fd);*/
+        int sent = 0;
+        while (!sent)
+            sent = response.sendResponse(new_fd);
     }
     else
     {
@@ -399,7 +405,10 @@ void send_res(Request &request, int new_fd)
         response.setContentLength();
         response.addHeader(std::string("Content-Type"), contentType);
         response.addHeader(std::string("Connection"), connection);
-        response.sendResponse(new_fd);
+        /*response.sendResponse(new_fd);*/
+        int sent = 0;
+        while (!sent)
+            sent = response.sendResponse(new_fd);
     }
 }
 
@@ -453,7 +462,10 @@ void handle_request(int new_fd)
         response.setContentLength();
         response.addHeader(std::string("Content-Type"), contentType);
         response.addHeader(std::string("Connection"), connection);
-        response.sendResponse(new_fd);
+        /*response.sendResponse(new_fd);*/
+        int sent = 0;
+        while (!sent)
+            sent = response.sendResponse(new_fd);
         // std::cerr << e.what() << std::endl;
     }
 }
