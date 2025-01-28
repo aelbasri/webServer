@@ -12,7 +12,10 @@
 
 #include "server_data.hpp"
 
-server::server():_indixL(0),_location(nullptr),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
+server::server():_indixL(0),_location(nullptr),_name("localhost"), _host("127.0.0.0"),_max_body_size(1048576){
+    _port.push_back("8080");
+    _NPort = 0;
+}
 
 server::~server() {
     if (_location) {
@@ -33,7 +36,7 @@ void server::Set_host(std::string __host){
     _host = __host;
 }
 
-void server::Set_port(std::string __port){
+void server::Set_port(std::vector<std::string> __port){
     _port = __port;
 }
 
@@ -53,7 +56,7 @@ std::string server::Get_host(){
     return(_host) ;
 }
 
-std::string server::Get_port(){
+std::vector<std::string> server::Get_port(){
     return(_port);
 }
 
@@ -229,6 +232,7 @@ void server::Getlocation(){
 }
 
 void server::loadingDataserver(){
+    int flage = 0;
     size_t found_at;
     std::string key;
     std::string value;
@@ -256,10 +260,16 @@ void server::loadingDataserver(){
             }
         }
         else if (key == "port") {
-            _port = value;
-            if (!isValidPort(_port)) {
-                throw std::runtime_error("Invalid port: " + _port);
+            if (!isValidPort(value)) {
+                throw std::runtime_error("Invalid port: " + value);
             }
+            if (flage == 0){
+                _port[_NPort] = value;
+                flage = 1;
+            }
+            else
+                _port.push_back(value);
+            _NPort++;
         }
         else if (key == "max_body_size") {
             if (!parseBodySize(value, _max_body_size)) {
@@ -295,48 +305,53 @@ int server::run()
     int yes = 1;
     int addI;
 
-    memset(&hints, 0,  sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((addI = getaddrinfo(_host.c_str(), _port.c_str(), &hints, &res)) != 0)
+    for (std::vector<std::string>::size_type y = 0; y < _port.size();  y++)
     {
-        std::cerr << gai_strerror(addI) << std::endl;
-        return -1;
-    }
+        memset(&hints, 0,  sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
 
-    for(p = res; p; p = p->ai_next)
-    {
-        if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-            continue;
-        if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+        if ((addI = getaddrinfo(_host.c_str(), _port[y].c_str(), &hints, &res)) != 0)
         {
-            perror("setsockopt");
+            std::cerr << gai_strerror(addI) << std::endl;
+            return -1;
+        }
+
+        for(p = res; p; p = p->ai_next)
+        {
+            if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+                continue;
+            if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+            {
+                perror("setsockopt");
+                return (-1);
+                /*exit(1);*/
+            }
+            //bind
+            if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
+                continue;
+            break;
+        }
+
+        freeaddrinfo(res); 
+        if (!p)
+        {
+            perror("bind failed");
             return (-1);
             /*exit(1);*/
         }
-        //bind
-        if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
-            continue;
-        break;
-    }
 
-    freeaddrinfo(res); 
-    if (!p)
-    {
-        perror("bind failed");
-        return (-1);
-        /*exit(1);*/
+        if (listen(_sock, 10) == -1)
+        {
+            perror("listen() failed");
+            return (-1);
+            /*exit(1);*/
+        }
+        /* code */
+        std::cout << "Server is listening on " << _host << ":" << _port[y] << std::endl; 
     }
+    
 
-    if (listen(_sock, 10) == -1)
-    {
-        perror("listen() failed");
-        return (-1);
-        /*exit(1);*/
-    }
-
-    std::cout << "Server is listening on " << _host << ":" << _port << std::endl; 
     return (0);
 }
 
