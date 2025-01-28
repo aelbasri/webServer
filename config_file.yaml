@@ -63,7 +63,7 @@ server:
       - DELETE
       - GET
     index  : index2.htm index2.html
-    # upload_dir :  hala madrid
+    rewrite :  hala madrid
   location :
     type : zara
     root_directory: /root1
