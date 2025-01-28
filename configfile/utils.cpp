@@ -14,7 +14,7 @@
 
 
 void CheckKey(const std::string& key) {
-    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location"};
+    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location", "rewrite"};
     std::vector<std::string> validKeys(arr, arr + sizeof(arr)/sizeof(arr[0]));
 
     std::string trimmedKey = trim(key);
