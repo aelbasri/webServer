@@ -41,6 +41,9 @@ void location::SetMax_body_size(long long __max_body_size){
     _max_body_size = __max_body_size;
 }
 
+void location::SetRewrite(std::string __rewrite){
+    _rewrite = __rewrite;
+}
 
 std::string location::GetType_of_location(){
     return _type_of_location;
@@ -60,4 +63,8 @@ std::string location::GetUpload_dir(){
 
 long long location::GetMax_body_size(){
     return _max_body_size;
+}
+
+std::string location::GetRewrite(){
+    return _rewrite;
 }
