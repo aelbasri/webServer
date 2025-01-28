@@ -335,137 +335,137 @@ int server::run()
     return (0);
 }
 
-void send_res(Request &request, int new_fd)
-{
-    Response response;
-    std::string path("./assets");
+// void send_res(Request &request, int new_fd)
+// {
+//     Response response;
+//     std::string path("./assets");
     
-    if (request.getRequestTarget() == "/")
-        path += "/index.html";
-    else
-        path += request.getRequestTarget();
-    std::ifstream file(path.c_str());
+//     if (request.getRequestTarget() == "/")
+//         path += "/index.html";
+//     else
+//         path += request.getRequestTarget();
+//     std::ifstream file(path.c_str());
 
-    std::cout << "PATH: "  << path << std::endl;
+//     std::cout << "PATH: "  << path << std::endl;
 
-    if (request.getRequestTarget() == "/redirection")
-    {
-	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
+//     if (request.getRequestTarget() == "/redirection")
+//     {
+// 	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
 
-        std::cout << "Ridddddaryrikchn" << std::endl;
-        path = "./assets/302.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+//         std::cout << "Ridddddaryrikchn" << std::endl;
+//         path = "./assets/302.html";
+//         std::string connection = "close";
+//         std::string contentType = getMimeType(path);
 
-        response.setHttpVersion(HTTP_VERSION);
-        response.setStatusCode(302);
-        response.setReasonPhrase("Moved Temporarily");
-        response.setFile(path);
+//         response.setHttpVersion(HTTP_VERSION);
+//         response.setStatusCode(302);
+//         response.setReasonPhrase("Moved Temporarily");
+//         response.setFile(path);
 
-        response.setContentLength();
-        response.addHeader(std::string("Location"), location);
-        response.addHeader(std::string("Content-Type"), contentType);
-        response.addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        int sent = 0;
-        while (!sent)
-            sent = response.sendResponse(new_fd);
-    }
-    else if (!file.good()) {
-        std::cout << "iror nat found" << std::endl;
-        path = "./assets/404.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+//         response.setContentLength();
+//         response.addHeader(std::string("Location"), location);
+//         response.addHeader(std::string("Content-Type"), contentType);
+//         response.addHeader(std::string("Connection"), connection);
+//         /*response.sendResponse(new_fd);*/
+//         int sent = 0;
+//         while (!sent)
+//             sent = response.sendResponse(new_fd);
+//     }
+//     else if (!file.good()) {
+//         std::cout << "iror nat found" << std::endl;
+//         path = "./assets/404.html";
+//         std::string connection = "close";
+//         std::string contentType = getMimeType(path);
 
-        response.setHttpVersion(HTTP_VERSION);
-        response.setStatusCode(404);
-        response.setReasonPhrase("Not Found");
-        response.setFile(path);
+//         response.setHttpVersion(HTTP_VERSION);
+//         response.setStatusCode(404);
+//         response.setReasonPhrase("Not Found");
+//         response.setFile(path);
 
-        response.setContentLength();
-        response.addHeader(std::string("Content-Type"), contentType);
-        response.addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        int sent = 0;
-        while (!sent)
-            sent = response.sendResponse(new_fd);
-    }
-    else
-    {
-        std::cout << "saad t3asb "  << path << std::endl;
+//         response.setContentLength();
+//         response.addHeader(std::string("Content-Type"), contentType);
+//         response.addHeader(std::string("Connection"), connection);
+//         /*response.sendResponse(new_fd);*/
+//         int sent = 0;
+//         while (!sent)
+//             sent = response.sendResponse(new_fd);
+//     }
+//     else
+//     {
+//         std::cout << "saad t3asb "  << path << std::endl;
 
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+//         std::string connection = "close";
+//         std::string contentType = getMimeType(path);
 
-        response.setHttpVersion(HTTP_VERSION);
-        response.setStatusCode(200);
-        response.setReasonPhrase("OK");
-        response.setFile(path);
+//         response.setHttpVersion(HTTP_VERSION);
+//         response.setStatusCode(200);
+//         response.setReasonPhrase("OK");
+//         response.setFile(path);
 
-        response.setContentLength();
-        response.addHeader(std::string("Content-Type"), contentType);
-        response.addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        int sent = 0;
-        while (!sent)
-            sent = response.sendResponse(new_fd);
-    }
-}
+//         response.setContentLength();
+//         response.addHeader(std::string("Content-Type"), contentType);
+//         response.addHeader(std::string("Connection"), connection);
+//         /*response.sendResponse(new_fd);*/
+//         int sent = 0;
+//         while (!sent)
+//             sent = response.sendResponse(new_fd);
+//     }
+// }
 
-void handle_request(int new_fd)
-{
-    /*Parse Request*/
-    try
-    {
-        Request request;
-        int offset = 0;
-        int nBytes = 0;
-        enum state myState = REQUEST_LINE;
+// void handle_request(int new_fd)
+// {
+//     /*Parse Request*/
+//     try
+//     {
+//         Request request;
+//         int offset = 0;
+//         int nBytes = 0;
+//         enum State myState = REQUEST_LINE;
 
 
-        while(myState != DONE)
-        {
-            switch (myState)
-            {
-                case  REQUEST_LINE :
-                    request.parseRequestLine(new_fd, offset, nBytes);
-                    myState = HEADER;
-                    break;
-                case HEADER :
-                    request.parseHeader(new_fd, offset, nBytes);
-                    myState = BODY;
-                    break;
-                case BODY :
-                    request.parseBody(new_fd, offset, nBytes);
-                    myState = DONE;
-                    break;
-                default:
-                    break;
-            }
-        }
-        //throw Server::InternalServerError();
-        send_res(request, new_fd);
-    }
-    catch(const std::exception& e)
-    {
-        Response response;
-        std::cout << "Saad 500Error" << std::endl;
-        std::string path = "./assets/50x.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+//         while(myState != DONE)
+//         {
+//             switch (myState)
+//             {
+//                 case  REQUEST_LINE :
+//                     request.parseRequestLine(new_fd, offset, nBytes);
+//                     myState = HEADER;
+//                     break;
+//                 case HEADER :
+//                     request.parseHeader(new_fd, offset, nBytes);
+//                     myState = BODY;
+//                     break;
+//                 case BODY :
+//                     request.parseBody(new_fd, offset, nBytes);
+//                     myState = DONE;
+//                     break;
+//                 default:
+//                     break;
+//             }
+//         }
+//         //throw Server::InternalServerError();
+//         send_res(request, new_fd);
+//     }
+//     catch(const std::exception& e)
+//     {
+//         Response response;
+//         std::cout << "Saad 500Error" << std::endl;
+//         std::string path = "./assets/50x.html";
+//         std::string connection = "close";
+//         std::string contentType = getMimeType(path);
 
-        response.setHttpVersion(HTTP_VERSION);
-        response.setStatusCode(500);
-        response.setReasonPhrase("Internal Server Error");
-        response.setFile(path);
+//         response.setHttpVersion(HTTP_VERSION);
+//         response.setStatusCode(500);
+//         response.setReasonPhrase("Internal Server Error");
+//         response.setFile(path);
 
-        response.setContentLength();
-        response.addHeader(std::string("Content-Type"), contentType);
-        response.addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        int sent = 0;
-        while (!sent)
-            sent = response.sendResponse(new_fd);
-        // std::cerr << e.what() << std::endl;
-    }
-}
+//         response.setContentLength();
+//         response.addHeader(std::string("Content-Type"), contentType);
+//         response.addHeader(std::string("Connection"), connection);
+//         /*response.sendResponse(new_fd);*/
+//         int sent = 0;
+//         while (!sent)
+//             sent = response.sendResponse(new_fd);
+//         // std::cerr << e.what() << std::endl;
+//     }
+// }

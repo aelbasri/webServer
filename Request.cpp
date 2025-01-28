@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Response.hpp"
 
 std::string Request::getRequestTarget(void) const
 {
@@ -278,4 +279,59 @@ int Request::parseBody(int socket, int &offset, int &nBytes)
     return (0);
 }
 
+void Request::handle_request(char *buffer, int bytesRec)
+{
+    for(int i = 0; i < bytesRec; i++)
+    {
+        switch (state)
+        {
+            case METHOD :
+                if (buffer[i] == ' ')
+                {
+                    if (method != "GET" && method != "POST" && method != "DELETE")
+                        throw Request::badRequest();
+                    state = REQUEST_TARGET;
+                    break;
+                }
+                if (method.empty())
+                {
+                    if (buffer[i] == 'G')
+                        method += buffer[i];
+                    else if (buffer[i] == 'P')
+                        method += buffer[i];
+                    else if (buffer[i] == 'D')
+                        method += buffer[i];
+                    else
+                        throw Request::badRequest();
+                    index++;
+                }
+                else if (method[0] == 'G')
+                {
+                    method += buffer[i];
+                    if (method[index] != "GET"[index])
+                        throw badRequest();
+                    index++;
+                }
+                else if (method[0] == 'P')
+                {
+                    method += buffer[i];
+                    if (method[index] != "POST"[index])
+                        throw badRequest();
+                    index++;
+                }
+                else if (method[0] == 'D')
+                {
+                    method += buffer[i];
+                    if (method[index] != "DELETE"[index])
+                        throw badRequest();
+                    index++;
+                }
+                break;
+            case REQUEST_TARGET :
+                // origin-form = absolute-path [ "?" query ]
+                // if (re)
+
+        }
+    }
+}
 

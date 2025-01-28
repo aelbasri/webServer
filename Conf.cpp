@@ -100,7 +100,6 @@ int Config::CheckNumberOfServer(){
 
 void Config::creatPoll()
 {
-    // struct epoll_event ev;
     struct epoll_event evlist[MAX_EVENT];
 
     int ep = epoll_create(1);
@@ -123,7 +122,7 @@ void Config::creatPoll()
         }
     }
 
-    // std::map<int, Connection> connections;
+    std::map<int, Connection> connections;
 
     while(1)
     {
@@ -152,25 +151,25 @@ void Config::creatPoll()
                     int new_fd = accept(server_fd, NULL,  0);
                     evlist[i].data.fd = new_fd;
                     evlist[i].events = EPOLLIN;
+
                     if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &evlist[i]) == -1)
                     {
                         // Throw exception
                         return;
                     }
-                    // connections[new_fd] = Connection(new_fd);
+                    connections[new_fd] = Connection(new_fd);
                 }
                 else
                 {
+                    connections[_fd].sockRead();
+                    // handle_request(_fd);
+                    // close(_fd);
 
-                    //connections[_fd].sockRead();
-
-                    handle_request(_fd);
-                    close(_fd);
-                    /*if (connections[evlist[i].data.fd].close())
-                    {
-                        // remove vector
-                        close(_fd);
-                    }*/
+                    // if (connections[evlist[i].data.fd].close())
+                    // {
+                    //     // remove vector
+                    //     close(_fd);
+                    // }
                 }
             }
             else if(evlist[i].events & EPOLLOUT)

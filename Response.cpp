@@ -56,7 +56,7 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-#define RESPONSE_CHUNCK_SIZE 100
+#define RESPONSE_CHUNCK_SIZE 1024
 
 int Response::sendResponse(int clientSocket)
 {
