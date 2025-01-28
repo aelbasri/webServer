@@ -43,11 +43,13 @@ class server : public error_pages
 private:
     size_t _indixL;
     int     _nembre_of_location;
+    int     _NPort;
+    std::vector<std::string> _port;
     location *_location;
     std::string _content;
     std::string _name;
     std::string _host;
-    std::string _port;
+    // std::string _port;
     long long _max_body_size;
 
     int         _sock;
@@ -61,7 +63,7 @@ public:
     void Set_content(std::string __content);
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
-    void Set_port(std::string __port);
+    void Set_port(std::vector<std::string> __port);
     void Set_max_body_size(long long __max_body_size);
     void setSock(int sock);
     void setRes(struct addrinfo* newRes);
@@ -74,7 +76,7 @@ public:
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
-    std::string Get_port();
+    std::vector<std::string> Get_port();
     long long Get_max_body_size();
 
     int getSock() ;
