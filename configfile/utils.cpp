@@ -14,7 +14,7 @@
 
 
 void CheckKey(const std::string& key) {
-    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location", "rewrite"};
+    std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location", "rewrite", "CGI"};
     std::vector<std::string> validKeys(arr, arr + sizeof(arr)/sizeof(arr[0]));
 
     std::string trimmedKey = trim(key);
@@ -126,8 +126,8 @@ bool isValidEroorValue(const std::string& value) {
         throw std::runtime_error("value of error must be between 300 and 599 : " + value);
     else 
         return true;
-
 }
+
 bool isValidPort(const std::string& port) {
     for (size_t i = 0; i < port.length(); ++i) {
         if (!isdigit(port[i])) {
@@ -176,7 +176,6 @@ bool isValidHost(const std::string& host) {
             return false; 
         }
     }
-    
     return dots == 3 && value <= 255 && segment > 0;
 }
 
