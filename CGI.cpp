@@ -16,12 +16,14 @@ std::string generate_unique_path() {
 void   CGI::RunPythonCgi() {
     std::string filename = generate_unique_path();
     
-        std::stringstream  command = "python3 " + _path; 
+        std::stringstream  command ;
+        command << "python3 " << _path;
+        std::string tmp = command.str();
 
-    FILE* pipe = popen(command, "r");
+    FILE* pipe = popen(tmp.c_str(), "r");
     if (!pipe) {
         std::cerr << "Error executing command." << std::endl;
-        return 1;
+        return;
     }
 
     char buffer[128];
@@ -44,6 +46,6 @@ void   CGI::RunPythonCgi() {
     file << "<html><body><h1>Script Output</h1><pre>" << result << "</pre></body></html>";
 
     _PathOfExecutable = filename;
-    return 0;
+    return ;
 }
 
