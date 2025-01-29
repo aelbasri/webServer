@@ -125,6 +125,17 @@ int server::getAddI()  {
 void server::setAddI(int newAddI) {
     addI = newAddI;
 }
+
+
+std::map<std::string, std::string> server::GetCgi(){
+    return _CGI;
+}
+
+void  server::SetCgi(std::map<std::string, std::string> __cgi){
+    _CGI = __cgi;
+
+}
+
 int server::CheckNumberOfLocation(){
     std::string sentence = "location";
     int cont = 0;
@@ -227,9 +238,40 @@ void server::Getlocation(){
 
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        }   
+        }
+
+        
     }
 }
+
+void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
+    size_t found_at;
+    std::string key;
+    std::string value;
+
+    std::map<std::string , std::string>::iterator it = _CGI.begin();
+    while (i++ < lines.size() -1) {
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
+        found_at = lines[i].find(':');
+        key = trim(lines[i].substr(0, found_at));
+        value = trim(lines[i].substr(found_at + 1));
+        if (found_at == std::string::npos) 
+            continue;
+        if (key == "types"){
+            if (value == "bash" || value == "PhP" || value == "python")
+                _CGI.insert (it, std::pair<std::string , std::string>(key,value)); 
+            else
+                throw std::runtime_error("Invalid script: " + trim(lines[i]));  
+        }
+        else if (key == "indix"){
+            if (removeWhitespace(value).empty())
+                throw std::runtime_error("enter indix for CGI : " + trim(lines[i]));  
+            _CGI.insert (it, std::pair<std::string , std::string>(key,value)); 
+        }
+        else
+            break;
+    }
+}    
 
 void server::loadingDataserver(){
     int flage = 0;
@@ -283,7 +325,11 @@ void server::loadingDataserver(){
         else if (key == "location") {
             loadingLocationContent(lines, i);
             i--;
-        }   
+        }
+        else if (key == "CGI") {
+            loadingCgiContent(lines, i);
+            i--;
+        }
     }
     // Getlocation();
 }
@@ -304,6 +350,7 @@ int server::run()
     struct addrinfo *res ,*p;
     int yes = 1;
     int addI;
+
 
     for (std::vector<std::string>::size_type y = 0; y < _port.size();  y++)
     {

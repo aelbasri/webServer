@@ -1,6 +1,8 @@
 
 #pragma once
 
+
+#include "configfile/server_data.hpp"
 #include <fstream>
 #include <iostream>
 #include <cstdio>
@@ -11,6 +13,7 @@
 class CGI
 {
 private:
+    server *_server;
     std::string _PathOfExecutable;
     std::string _type;
     std::string _path;

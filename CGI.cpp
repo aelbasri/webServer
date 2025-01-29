@@ -1,6 +1,15 @@
 #include "CGI.hpp"
 
-CGI::CGI(){}
+CGI::CGI(){
+    std::map<std::string, std::string> _mapCgi = _server->GetCgi();
+    for (std::map<std::string, std::string>::iterator i = _mapCgi.begin(); i != _mapCgi.end(); i++)
+    {
+        if (i->first == "type")
+            _type = i->second;
+        else
+            _path = i->second;
+    }
+}
 
 CGI::~CGI(){}
 
@@ -17,7 +26,7 @@ void   CGI::RunPythonCgi() {
     std::string filename = generate_unique_path();
     
         std::stringstream  command ;
-        command << "python3 " << _path;
+        command << _type.c_str() << _path;
         std::string tmp = command.str();
 
     FILE* pipe = popen(tmp.c_str(), "r");
