@@ -303,34 +303,103 @@ void Request::handle_request(char *buffer, int bytesRec)
                         method += buffer[i];
                     else
                         throw Request::badRequest();
-                    index++;
+                    indexMethod++;
                 }
                 else if (method[0] == 'G')
                 {
                     method += buffer[i];
-                    if (method[index] != "GET"[index])
+                    if (method[indexMethod] != "GET"[indexMethod])
                         throw badRequest();
-                    index++;
+                    indexMethod++;
                 }
                 else if (method[0] == 'P')
                 {
                     method += buffer[i];
-                    if (method[index] != "POST"[index])
+                    if (method[indexMethod] != "POST"[indexMethod])
                         throw badRequest();
-                    index++;
+                    indexMethod++;
                 }
                 else if (method[0] == 'D')
                 {
                     method += buffer[i];
-                    if (method[index] != "DELETE"[index])
+                    if (method[indexMethod] != "DELETE"[indexMethod])
                         throw badRequest();
-                    index++;
+                    indexMethod++;
                 }
                 break;
             case REQUEST_TARGET :
                 // origin-form = absolute-path [ "?" query ]
-                // if (re)
-
+                if (requestTarget.empty() && buffer[i] != '/')
+                    throw badRequest();
+                if (buffer[i] != ' ' && buffer[i] != '?')
+                    requestTarget += buffer[i];
+                else if (buffer[i] == '?')
+                    state = QUERY_KEY;
+                else
+                {
+                    if (requestTarget.empty())
+                        throw badRequest();
+                    state = HTTP_VERSION_;
+                }
+                break;
+            case QUERY_KEY:
+                if (buffer[i] == '=')
+                {
+                    if (tmpKey.empty())
+                        throw badRequest();
+                    query[tmpKey] = "";
+                    state = QUERY_VALUE;
+                }
+                else if (buffer[i] == ' ' || buffer[i] == '&')
+                    throw badRequest();
+                else
+                    tmpKey += buffer[i];
+                break;
+            case QUERY_VALUE:
+                if (buffer[i] == '&')
+                {
+                    if (tmpKey.empty() || tmpValue.empty())
+                        throw badRequest();
+                    query[tmpKey] = tmpValue;
+                    state = QUERY_KEY;
+                    tmpKey = "";
+                    tmpValue = "";
+                }
+                if (buffer[i] == ' ')
+                {
+                    if (tmpValue.empty())
+                        throw badRequest();
+                    query[tmpKey] = tmpValue;
+                    state = HTTP_VERSION_;
+                }
+                else
+                    tmpKey += buffer[i];
+            case HTTP_VERSION_:
+                if (buffer[i] != "HTTP"[indexHttp])
+                        throw badRequest();
+                if (buffer[i] == 'P')
+                    state = FORWARD_SKASH;
+                httpVersion += buffer[i];
+                break;
+            case FORWARD_SKASH:
+                if (buffer[i] != '\'')
+                    throw badRequest();
+                httpVersion += buffer[i];
+                state = DIGIT;
+                break;
+            case DIGIT:
+                if (buffer[i] < 0 || buffer[i] > 9)
+                    throw badRequest();
+                if (httpVersion[httpVersion.size() - 1] != '.')
+                    state = DOT;
+                else
+                    state = CR_STATE;
+                httpVersion += buffer[i];
+            case DOT:
+                 if (buffer[i] != '.')
+                    throw badRequest();
+                httpVersion += buffer[i];
+                state = DIGIT;
         }
     }
 }

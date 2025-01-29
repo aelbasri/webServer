@@ -18,12 +18,21 @@
 
 
 #define BUFF_SIZE 1024
+#define CR '\r'
+#define LF '\n'
 
 enum State
 {
     METHOD,
     REQUEST_TARGET,
-    HTTP_VERSION,
+    QUERY_KEY,
+    QUERY_VALUE,
+    HTTP_VERSION_,
+    FORWARD_SKASH,
+    DIGIT,
+    DOT,
+    CR_STATE,
+    LF_STATE,
     REQUEST_LINE,
     HEADER,
     BODY,
@@ -43,24 +52,27 @@ class Request
 {
     private:
         State state;
-        int index;
+        int indexMethod;
+        int indexHttp;
         char buffer[BUFF_SIZE];
-        std::string tmp;
 
         //request line
         std::string method;
         std::string requestTarget;
         std::string httpVersion;
 
+        //query
+        std::map<std::string, std::string> query;
+        std::string tmpKey;
+        std::string tmpValue;
         //header
         std::map<std::string, std::string> header;
     public:
-        Request() : state(REQUEST_LINE), index(0) {}
+        Request() : state(REQUEST_LINE), indexMethod(0),indexHttp(0) {}
         
         void handle_request(char *buffer, int bytesRec);
         
         State getState(void) const { return (state);}
-        int getIndex(void) const { return (index);}
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
@@ -71,7 +83,6 @@ class Request
 
         class badRequest : public std::exception 
         {
-            public:
-                
+
         };
 };
