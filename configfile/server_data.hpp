@@ -38,13 +38,14 @@
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
 
-class server : public error_pages
+class server : public error_pages 
 {
 private:
     size_t _indixL;
     int     _nembre_of_location;
     int     _NPort;
     std::vector<std::string> _port;
+    std::map<std::string, std::string> _CGI;
     location *_location;
     std::string _content;
     std::string _name;
@@ -68,8 +69,8 @@ public:
     void setSock(int sock);
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
-    void setAddI(int newAddI);
-    // void Set
+    void setAddI(int newAddI);\
+    void SetCgi(std::map<std::string, std::string> __cgi);
 
     
     int Get_nembre_of_location();
@@ -78,6 +79,7 @@ public:
     std::string Get_host(); 
     std::vector<std::string> Get_port();
     long long Get_max_body_size();
+    std::map<std::string, std::string> GetCgi();
 
     int getSock() ;
     struct addrinfo &getHints() ;
@@ -90,13 +92,13 @@ public:
     virtual ~server();
 
 
-
     void Getlocation();
     void LoidingAllowedMethods(std::vector<std::string> lines,size_t &i);
     void loadingLocationContent(std::vector<std::string> lines,size_t &i);
     void loadingDataserver();
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
+    void loadingCgiContent(std::vector<std::string> lines,size_t &i);
     int run();
 
     public:
