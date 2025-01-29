@@ -395,11 +395,23 @@ void Request::handle_request(char *buffer, int bytesRec)
                 else
                     state = CR_STATE;
                 httpVersion += buffer[i];
+                break;
             case DOT:
                  if (buffer[i] != '.')
                     throw badRequest();
                 httpVersion += buffer[i];
                 state = DIGIT;
+                break;
+            case CR_STATE:
+                if (buffer[i] != CR)
+                    throw badRequest();
+                state = LF_STATE;
+                break;
+            case LF_STATE:
+                if (buffer[i] != LF)
+                    throw badRequest();
+                break;
+            
         }
     }
 }
