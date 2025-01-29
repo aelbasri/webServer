@@ -80,7 +80,7 @@ server:
     
     location :
       type : /upload
-      root_directory:  hala kkkkk              
+      root_directory:  hala kkkkk            
       allowed_methods:
         - POST
         - DELETE
