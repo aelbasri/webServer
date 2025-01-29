@@ -78,6 +78,9 @@ server:
 
       index  : index1.htm index1.html
     
+    CGI :
+      types :python
+      indix : /test/py
     location :
       type : /upload
       root_directory:  hala kkkkk            
