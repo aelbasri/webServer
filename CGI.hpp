@@ -16,7 +16,7 @@ private:
     std::string _path;
 public:
 
-    void RunPythonCgi;
+    void RunPythonCgi();
     CGI();
     ~CGI();
 };
