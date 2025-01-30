@@ -9,9 +9,10 @@ class Connection
         int _socket;
         Request _request;
         Response _response;
-        bool _isComplete;
+        // bool _isComplete;
     
     public:
+        Connection() {};
         Connection(int sock) : _socket(sock) {};
         void sockRead();
         // bool close()  const;

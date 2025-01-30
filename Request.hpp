@@ -24,6 +24,7 @@
 enum State
 {
     METHOD,
+    REQUEST_LINE,
     REQUEST_TARGET,
     QUERY_KEY,
     QUERY_VALUE,
@@ -33,8 +34,10 @@ enum State
     DOT,
     CR_STATE,
     LF_STATE,
-    REQUEST_LINE,
     HEADER,
+    FIELD_NAME,
+    OWS,
+    FIELD_VALUE,
     BODY,
     DONE
 };
@@ -51,7 +54,10 @@ struct parseBodyElement
 class Request
 {
     private:
-        State state;
+        State mainState;
+        State subState;
+
+
         int indexMethod;
         int indexHttp;
         char buffer[BUFF_SIZE];
@@ -63,22 +69,32 @@ class Request
 
         //query
         std::map<std::string, std::string> query;
-        std::string tmpKey;
-        std::string tmpValue;
+        std::string queryName;
+        std::string queryValue;
+
         //header
-        std::map<std::string, std::string> header;
+        std::map<std::string, std::string> headers;
+        std::string fieldName;
+        std::string fieldValue;
+
     public:
-        Request() : state(REQUEST_LINE), indexMethod(0),indexHttp(0) {}
+        Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue("") {}
         
-        void handle_request(char *buffer, int bytesRec);
+        void handle_request(int bytesRec);
         
-        State getState(void) const { return (state);}
+        State getState(void) const { return (mainState);}
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
-        int parseRequestLine(int socket, int &offset, int &nBytes);
-        int parseHeader(int socket, int &offset, int &nBytes);
-        int parseBody(int socket, int &offset, int &nBytes);
+        // int parseRequestLine(int socket, int &offset, int &nBytes);
+        // int parseHeader(int socket, int &offset, int &nBytes);
+        // int parseBody(int socket, int &offset, int &nBytes);
+        void parseRequestLine(int i);
+        void parseHeader(int i);
+        void parseBody(int i);
+
+        //delete me
+        void printRequestElement();
 
 
         class badRequest : public std::exception 

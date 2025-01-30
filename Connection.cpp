@@ -7,8 +7,10 @@ void Connection::sockRead()
 
     if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
         return ;  
-    if(!_isComplete)
+    if(_request.getState() == DONE)
     {
-        _request.handle_request(buffer, bytesRec);
+        _request.handle_request(bytesRec);
     }
+    else
+        _request.printRequestElement(); 
 }
