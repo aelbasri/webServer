@@ -458,8 +458,8 @@ void Request::parseHeader(char *buffer, int i)
             if(fieldName.empty() && fieldValue.empty())
             {
                 // if()
-                mainState = DONE;
-                // mainState = BODY;
+                // mainState = DONE;
+                mainState = BODY;
             }
             else
                 subState = FIELD_NAME;
@@ -484,22 +484,22 @@ void Request::printRequestElement()
     }
 }
 
-void Request::parseBody(char *buffer, int i)
+void Request::parseBody(char *buffer, int i, int bytesRec)
 {
     (void)i;
+    (void)bytesRec;
     (void)buffer;
-
     // if (headers.find("Content-Length") != headers.end())
     // {
-        
-    // }
+    //     std::ofstream content;
+    //     int toBeConsumed;
 
-    // switch(subState)
-    // {
-    //     case :
+    //     content.open("/tmp/.contentData", std::ios::binary);
+    //     content.write(buffer,)
     // }
-    
-    std::cout << "DONE" << std::endl;
+    // else if(headers["Transfer-Encoding"] == "chunked")
+    // {}
+    // std::cout << "DONE" << std::endl;
     mainState = DONE;
 
 }
@@ -518,7 +518,7 @@ void Request::handle_request(char *buffer, int bytesRec)
                 parseHeader(buffer, i);
                 break;
             case BODY:
-                parseBody(buffer, i);
+                parseBody(buffer, i, bytesRec);
                 break;
             default:
                 break;

@@ -77,6 +77,9 @@ class Request
         std::string fieldName;
         std::string fieldValue;
 
+        //body
+        int consumed;
+
     public:
         Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue("") {}
         
@@ -91,7 +94,7 @@ class Request
         // int parseBody(int socket, int &offset, int &nBytes);
         void parseRequestLine(char *buffer, int i);
         void parseHeader(char *buffer, int i);
-        void parseBody(char *buffer, int i);
+        void parseBody(char *buffer, int i, int bytesRec);
 
         //delete me
         void printRequestElement();
