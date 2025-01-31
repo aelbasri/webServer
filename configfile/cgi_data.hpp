@@ -1,21 +1,32 @@
 #pragma once
 
 #include "server_data.hpp"
+#include <fstream>
+#include <iostream>
+#include <cstdio>
+#include <ctime>
+#include <sys/time.h>
+#include <sstream>
 
-class cgi_data
+
+class CGI : public server
 {
 private:
-   std::string _type;
-   std::string _path;
+    server *_server;
+    std::string _PathOfExecutable;
+    std::string _type;
+    std::string _path;
 
 public:
-    cgi_data();
-    ~cgi_data();
+    CGI();
+    ~CGI();
 
     void SetPath(std::string __type);
     void SetType(std::string __indix);
 
     std::string GetPath();
     std::string GetType();
+
+    void RunCgi();
 };
 
