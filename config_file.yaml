@@ -81,6 +81,9 @@ server:
     CGI :
       types :python
       indix : /test/py
+    CGI :
+      types :PhP
+      indix : /test/phP
     location :
       type : /upload
       root_directory:  hala kkkkk            

@@ -14,6 +14,9 @@
 
 #include "error_pages.hpp"
 #include "location.hpp"
+#include "../Request.hpp"
+#include "../Response.hpp"
+#include "cgi_data.hpp"
 
 #include <fcntl.h>
 #include <iostream>
@@ -31,9 +34,7 @@
 #include <vector>
 #include <sys/epoll.h>
 
-
-#include "../Request.hpp"
-#include "../Response.hpp"
+class cgi_data;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
@@ -41,17 +42,18 @@
 class server : public error_pages 
 {
 private:
-    size_t _indixL;
-    int     _nembre_of_location;
-    int     _NPort;
-    std::vector<std::string> _port;
-    std::map<std::string, std::string> _CGI;
-    location *_location;
     std::string _content;
     std::string _name;
     std::string _host;
-    // std::string _port;
     long long _max_body_size;
+
+    size_t _indixL;
+    int     _nembre_of_location;
+    int     _NPort;
+
+    std::vector<std::string> _port;
+    std::vector<cgi_data> _CGI;
+    location *_location;
 
     int         _sock;
     struct addrinfo hints;
@@ -70,7 +72,7 @@ public:
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
     void setAddI(int newAddI);\
-    void SetCgi(std::map<std::string, std::string> __cgi);
+    void SetCgi(std::vector<cgi_data> __cgi);
 
     
     int Get_nembre_of_location();
@@ -79,7 +81,7 @@ public:
     std::string Get_host(); 
     std::vector<std::string> Get_port();
     long long Get_max_body_size();
-    std::map<std::string, std::string> GetCgi();
+    std::vector<cgi_data> GetCgi();
 
     int getSock() ;
     struct addrinfo &getHints() ;

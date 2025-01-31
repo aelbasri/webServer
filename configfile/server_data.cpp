@@ -12,9 +12,14 @@
 
 #include "server_data.hpp"
 
-server::server():_indixL(0),_location(nullptr),_name("localhost"), _host("127.0.0.0"),_max_body_size(1048576){
+server::server(){
+    _name = "localhost";
     _port.push_back("8080");
     _NPort = 0;
+    _location = nullptr;
+    _indixL = 0;
+    _max_body_size = 1048576;
+    _host = "127.0.0.0";
 }
 
 server::~server() {
@@ -127,11 +132,11 @@ void server::setAddI(int newAddI) {
 }
 
 
-std::map<std::string, std::string> server::GetCgi(){
+std::vector<cgi_data> server::GetCgi(){
     return _CGI;
 }
 
-void  server::SetCgi(std::map<std::string, std::string> __cgi){
+void  server::SetCgi(std::vector<cgi_data> __cgi){
     _CGI = __cgi;
 
 }
@@ -248,8 +253,8 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
+    cgi_data tmp;
 
-    std::map<std::string , std::string>::iterator it = _CGI.begin();
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
         found_at = lines[i].find(':');
@@ -259,18 +264,19 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
             continue;
         if (key == "types"){
             if (value == "bash" || value == "PhP" || value == "python")
-                _CGI.insert (it, std::pair<std::string , std::string>(key,value)); 
+                 tmp.SetType(value);
             else
                 throw std::runtime_error("Invalid script: " + trim(lines[i]));  
         }
         else if (key == "indix"){
             if (removeWhitespace(value).empty())
                 throw std::runtime_error("enter indix for CGI : " + trim(lines[i]));  
-            _CGI.insert (it, std::pair<std::string , std::string>(key,value)); 
+            tmp.SetPath(value);
         }
         else
             break;
     }
+    _CGI.push_back(tmp);
 }    
 
 void server::loadingDataserver(){
@@ -350,6 +356,17 @@ int server::run()
     struct addrinfo *res ,*p;
     int yes = 1;
     int addI;
+
+
+    std::cout << "---------- CGI ---------------------------------------" << std::endl;
+    for (std::vector<cgi_data>::size_type i = 0; i < _CGI.size(); i++)
+    {
+        std::cout << "the type is : " << _CGI[i].GetType() << std::endl;
+        std::cout << "the indix is : " << _CGI[i].GetPath() << std::endl;
+
+    }
+    
+    std::cout << "------------------------------------------------" << std::endl;
 
 
     for (std::vector<std::string>::size_type y = 0; y < _port.size();  y++)
