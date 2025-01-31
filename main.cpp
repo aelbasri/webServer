@@ -13,7 +13,7 @@ int main()
         // exit(0);
 
      }
-     catch (std::runtime_error e)
+     catch (std::runtime_error &e)
      {
          std::cout << "L***A JAAAY!: " << e.what();
      }

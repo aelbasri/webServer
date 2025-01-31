@@ -5,8 +5,12 @@ void Connection::sockRead()
     int bytesRec;
     char buffer[BUFF_SIZE];
 
+    fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
+    {
+        close(_socket);
         return ;
+    }
     std::cout << "=======bytes recived" << std::endl;
     write(1, buffer, bytesRec); 
     std::cout << "=======end:" << std::endl;

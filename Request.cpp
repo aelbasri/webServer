@@ -353,7 +353,7 @@ void Request::parseRequestLine(char *buffer, int i)
                 queryName = "";
                 queryValue = "";
             }
-            if (buffer[i] == ' ')
+            else if (buffer[i] == ' ')
             {
                 if (queryValue.empty())
                     throw badRequest();
@@ -362,6 +362,7 @@ void Request::parseRequestLine(char *buffer, int i)
             }
             else
                 queryName += buffer[i];
+            break;
         case HTTP_VERSION_:
             if (buffer[i] != "HTTP"[indexHttp])
                     throw badRequest();
@@ -424,23 +425,19 @@ void Request::parseHeader(char *buffer, int i)
                 if (fieldName.empty())
                     throw badRequest();
                 headers[fieldName] = "";
-                subState = OWS;
+                subState = FIELD_VALUE;
             }
             else
                 fieldName += buffer[i];
             break;
-        case OWS:
-            if (!isWhiteSpace(buffer[i]))
-                fieldValue += buffer[i];
-            subState = FIELD_VALUE;
-            break;
+        //we will discuss about OWS
+        // case OWS:
+        //     if (!isWhiteSpace(buffer[i]))
+        //         fieldValue += buffer[i];
+        //     subState = FIELD_VALUE;
+        //     break;
         case FIELD_VALUE:
-            if (buffer[i] != CR && isWhiteSpace(buffer[i]))
-            {
-                subState = CR_STATE;
-                headers[fieldName] = fieldValue;
-            }
-            else if (buffer[i] == CR)
+            if (buffer[i] == CR)
             {
                 subState = LF_STATE;
                 headers[fieldName] = fieldValue;
@@ -460,7 +457,9 @@ void Request::parseHeader(char *buffer, int i)
             }
             if(fieldName.empty() && fieldValue.empty())
             {
-                mainState = BODY;
+                // if()
+                mainState = DONE;
+                // mainState = BODY;
             }
             else
                 subState = FIELD_NAME;
@@ -500,7 +499,7 @@ void Request::parseBody(char *buffer, int i)
     //     case :
     // }
     
-
+    std::cout << "DONE" << std::endl;
     mainState = DONE;
 
 }
@@ -509,7 +508,7 @@ void Request::handle_request(char *buffer, int bytesRec)
 {
     for(int i = 0; i < bytesRec; i++)
     {
-        std::cout << "-->" <<buffer[i] << std::endl;
+        std::cout << "->" << i << "=>" << buffer[i] << std::endl;
         switch (mainState)
         {
             case REQUEST_LINE:
