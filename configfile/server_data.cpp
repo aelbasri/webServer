@@ -86,51 +86,41 @@ int server::getSock()  {
     return _sock;
 }
 
-    // Setter for _sock
 void server::setSock(int sock) {
    _sock = sock;
 }
 
-    // Getter for hints
 struct addrinfo &server::getHints()  {
     return hints;
 }
 
-    // Setter for hints
 void server::setHints( struct addrinfo& newHints) {
     hints = newHints;
 }
 
-    // Getter for res
 struct addrinfo* &server::getRes() {
     return res;
 }
 
-    // Setter for res
 void server::setRes(struct addrinfo* newRes) {
     res = newRes;
 }
 
-    // Getter for p
 struct addrinfo* &server::getP() {
     return p;
 }
 
-    // Setter for p
 void server::setP(struct addrinfo* newP) {
     p = newP;
 }
 
-    // Getter for addI
 int server::getAddI()  {
     return addI;
 }
 
-    // Setter for addI
 void server::setAddI(int newAddI) {
     addI = newAddI;
 }
-
 
 std::vector<cgi_data> server::GetCgi(){
     return _CGI;
@@ -244,8 +234,6 @@ void server::Getlocation(){
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
         }
-
-        
     }
 }
 
