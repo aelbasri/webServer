@@ -60,7 +60,7 @@ class Request
 
         int indexMethod;
         int indexHttp;
-        char buffer[BUFF_SIZE];
+        // char buffer[BUFF_SIZE];
 
         //request line
         std::string method;
@@ -80,7 +80,7 @@ class Request
     public:
         Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue("") {}
         
-        void handle_request(int bytesRec);
+        void handle_request(char *buffer, int bytesRec);
         
         State getState(void) const { return (mainState);}
         std::string getRequestTarget(void) const;
@@ -89,9 +89,9 @@ class Request
         // int parseRequestLine(int socket, int &offset, int &nBytes);
         // int parseHeader(int socket, int &offset, int &nBytes);
         // int parseBody(int socket, int &offset, int &nBytes);
-        void parseRequestLine(int i);
-        void parseHeader(int i);
-        void parseBody(int i);
+        void parseRequestLine(char *buffer, int i);
+        void parseHeader(char *buffer, int i);
+        void parseBody(char *buffer, int i);
 
         //delete me
         void printRequestElement();

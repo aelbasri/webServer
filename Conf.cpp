@@ -157,10 +157,13 @@ void Config::creatPoll()
                         // Throw exception
                         return;
                     }
+                    fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
                     connections[new_fd] = Connection(new_fd);
                 }
                 else
                 {
+                    std::cout << "connection socket:"<< _fd << std::endl;
+                    std::cout << "request socket:" << connections[_fd].getSocket() << std::endl;
                     connections[_fd].sockRead();
                     // handle_request(_fd);
                     // close(_fd);

@@ -268,13 +268,14 @@ void loadChunk(parseBodyElement &body, int &chunkSize)
 //     return (0);
 // }
 
-void Request::parseBody(int i)
+void Request::parseBody(char *buffer, int i)
 {
     (void)i;
+    (void)buffer;
     mainState = DONE;
 }
 
-void Request::parseRequestLine(int i)
+void Request::parseRequestLine(char *buffer, int i)
 {
     switch (subState)
     {
@@ -373,15 +374,16 @@ void Request::parseRequestLine(int i)
             if (buffer[i] == 'P')
                 subState = FORWARD_SKASH;
             httpVersion += buffer[i];
+            indexHttp++;
             break;
         case FORWARD_SKASH:
-            if (buffer[i] != '\'')
+            if (buffer[i] != '/')
                 throw badRequest();
             httpVersion += buffer[i];
             subState = DIGIT;
             break;
         case DIGIT:
-            if (buffer[i] < 0 || buffer[i] > 9)
+            if (buffer[i] < '0' || buffer[i] > '9')
                 throw badRequest();
             if (httpVersion[httpVersion.size() - 1] != '.')
                 subState = DOT;
@@ -411,7 +413,7 @@ void Request::parseRequestLine(int i)
     }
 }
 
-void Request::parseHeader(int i)
+void Request::parseHeader(char *buffer, int i)
 {
     switch (subState)
     {
@@ -439,7 +441,7 @@ void Request::parseHeader(int i)
             subState = FIELD_VALUE;
             break;
         case FIELD_VALUE:
-            if (isWhiteSpace(buffer[i]))
+            if (buffer[i] != CR && isWhiteSpace(buffer[i]))
             {
                 subState = CR_STATE;
                 headers[fieldName] = fieldValue;
@@ -448,8 +450,6 @@ void Request::parseHeader(int i)
             {
                 subState = LF_STATE;
                 headers[fieldName] = fieldValue;
-                fieldValue = "";
-                fieldName = "";
             }
             else
                 fieldValue += buffer[i];
@@ -461,9 +461,13 @@ void Request::parseHeader(int i)
             break;
         case LF_STATE:
             if (buffer[i] != LF)
+            {
                 throw badRequest();
+            }
             if(fieldName.empty() && fieldValue.empty())
-                subState = BODY;
+            {
+                mainState = BODY;
+            }
             else
                 subState = FIELD_NAME;
             fieldName = "";
@@ -487,21 +491,25 @@ void Request::printRequestElement()
     }
 }
 
-void Request::handle_request(int bytesRec)
+void Request::handle_request(char *buffer, int bytesRec)
 {
     for(int i = 0; i < bytesRec; i++)
     {
+        std::cout << "-->" <<buffer[i] << std::endl;
         switch (mainState)
         {
             case REQUEST_LINE:
-                parseRequestLine(i);
+                parseRequestLine(buffer, i);
                 break;
             case HEADER:
-                parseHeader(i);
+                parseHeader(buffer, i);
                 break;
             case BODY:
-                parseBody(i);
+            {
+                std::cout << "WSAL hna" << std::endl;
+                parseBody(buffer, i);
                 break;
+            }
             default:
                 break;
         }

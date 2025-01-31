@@ -15,6 +15,7 @@ class Connection
         Connection() {};
         Connection(int sock) : _socket(sock) {};
         void sockRead();
+        int getSocket() const {return _socket;};
         // bool close()  const;
         // void sockWrite() const;
 };
