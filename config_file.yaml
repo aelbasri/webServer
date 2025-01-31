@@ -79,7 +79,7 @@ server:
       index  : index1.htm index1.html
     
     CGI :
-      types :python
+      types : bash
       indix : /test/py
     CGI :
       types :PhP
