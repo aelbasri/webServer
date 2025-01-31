@@ -13,5 +13,8 @@ void Connection::sockRead()
     std::cout << "nbytes: " << bytesRec << std::endl; 
     _request.handle_request(buffer, bytesRec);
     if(_request.getState() == DONE)
+    {
         _request.printRequestElement(); 
+        close(_socket);
+    }
 }

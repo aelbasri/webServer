@@ -268,12 +268,6 @@ void loadChunk(parseBodyElement &body, int &chunkSize)
 //     return (0);
 // }
 
-void Request::parseBody(char *buffer, int i)
-{
-    (void)i;
-    (void)buffer;
-    mainState = DONE;
-}
 
 void Request::parseRequestLine(char *buffer, int i)
 {
@@ -491,6 +485,26 @@ void Request::printRequestElement()
     }
 }
 
+void Request::parseBody(char *buffer, int i)
+{
+    (void)i;
+    (void)buffer;
+
+    // if (headers.find("Content-Length") != headers.end())
+    // {
+        
+    // }
+
+    // switch(subState)
+    // {
+    //     case :
+    // }
+    
+
+    mainState = DONE;
+
+}
+
 void Request::handle_request(char *buffer, int bytesRec)
 {
     for(int i = 0; i < bytesRec; i++)
@@ -505,11 +519,8 @@ void Request::handle_request(char *buffer, int bytesRec)
                 parseHeader(buffer, i);
                 break;
             case BODY:
-            {
-                std::cout << "WSAL hna" << std::endl;
                 parseBody(buffer, i);
                 break;
-            }
             default:
                 break;
         }
