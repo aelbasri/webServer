@@ -553,21 +553,13 @@ void Request::parseBody(char *buffer, int &i, long bytesRec)
             if (buffer[i] == CR)
                 subState = LF_STATE;
             else
-            {
                 chunkSizeS += buffer[i];
-                std::cout << "yess:::" << chunkSizeS << std::endl;
-            }
             break;
-        case CR_STATE:
-            if (buffer[i] != CR)
-            {
-                std::cout << "daz mn hna" << std::endl;
-                throw badRequest();
-            }
-            subState = LF_STATE;
         case LF_STATE:
             if (buffer[i] != LF)
+            {
                 throw badRequest();
+            }
             else if (!chunkSizeS.empty())
             {
                 std::stringstream ss;
@@ -581,7 +573,7 @@ void Request::parseBody(char *buffer, int &i, long bytesRec)
                 break;
             }
             if(chunkSizeL == 0)
-                subState = DONE;
+                mainState = DONE;
             else
             {
                 toBeConsumed = 0;
@@ -594,9 +586,8 @@ void Request::parseBody(char *buffer, int &i, long bytesRec)
             contentFile.write(buffer + i, toBeConsumed);
             i += toBeConsumed;
             consumed += toBeConsumed;
-            std::cout << "To be consumed: " << toBeConsumed << " == Consumed: "<< consumed << " == Offset:" << i << " == chunk size:" << chunkSizeL << std::endl;
             if (consumed == chunkSizeL)
-                subState = CR_STATE;
+                subState = LF_STATE;
             break;
         default :
             break;
@@ -627,14 +618,9 @@ void Request::handle_request(char *buffer, long bytesRec)
             case BODY:
                 parseBody(buffer, i, bytesRec);
                 break;
-            // case DONE:
-            //     goto exit_loop;
-            //     break;
             default:
                 break;
         }
-        // exit_loop :
-        //     break;
     }
 }
 
