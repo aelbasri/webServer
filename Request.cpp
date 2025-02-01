@@ -361,7 +361,7 @@ void Request::parseRequestLine(char *buffer, int i)
                 subState = HTTP_VERSION_;
             }
             else
-                queryName += buffer[i];
+                queryValue += buffer[i];
             break;
         case HTTP_VERSION_:
             if (buffer[i] != "HTTP"[indexHttp])
@@ -408,6 +408,29 @@ void Request::parseRequestLine(char *buffer, int i)
     }
 }
 
+void ft_trim(std::string &fieldValue)
+{
+    size_t i = 0;
+    size_t len = fieldValue.size() - 1; 
+    while (isWhiteSpace(fieldValue[i]))
+    {
+        if (i > 1)
+            throw Request::badRequest();
+        i++;
+    }
+    
+    size_t start = i;
+    i = len;
+    while (isWhiteSpace(fieldValue[i]))
+    {
+        if (i < len)
+            throw Request::badRequest();
+        i--;
+    }
+    size_t end = i;
+    fieldValue = fieldValue.substr(start, end - start + 1);
+}
+
 void Request::parseHeader(char *buffer, int i)
 {
     switch (subState)
@@ -425,21 +448,23 @@ void Request::parseHeader(char *buffer, int i)
                 if (fieldName.empty())
                     throw badRequest();
                 headers[fieldName] = "";
-                subState = FIELD_VALUE;
+                subState = OWS;
             }
             else
                 fieldName += buffer[i];
             break;
         //we will discuss about OWS
-        // case OWS:
-        //     if (!isWhiteSpace(buffer[i]))
-        //         fieldValue += buffer[i];
-        //     subState = FIELD_VALUE;
-        //     break;
+        case OWS:
+            if (!isWhiteSpace(buffer[i]))
+                fieldValue += buffer[i];
+            subState = FIELD_VALUE;
+            break;
         case FIELD_VALUE:
             if (buffer[i] == CR)
             {
                 subState = LF_STATE;
+                //trim
+                ft_trim(fieldValue);
                 headers[fieldName] = fieldValue;
             }
             else
@@ -458,8 +483,8 @@ void Request::parseHeader(char *buffer, int i)
             if(fieldName.empty() && fieldValue.empty())
             {
                 // if()
-                // mainState = DONE;
-                mainState = BODY;
+                mainState = DONE;
+                // mainState = BODY;
             }
             else
                 subState = FIELD_NAME;
@@ -481,6 +506,12 @@ void Request::printRequestElement()
     for (std::map<std::string , std::string>::iterator ite = headers.begin(); ite != headers.end(); ite++)
     {
         std::cout << "{" << ite->first << "}:{" << ite->second << "}" << std::endl;
+    }
+
+    std::cout << "{==========}" << std::endl;
+    for (std::map<std::string , std::string>::iterator ite = query.begin(); ite != query.end(); ite++)
+    {
+        std::cout << "{" << ite->first << "}={" << ite->second << "}" << std::endl;
     }
 }
 
