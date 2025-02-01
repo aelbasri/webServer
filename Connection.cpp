@@ -1,9 +1,8 @@
 #include "Connection.hpp"
-#include "Response.hpp"
 
 void Connection::sockRead()
 {
-    int bytesRec;
+    long bytesRec;
     char buffer[BUFF_SIZE];
 
     if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
@@ -13,13 +12,12 @@ void Connection::sockRead()
     std::cout << "=======end:" << std::endl;
     std::cout << "nbytes: " << bytesRec << std::endl; 
     _request.handle_request(buffer, bytesRec);
-    std::cout << "Request handled" << std::endl;
-    // exit(11);
     if(_request.getState() == DONE)
     {
-        _request.printRequestElement(); 
-        std::cout << "Request printed" << std::endl;
+        std::cout << "Request Done" << std::endl;
+        // _request.printRequestElement(); 
         // close(_socket);
+        // _request.closeContentFile();
     }
 }
 
@@ -33,6 +31,7 @@ void Connection::sockWrite()
     }
     if (_response.getProgress() == SEND_RESPONSE)
     {
+        std::cout << "Lets send response" << std::endl;
         ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), 0);
         if (bytesSent == -1)
         {
@@ -52,6 +51,7 @@ void Connection::sockWrite()
             // _response.setTextBody("");
             // _response.setFile("");
             _response.setProgress(FINISHED);
+            std::cout << "Response Done" << std::endl;
         }
     }
 }
