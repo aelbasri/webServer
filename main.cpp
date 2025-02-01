@@ -1,5 +1,6 @@
 #include "configfile/server_data.hpp"
 #include "Conf.hpp"
+#include <exception>
 #include <iostream>
 
 int main()
@@ -13,7 +14,8 @@ int main()
         // exit(0);
 
      }
-     catch (std::runtime_error e)
+     // catch (std::runtime_error e)
+     catch (std::exception &e)
      {
          std::cout << "L***A JAAAY!: " << e.what();
      }

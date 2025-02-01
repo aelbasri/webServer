@@ -56,9 +56,8 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-<<<<<<< Updated upstream
 #define RESPONSE_CHUNCK_SIZE 100
-=======
+
 int Response::buildResponse(Request &request)
 {
     // Response response;
@@ -134,9 +133,6 @@ int Response::buildResponse(Request &request)
     _progress = SEND_RESPONSE;
     return (0);
 }
-
-#define RESPONSE_CHUNCK_SIZE 1024
->>>>>>> Stashed changes
 
 int Response::sendResponse(int clientSocket)
 {
