@@ -482,9 +482,13 @@ void Request::parseHeader(char *buffer, int i)
             }
             if(fieldName.empty() && fieldValue.empty())
             {
-                // if()
-                mainState = DONE;
-                // mainState = BODY;
+                mainState = BODY;
+                if (headers.find("Content-Length") != headers.end())
+                    subState = CONTLEN;
+                else if(headers["Transfer-Encoding"] == "chunked")
+                    subState = CHUNKS;
+                else
+                    mainState = DONE;
             }
             else
                 subState = FIELD_NAME;
@@ -517,21 +521,22 @@ void Request::printRequestElement()
 
 void Request::parseBody(char *buffer, int i, int bytesRec)
 {
-    (void)i;
-    (void)bytesRec;
-    (void)buffer;
-    // if (headers.find("Content-Length") != headers.end())
-    // {
-    //     std::ofstream content;
-    //     int toBeConsumed;
-
-    //     content.open("/tmp/.contentData", std::ios::binary);
-    //     content.write(buffer,)
-    // }
-    // else if(headers["Transfer-Encoding"] == "chunked")
-    // {}
+    // (void)i;
+    // (void)bytesRec;
+    // (void)buffer;
+    if (headers.find("Content-Length") != headers.end())
+    {
+        //check is open
+        // if (!contentFile.is_open())
+        //     contentFile.open("/tmp/.contentData", std::ios::binary);
+        // if ()
+        // int toBeConsumed;
+        // contentFile.write(buffer, );
+    }
+    else if(headers["Transfer-Encoding"] == "chunked")
+    {}
     // std::cout << "DONE" << std::endl;
-    mainState = DONE;
+    // mainState = DONE;
 
 }
 

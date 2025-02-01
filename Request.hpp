@@ -39,6 +39,8 @@ enum State
     OWS,
     FIELD_VALUE,
     BODY,
+    CONTLEN,
+    CHUNKS,
     DONE
 };
 
@@ -78,7 +80,9 @@ class Request
         std::string fieldValue;
 
         //body
-        // int consumed;
+        std::ofstream contentFile;
+        int consumed;
+
 
     public:
         Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue("") {}
