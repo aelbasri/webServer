@@ -41,6 +41,8 @@ enum State
     BODY,
     CONTLEN,
     CHUNKS,
+    CHUNK_HEADER,
+    LOAD_CHUNK,
     DONE
 };
 
@@ -83,6 +85,9 @@ class Request
         std::ofstream contentFile;
         long consumed;
         long contentLength;
+
+        std::string chunkSizeS;
+        long chunkSizeL;
 
 
     public:

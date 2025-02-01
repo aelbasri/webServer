@@ -489,7 +489,7 @@ void Request::parseHeader(char *buffer, int i)
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
                 }
                 else if(headers["Transfer-Encoding"] == "chunked")
-                    subState = CHUNKS;
+                    subState = CHUNK_HEADER;
                 else
                     mainState = DONE;
             }
@@ -541,9 +541,62 @@ void Request::parseBody(char *buffer, int &i, long bytesRec)
             i += toBeConsumed;
             consumed += toBeConsumed;
             if (consumed == contentLength)
+            {
                 mainState = DONE;
+                consumed = 0;
+                toBeConsumed = 0;
+            }
             break;
-        case CHUNKS :
+        case CHUNK_HEADER:
+            if (!contentFile.is_open())
+                contentFile.open("/tmp/.contentData", std::ios::binary);
+            if (buffer[i] == CR)
+                subState = LF_STATE;
+            else
+            {
+                chunkSizeS += buffer[i];
+                std::cout << "yess:::" << chunkSizeS << std::endl;
+            }
+            break;
+        case CR_STATE:
+            if (buffer[i] != CR)
+            {
+                std::cout << "daz mn hna" << std::endl;
+                throw badRequest();
+            }
+            subState = LF_STATE;
+        case LF_STATE:
+            if (buffer[i] != LF)
+                throw badRequest();
+            else if (!chunkSizeS.empty())
+            {
+                std::stringstream ss;
+                ss << std::hex << chunkSizeS;
+                ss >> chunkSizeL;
+                chunkSizeS = "";
+            }
+            else 
+            {
+                subState = CHUNK_HEADER;
+                break;
+            }
+            if(chunkSizeL == 0)
+                subState = DONE;
+            else
+            {
+                toBeConsumed = 0;
+                consumed = 0;
+                subState = LOAD_CHUNK;
+            }
+            break;
+        case LOAD_CHUNK:
+            toBeConsumed = std::min(bytesRec - i, chunkSizeL - consumed);      
+            contentFile.write(buffer + i, toBeConsumed);
+            i += toBeConsumed;
+            consumed += toBeConsumed;
+            std::cout << "To be consumed: " << toBeConsumed << " == Consumed: "<< consumed << " == Offset:" << i << " == chunk size:" << chunkSizeL << std::endl;
+            if (consumed == chunkSizeL)
+                subState = CR_STATE;
             break;
         default :
             break;
