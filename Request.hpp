@@ -81,13 +81,14 @@ class Request
 
         //body
         std::ofstream contentFile;
-        int consumed;
+        long consumed;
+        long contentLength;
 
 
     public:
-        Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue("") {}
+        Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0) {}
         
-        void handle_request(char *buffer, int bytesRec);
+        void handle_request(char *buffer, long bytesRec);
         
         State getState(void) const { return (mainState);}
         std::string getRequestTarget(void) const;
@@ -98,7 +99,9 @@ class Request
         // int parseBody(int socket, int &offset, int &nBytes);
         void parseRequestLine(char *buffer, int i);
         void parseHeader(char *buffer, int i);
-        void parseBody(char *buffer, int i, int bytesRec);
+        void parseBody(char *buffer, int &i, long bytesRec);
+
+        void closeContentFile();
 
         //delete me
         void printRequestElement();

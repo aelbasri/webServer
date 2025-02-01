@@ -2,7 +2,7 @@
 
 void Connection::sockRead()
 {
-    int bytesRec;
+    long bytesRec;
     char buffer[BUFF_SIZE];
 
     if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
@@ -16,5 +16,6 @@ void Connection::sockRead()
     {
         _request.printRequestElement(); 
         close(_socket);
+        _request.closeContentFile();
     }
 }

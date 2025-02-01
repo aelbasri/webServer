@@ -122,7 +122,7 @@ void Config::creatPoll()
         }
     }
 
-    std::map<int, Connection> connections;
+    std::map<int, Connection*> connections;
 
     while(1)
     {
@@ -158,13 +158,13 @@ void Config::creatPoll()
                         return;
                     }
                     fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-                    connections[new_fd] = Connection(new_fd);
+                    connections[new_fd] = new Connection(new_fd);
                 }
                 else
                 {
                     std::cout << "connection socket:"<< _fd << std::endl;
-                    std::cout << "request socket:" << connections[_fd].getSocket() << std::endl;
-                    connections[_fd].sockRead();
+                    std::cout << "request socket:" << connections[_fd]->getSocket() << std::endl;
+                    connections[_fd]->sockRead();
                     // handle_request(_fd);
                     // close(_fd);
 

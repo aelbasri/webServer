@@ -484,7 +484,10 @@ void Request::parseHeader(char *buffer, int i)
             {
                 mainState = BODY;
                 if (headers.find("Content-Length") != headers.end())
+                {
                     subState = CONTLEN;
+                    contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
+                }
                 else if(headers["Transfer-Encoding"] == "chunked")
                     subState = CHUNKS;
                 else
@@ -512,35 +515,50 @@ void Request::printRequestElement()
         std::cout << "{" << ite->first << "}:{" << ite->second << "}" << std::endl;
     }
 
-    std::cout << "{==========}" << std::endl;
-    for (std::map<std::string , std::string>::iterator ite = query.begin(); ite != query.end(); ite++)
-    {
-        std::cout << "{" << ite->first << "}={" << ite->second << "}" << std::endl;
-    }
+    // std::cout << "{==========}" << std::endl;
+    // for (std::map<std::string , std::string>::iterator ite = query.begin(); ite != query.end(); ite++)
+    // {
+    //     std::cout << "{" << ite->first << "}={" << ite->second << "}" << std::endl;
+    // }
 }
 
-void Request::parseBody(char *buffer, int i, int bytesRec)
+void Request::parseBody(char *buffer, int &i, long bytesRec)
 {
     // (void)i;
     // (void)bytesRec;
     // (void)buffer;
-    if (headers.find("Content-Length") != headers.end())
+    int toBeConsumed = 0;
+
+    switch (subState)
     {
-        //check is open
-        // if (!contentFile.is_open())
-        //     contentFile.open("/tmp/.contentData", std::ios::binary);
-        // if ()
-        // int toBeConsumed;
-        // contentFile.write(buffer, );
+        case CONTLEN :
+            //check is open
+            if (!contentFile.is_open())
+                contentFile.open("/tmp/.contentData", std::ios::binary);
+            toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
+            contentFile.write(buffer + i, toBeConsumed);
+            std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
+            i += toBeConsumed;
+            consumed += toBeConsumed;
+            if (consumed == contentLength)
+                mainState = DONE;
+            break;
+        case CHUNKS :
+            break;
+        default :
+            break;
     }
-    else if(headers["Transfer-Encoding"] == "chunked")
-    {}
     // std::cout << "DONE" << std::endl;
     // mainState = DONE;
 
 }
 
-void Request::handle_request(char *buffer, int bytesRec)
+void Request::closeContentFile()
+{
+    contentFile.close();
+}
+
+void Request::handle_request(char *buffer, long bytesRec)
 {
     for(int i = 0; i < bytesRec; i++)
     {
@@ -556,9 +574,14 @@ void Request::handle_request(char *buffer, int bytesRec)
             case BODY:
                 parseBody(buffer, i, bytesRec);
                 break;
+            // case DONE:
+            //     goto exit_loop;
+            //     break;
             default:
                 break;
         }
+        // exit_loop :
+        //     break;
     }
 }
 
