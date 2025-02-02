@@ -10,8 +10,18 @@ void Connection::sockRead()
         return ;
     write(1, buffer, bytesRec); 
     std::cout << "=======end:" << std::endl;
-    std::cout << "nbytes: " << bytesRec << std::endl; 
-    _request.handle_request(buffer, bytesRec);
+    std::cout << "nbytes: " << bytesRec << std::endl;
+
+    try
+    {
+        _request.handle_request(buffer, bytesRec);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+    
+    
     //after completing the request
     if(_request.getState() == DONE)
     {
