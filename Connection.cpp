@@ -25,8 +25,44 @@ void Connection::sockRead()
     //after completing the request
     if(_request.getState() == DONE)
     {
-        _request.printRequestElement(); 
-        close(_socket);
-        _request.closeContentFile();
+        std::cout << "Request Done" << std::endl;
+        // _request.printRequestElement(); 
+        // close(_socket);
+        // _request.closeContentFile();
+    }
+}
+
+void Connection::sockWrite()
+{
+    if (_request.getState() != DONE || _response.getProgress() == FINISHED)
+        return;
+    if (_response.getProgress() == BUILD_RESPONSE)
+    {
+        _response.buildResponse(_request);
+    }
+    if (_response.getProgress() == SEND_RESPONSE)
+    {
+        std::cout << "Lets send response" << std::endl;
+        ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), 0);
+        if (bytesSent == -1)
+        {
+            // Throw exception
+            return;
+        }
+        _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
+        if (_response.getTotalBytesSent() == _response.getResponse().size())
+        {
+            _response.setSent(true);
+            // _response.setTotalBytesSent(0);
+            // _response.setResponse("");
+            // _response.setHttpVersion("");
+            // _response.setStatusCode(0);
+            // _response.setReasonPhrase("");
+            // _response.getHeaders().clear();
+            // _response.setTextBody("");
+            // _response.setFile("");
+            _response.setProgress(FINISHED);
+            std::cout << "Response Done" << std::endl;
+        }
     }
 }

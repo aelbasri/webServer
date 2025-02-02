@@ -9,6 +9,7 @@ NAME = webserv
 all : $(NAME)
 
 run: re
+	clear
 	./$(NAME)
 
 %.o : %.cpp 

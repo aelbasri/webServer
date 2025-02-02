@@ -58,6 +58,82 @@ void Response::setContentLength()
 
 #define RESPONSE_CHUNCK_SIZE 1024
 
+int Response::buildResponse(Request &request)
+{
+    // Response response;
+    std::string path("./assets");
+    
+    if (request.getRequestTarget() == "/")
+        path += "/index.html";
+    else
+        path += request.getRequestTarget();
+    std::ifstream file(path.c_str());
+
+    std::cout << "PATH: "  << path << std::endl;
+
+    if (request.getRequestTarget() == "/redirection")
+    {
+	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
+
+        std::cout << "Ridddddaryrikchn" << std::endl;
+        path = "./assets/302.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        setHttpVersion(HTTP_VERSION);
+        setStatusCode(302);
+        setReasonPhrase("Moved Temporarily");
+        setFile(path);
+
+        addHeader(std::string("Connection"), connection);
+        /*response.sendResponse(new_fd);*/
+        // int sent = 0;
+        // while (!sent)
+        //     sent = sendResponse(_sock);
+    }
+    else if (!file.good()) {
+        std::cout << "iror nat found" << std::endl;
+        path = "./assets/404.html";
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        setHttpVersion(HTTP_VERSION);
+        setStatusCode(404);
+        setReasonPhrase("Not Found");
+        setFile(path);
+
+        setContentLength();
+        addHeader(std::string("Content-Type"), contentType);
+        addHeader(std::string("Connection"), connection);
+        /*response.sendResponse(new_fd);*/
+        // int sent = 0;
+        // while (!sent)
+        //     sent = sendResponse(_sock);
+    }
+    else
+    {
+        std::cout << "saad t3asb "  << path << std::endl;
+
+        std::string connection = "close";
+        std::string contentType = getMimeType(path);
+
+        setHttpVersion(HTTP_VERSION);
+        setStatusCode(200);
+        setReasonPhrase("OK");
+        setFile(path);
+
+        setContentLength();
+        addHeader(std::string("Content-Type"), contentType);
+        addHeader(std::string("Connection"), connection);
+        /*response.sendResponse(new_fd);*/
+        // int sent = 0;
+        // while (!sent)
+        //     sent = sendResponse(_sock);
+    }
+    _progress = SEND_RESPONSE;
+    return (0);
+}
+
 int Response::sendResponse(int clientSocket)
 {
     if (_sent)
@@ -96,7 +172,7 @@ int Response::sendResponse(int clientSocket)
     _totalBytesSent += bytesSent;
     std::cout << "***********Sent: " << _totalBytesSent << std::endl;
     if (_totalBytesSent == _response.size())
-        _sent = true;
+        _sent = true, _progress = FINISHED;
     return (_sent);
 }
 

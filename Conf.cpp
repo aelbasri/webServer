@@ -114,7 +114,7 @@ void Config::creatPoll()
     {
         struct epoll_event ev;
         ev.data.fd = _server[i].getSock();
-        ev.events = EPOLLIN;
+        ev.events = EPOLLIN | EPOLLOUT;
         if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock(), &ev) == -1)
         {
             // Throw exception )
@@ -149,10 +149,14 @@ void Config::creatPoll()
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
-                    evlist[i].data.fd = new_fd;
-                    evlist[i].events = EPOLLIN;
 
-                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &evlist[i]) == -1)
+                    struct epoll_event ev;
+                    ev.data.fd = new_fd;
+                    ev.events = EPOLLIN;
+                    // evlist[i].data.fd = new_fd;
+                    // evlist[i].events = EPOLLIN;
+
+                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
                     {
                         // Throw exception
                         return;
@@ -165,6 +169,9 @@ void Config::creatPoll()
                     std::cout << "connection socket:"<< _fd << std::endl;
                     std::cout << "request socket:" << connections[_fd]->getSocket() << std::endl;
                     connections[_fd]->sockRead();
+                    std::cout << "connection socket READ: "<< _fd << std::endl;
+                    std::cout << "request socket READ: " << connections[_fd].getSocket() << std::endl;
+                    connections[_fd].sockRead();
                     // handle_request(_fd);
                     // close(_fd);
 
@@ -178,7 +185,14 @@ void Config::creatPoll()
             else if(evlist[i].events & EPOLLOUT)
             {
                 // send response
-                //connections[_fd].sockWrite();
+                std::cout << "connection socket WRITE: "<< _fd << std::endl;
+                std::cout << "request socket WRITE: " << connections[_fd].getSocket() << std::endl;
+                connections[_fd].sockWrite();
+                if (connections[_fd].toBeClosed())
+                {
+                    close(_fd);
+                    connections.erase(_fd);
+                }
             }
         }
     }
