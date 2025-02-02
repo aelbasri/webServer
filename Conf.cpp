@@ -152,7 +152,7 @@ void Config::creatPoll()
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
-                    ev.events = EPOLLIN;
+                    ev.events = EPOLLIN | EPOLLOUT;
                     // evlist[i].data.fd = new_fd;
                     // evlist[i].events = EPOLLIN;
 
@@ -170,8 +170,8 @@ void Config::creatPoll()
                     std::cout << "request socket:" << connections[_fd]->getSocket() << std::endl;
                     connections[_fd]->sockRead();
                     std::cout << "connection socket READ: "<< _fd << std::endl;
-                    std::cout << "request socket READ: " << connections[_fd].getSocket() << std::endl;
-                    connections[_fd].sockRead();
+                    std::cout << "request socket READ: " << connections[_fd]->getSocket() << std::endl;
+                    connections[_fd]->sockRead();
                     // handle_request(_fd);
                     // close(_fd);
 
@@ -186,9 +186,9 @@ void Config::creatPoll()
             {
                 // send response
                 std::cout << "connection socket WRITE: "<< _fd << std::endl;
-                std::cout << "request socket WRITE: " << connections[_fd].getSocket() << std::endl;
-                connections[_fd].sockWrite();
-                if (connections[_fd].toBeClosed())
+                std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
+                connections[_fd]->sockWrite();
+                if (connections[_fd]->toBeClosed())
                 {
                     close(_fd);
                     connections.erase(_fd);
