@@ -9,7 +9,7 @@
 #include <sstream>
 
 
-class CGI : public server
+class CGI
 {
 private:
     server *_server;
