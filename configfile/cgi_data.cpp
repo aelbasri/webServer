@@ -4,10 +4,6 @@
 
 CGI::CGI(){}
 
-
-CGI::CGI(){}
-
-
 CGI::~CGI()
 {
 
