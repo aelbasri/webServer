@@ -122,11 +122,11 @@ void server::setAddI(int newAddI) {
     addI = newAddI;
 }
 
-std::vector<cgi_data> server::GetCgi(){
+std::vector<CGI> server::GetCgi(){
     return _CGI;
 }
 
-void  server::SetCgi(std::vector<cgi_data> __cgi){
+void  server::SetCgi(std::vector<CGI> __cgi){
     _CGI = __cgi;
 
 }
@@ -241,7 +241,7 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
-    cgi_data tmp;
+    CGI tmp;
 
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
@@ -347,7 +347,7 @@ int server::run()
 
 
     std::cout << "---------- CGI ---------------------------------------" << std::endl;
-    for (std::vector<cgi_data>::size_type i = 0; i < _CGI.size(); i++)
+    for (std::vector<CGI>::size_type i = 0; i < _CGI.size(); i++)
     {
         std::cout << "the type is : " << _CGI[i].GetType() << std::endl;
         std::cout << "the indix is : " << _CGI[i].GetPath() << std::endl;
