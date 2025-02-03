@@ -61,7 +61,7 @@ void Response::setContentLength()
 int Response::buildResponse(Request &request)
 {
     // Response response;
-    std::string path("./assets");
+    std::string path("./");
     
     if (request.getRequestTarget() == "/")
         path += "/index.html";
