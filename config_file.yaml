@@ -49,6 +49,7 @@ server:
 
 
 server:
+<<<<<<< HEAD
     name           :           "zaki el khadir"     
     host: 127.0.0.2
     port:   1800
@@ -77,6 +78,16 @@ server:
         - POST
 
       index  : index1.htm index1.html
+=======
+  name           :           "zaki el khadir"     
+  host: 127.0.0.1
+  port:   4000
+  max_body_size :       1
+  error_pages:
+    410: /errors/404.html
+    420: /errors/403.html
+    300:  /errors/4045.html
+>>>>>>> origin/request
     
     CGI :
       types : bash

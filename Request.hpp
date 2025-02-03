@@ -18,12 +18,31 @@
 
 
 #define BUFF_SIZE 1024
+#define CR '\r'
+#define LF '\n'
 
-enum state
+enum State
 {
+    METHOD,
     REQUEST_LINE,
+    REQUEST_TARGET,
+    QUERY_KEY,
+    QUERY_VALUE,
+    HTTP_VERSION_,
+    FORWARD_SKASH,
+    DIGIT,
+    DOT,
+    CR_STATE,
+    LF_STATE,
     HEADER,
+    FIELD_NAME,
+    OWS,
+    FIELD_VALUE,
     BODY,
+    CONTLEN,
+    CHUNKS,
+    CHUNK_HEADER,
+    LOAD_CHUNK,
     DONE
 };
 
@@ -39,25 +58,66 @@ struct parseBodyElement
 class Request
 {
     private:
-        char buffer[BUFF_SIZE];
+        State mainState;
+        State subState;
+
+
+        int indexMethod;
+        int indexHttp;
+        // char buffer[BUFF_SIZE];
 
         //request line
         std::string method;
         std::string requestTarget;
         std::string httpVersion;
 
-        // bool is_comlete;
-        // state stat;
-        // int sock;
+        //query
+        std::map<std::string, std::string> query;
+        std::string queryName;
+        std::string queryValue;
 
         //header
-        /*std::map<std::string, std::string> header;*/
-        std::map<std::string, std::string> header;
+        std::map<std::string, std::string> headers;
+        std::string fieldName;
+        std::string fieldValue;
+
+        //body
+        std::ofstream contentFile;
+        long consumed;
+        long contentLength;
+
+        std::string chunkSizeS;
+        long chunkSizeL;
+
+
     public:
+        Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0) {}
+        
+        void handle_request(char *buffer, long bytesRec);
+        
+        State getState(void) const { return (mainState);}
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
-        int parseRequestLine(int socket, int &offset, int &nBytes);
-        int parseHeader(int socket, int &offset, int &nBytes);
-        int parseBody(int socket, int &offset, int &nBytes);
+        // int parseRequestLine(int socket, int &offset, int &nBytes);
+        // int parseHeader(int socket, int &offset, int &nBytes);
+        // int parseBody(int socket, int &offset, int &nBytes);
+        void parseRequestLine(char *buffer, int i);
+        void parseHeader(char *buffer, int i);
+        void parseBody(char *buffer, int &i, long bytesRec);
+
+        void closeContentFile();
+
+        //delete me
+        void printRequestElement();
+
+
+        class badRequest : public std::exception 
+        {
+            public :
+                const char *what() const throw()
+                {
+                    return ("Bad request");
+                }
+        };
 };
