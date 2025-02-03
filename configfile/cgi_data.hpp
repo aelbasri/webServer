@@ -9,10 +9,9 @@
 #include <sstream>
 
 
-class CGI : public server
+class CGI
 {
 private:
-    server *_server;
     std::string _PathOfExecutable;
     std::string _type;
     std::string _path;
