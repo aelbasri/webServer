@@ -125,6 +125,8 @@ int Response::buildResponse(Request &request)
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
         addHeader(std::string("Connection"), connection);
+
+        // std::co
         /*response.sendResponse(new_fd);*/
         // int sent = 0;
         // while (!sent)

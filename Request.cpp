@@ -606,7 +606,7 @@ void Request::handle_request(char *buffer, long bytesRec)
 {
     for(int i = 0; i < bytesRec; i++)
     {
-        std::cout << "->" << i << "=>" << buffer[i] << std::endl;
+        // std::cout << "->" << i << "=>" << buffer[i] << std::endl;
         switch (mainState)
         {
             case REQUEST_LINE:
