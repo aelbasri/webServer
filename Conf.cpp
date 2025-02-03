@@ -171,7 +171,7 @@ void Config::creatPoll()
                     connections[_fd]->sockRead();
                     std::cout << "connection socket READ: "<< _fd << std::endl;
                     std::cout << "request socket READ: " << connections[_fd]->getSocket() << std::endl;
-                    connections[_fd]->sockRead();
+                    // connections[_fd]->sockRead();
                     // handle_request(_fd);
                     // close(_fd);
 
