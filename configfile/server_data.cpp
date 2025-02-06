@@ -61,16 +61,16 @@ long long server::Get_max_body_size(){
     return(_max_body_size);
 }
 
-int server::Get_nembre_of_location(){
-    return(_nembre_of_location);
+int server::Get_number_of_location(){
+    return(_number_of_location);
 }
 
-void server::Set_nembre_of_location(int __nembre_of_location){
-    _nembre_of_location = __nembre_of_location;
+void server::Set_number_of_location(int __number_of_location){
+    _number_of_location = __number_of_location;
 }
 
 void server::new_location(){
-    _location = new location[_nembre_of_location];
+    _location = new location[_number_of_location];
 }
 
 
@@ -211,7 +211,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
 }
 
 void server::Getlocation(){
-    for (int i = 0; i < _nembre_of_location; i++)
+    for (int i = 0; i < _number_of_location; i++)
     {
         // std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
         // std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;

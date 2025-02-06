@@ -15,6 +15,7 @@
 #include "error_pages.hpp"
 #include "location.hpp"
 
+#include <clocale>
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
@@ -42,7 +43,7 @@ class server : public error_pages
 {
 private:
     size_t _indixL;
-    int     _nembre_of_location;
+    int     _number_of_location;
     location *_location;
     std::string _content;
     std::string _name;
@@ -57,7 +58,7 @@ private:
 
 public:
     void new_location();
-    void Set_nembre_of_location(int _nembre_of_location);
+    void Set_number_of_location(int _number_of_location);
     void Set_content(std::string __content);
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
@@ -70,7 +71,7 @@ public:
     // void Set
 
     
-    int Get_nembre_of_location();
+    int Get_number_of_location();
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
@@ -88,6 +89,10 @@ public:
     virtual ~server();
 
 
+    location* GetLocations() const
+    {
+        return (_location);
+    }
 
     void Getlocation();
     void LoidingAllowedMethods(std::vector<std::string> lines,size_t &i);

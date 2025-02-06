@@ -50,7 +50,7 @@ void Config::loadContentServer() {
         _server[i].Set_content(serverContent);        
         if (nextServerPos != std::string::npos)
             pos = nextServerPos;
-        _server[i].Set_nembre_of_location(_server[i].CheckNumberOfLocation());
+        _server[i].Set_number_of_location(_server[i].CheckNumberOfLocation());
         _server[i].new_location();
         _server[i].loadingDataserver();
     }
@@ -114,7 +114,7 @@ void Config::creatPoll()
     {
         struct epoll_event ev;
         ev.data.fd = _server[i].getSock();
-        ev.events = EPOLLIN | EPOLLOUT;
+        ev.events = EPOLLIN;
         if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock(), &ev) == -1)
         {
             // Throw exception )
@@ -132,23 +132,30 @@ void Config::creatPoll()
             // Throw exception
             return;
         }
+        // std::cout << "nbrReady: " << nbrReady << std::endl;
         for(int i = 0; i < nbrReady; i++)
         {
             int _fd = evlist[i].data.fd;
             if(evlist[i].events & EPOLLIN)
             {
                 int server_fd = -1;
+                server tmp;
+                // std::cout << "aji nakhdo siservi" << std::endl;
                 for(size_t j = 0; j < _nembre_of_server; j++)
                 {
                     if (_fd == _server[j].getSock())
                     {
                         server_fd = _server[j].getSock();
+                        tmp = _server[j];
                         break;
                     }
                 }
+                // std::cout << "khdina" << std::endl;
+                // std::cout << tmp.getSock() << std::endl;
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
+                    // std::cout << "accept new_fd: " << new_fd << std::endl;
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
@@ -162,30 +169,18 @@ void Config::creatPoll()
                         return;
                     }
                     fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-                    connections[new_fd] = new Connection(new_fd);
+                    connections[new_fd] = new Connection(new_fd, tmp);
+                    // std::cout << "new connection: " << new_fd << std::endl;
                 }
                 else
                 {
-                    std::cout << "connection socket:"<< _fd << std::endl;
-                    std::cout << "request socket:" << connections[_fd]->getSocket() << std::endl;
+                    std::cout << "request socket READ:" << connections[_fd]->getSocket() << std::endl;
                     connections[_fd]->sockRead();
-                    std::cout << "connection socket READ: "<< _fd << std::endl;
-                    std::cout << "request socket READ: " << connections[_fd]->getSocket() << std::endl;
-                    // connections[_fd]->sockRead();
-                    // handle_request(_fd);
-                    // close(_fd);
-
-                    // if (connections[evlist[i].data.fd].close())
-                    // {
-                    //     // remove vector
-                    //     close(_fd);
-                    // }
                 }
             }
             else if(evlist[i].events & EPOLLOUT)
             {
                 // send response
-                std::cout << "connection socket WRITE: "<< _fd << std::endl;
                 std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
                 connections[_fd]->sockWrite();
                 if (connections[_fd]->toBeClosed())

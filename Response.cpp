@@ -1,4 +1,11 @@
 #include "Response.hpp"
+#include "configfile/location.hpp"
+#include <clocale>
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 
 void Response::setHttpVersion(const std::string &version)
 {
@@ -56,7 +63,87 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-#define RESPONSE_CHUNCK_SIZE 1024
+int Response::buildResponse2(Request &request, server &serv)
+{
+    // find the location match
+    location* locationMatch = getLocationMatch(
+                                    request.getRequestTarget(),
+                                    serv.GetLocations(),
+                                    serv.Get_number_of_location());
+    if (locationMatch == nullptr)
+    {
+        std::cout << "Location not found" << std::endl;
+        // return 404
+        return (1);
+    }
+    std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
+
+    // check if the file exists
+    std::string path = locationMatch->GetRoot_directory();
+    if ((path.size() > 0 && request.getRequestTarget().size() > 0) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
+        path += "/";
+    path += request.getRequestTarget();
+    std::ifstream file(path.c_str());
+    std::cout << "Looking for file: " << path << std::endl;
+    if (!file.good())
+    {
+        std::cout << "File not found" << std::endl;
+        // return 404
+        return (1);
+    }
+    std::cout << "File found " << path << std::endl;
+    file.close();
+
+    // check if the method is allowed
+    if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+    {
+        std::cout << "Method not allowed" << std::endl;
+        // return 405
+        return (1);
+    }
+    std::cout << "Method allowed: " << request.getMethod() << std::endl;
+
+
+    // check if the file is a directory
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) < 0)
+    {
+        std::cout << "Stat error" << std::endl;
+        // return 500
+        return (1);
+    }
+    if (S_ISDIR(fileStat.st_mode))
+    {
+        std::cout << "Is a directory" << std::endl;
+        // if autoindex is on, return the list of files, else
+        // handle index files
+        path += locationMatch->GetIndex();
+    }
+    else if (S_ISREG(fileStat.st_mode))
+    {
+        std::cout << "Is a file" << std::endl;
+    }
+    else
+    {
+        std::cout << "Not a file or directory" << std::endl;
+        // return 500
+        return (1);
+    }
+
+    // check if the file exists
+    std::cout << "Now looking for file: " << path << std::endl;
+    std::ifstream file2(path.c_str());
+    if (!file2.good())
+    {
+        std::cout << "File not found" << std::endl;
+        // return 404
+        return (1);
+    }
+    std::cout << "File found " << path << std::endl;
+    // generate response
+
+    return (0);
+}
 
 int Response::buildResponse(Request &request)
 {
@@ -85,11 +172,8 @@ int Response::buildResponse(Request &request)
         setReasonPhrase("Moved Temporarily");
         setFile(path);
 
+        addHeader(std::string("Location"), location);
         addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
     }
     else if (!file.good()) {
         std::cout << "iror nat found" << std::endl;
@@ -105,10 +189,6 @@ int Response::buildResponse(Request &request)
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
         addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
     }
     else
     {
@@ -125,21 +205,7 @@ int Response::buildResponse(Request &request)
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
         addHeader(std::string("Connection"), connection);
-
-        // std::co
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
     }
-    _progress = SEND_RESPONSE;
-    return (0);
-}
-
-int Response::sendResponse(int clientSocket)
-{
-    if (_sent)
-        return (1);
 
     if (_response.empty())
     {
@@ -162,19 +228,6 @@ int Response::sendResponse(int clientSocket)
         _response = responseStream.str();
     }
 
-    // Send the response in chunks
-    /*ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, _response.size() - _totalBytesSent, 0);*/
-    size_t remaining = _response.size() - _totalBytesSent;
-    ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, (RESPONSE_CHUNCK_SIZE < remaining) ? RESPONSE_CHUNCK_SIZE : remaining, 0);
-    if (bytesSent == -1)
-    {
-        perror("Failed to send response");
-        return (-1);
-    }
-    _totalBytesSent += bytesSent;
-    std::cout << "***********Sent: " << _totalBytesSent << std::endl;
-    if (_totalBytesSent == _response.size())
-        _sent = true, _progress = FINISHED;
-    return (_sent);
+    _progress = SEND_RESPONSE;
+    return (0);
 }
-

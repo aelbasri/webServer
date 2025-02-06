@@ -38,6 +38,7 @@ void Connection::sockWrite()
         return;
     if (_response.getProgress() == BUILD_RESPONSE)
     {
+        _response.buildResponse2(_request, _server);
         _response.buildResponse(_request);
     }
     if (_response.getProgress() == SEND_RESPONSE)

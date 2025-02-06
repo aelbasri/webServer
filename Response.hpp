@@ -2,11 +2,6 @@
 
 #include <string>
 #include <cstring>
-#include <fstream>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
 #include <cstdio>
 #include <map>
 #include <cmath>
@@ -16,8 +11,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "Request.hpp"
+#include "configfile/server_data.hpp"
 
 #define HTTP_VERSION "HTTP/1.1"
+#define RESPONSE_CHUNCK_SIZE 1024
 
 enum Progress
 {
@@ -66,9 +63,12 @@ class Response
         void setContentLength(void); 
 
         int buildResponse(Request &request);
+        int buildResponse2(Request &request, server &serv);
         bool responseSent() const { return _sent; };
 
         int sendResponse(int socket);
 };
 
 std::string getMimeType(const std::string& filename);
+location* getLocationMatch(std::string target, location *locations, int size);
+bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods);

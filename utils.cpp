@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "configfile/location.hpp"
 
 std::map<std::string, std::string> initializeMimeTypes() {
     std::map<std::string, std::string> mimeTypes;
@@ -41,5 +42,46 @@ std::string getMimeType(const std::string& filename) {
         }
     }
     return "application/octet-stream";
+}
+
+bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods) {
+    for (size_t i = 0; i < allowedMethods.size(); i++) {
+        if (method == allowedMethods[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+location* getLocationMatch(std::string target, location *locations, int size) {
+    location *best_match = nullptr;
+    size_t best_match_length = 0;
+
+    // std::cout << "size: " << size << std::endl;
+
+    for (int i = 0; i < size; i++) {
+        std::string locType = locations[i].GetType_of_location();
+        // std::cout << "Lets compare: " << locType << " with " << target << std::endl;
+        if (locType == target) {
+            return &locations[i];
+        }
+        if (target.find(locType) == 0 && locType.length() > best_match_length) {
+            best_match = &locations[i];
+            best_match_length = locType.length();
+        }
+    }
+    // std::cout << std::endl;
+
+    if (best_match == nullptr)
+    {
+        // std::cout << "walo abro" << std::endl;
+        for (int i = 0; i < size; i++) {
+            if (locations[i].GetType_of_location() == "/") {
+                best_match = &locations[i];
+                break;
+            }
+        }
+    }
+    return (best_match);
 }
 
