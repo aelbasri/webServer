@@ -84,4 +84,3 @@ location* getLocationMatch(std::string target, location *locations, int size) {
     }
     return (best_match);
 }
-

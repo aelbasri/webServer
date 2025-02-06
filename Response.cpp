@@ -74,6 +74,7 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "Location not found" << std::endl;
         // return 404
+        setError(404, "Not Found", *this, serv);
         return (1);
     }
     std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
@@ -89,6 +90,7 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "File not found" << std::endl;
         // return 404
+        setError(404, "Not Found", *this, serv);
         return (1);
     }
     std::cout << "File found " << path << std::endl;
@@ -99,6 +101,7 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "Method not allowed" << std::endl;
         // return 405
+        setError(405, "Method Not Allowed", *this, serv);
         return (1);
     }
     std::cout << "Method allowed: " << request.getMethod() << std::endl;
@@ -110,6 +113,7 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "Stat error" << std::endl;
         // return 500
+        setError(500, "Internal Server Error", *this, serv);
         return (1);
     }
     if (S_ISDIR(fileStat.st_mode))
@@ -127,6 +131,7 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "Not a file or directory" << std::endl;
         // return 500
+        setError(500, "Internal Server Error", *this, serv);
         return (1);
     }
 
@@ -137,11 +142,51 @@ int Response::buildResponse2(Request &request, server &serv)
     {
         std::cout << "File not found" << std::endl;
         // return 404
+        setError(404, "Not Found", *this, serv);
         return (1);
     }
+
     std::cout << "File found " << path << std::endl;
     // generate response
+    std::string connection = "close";
+    std::string contentType = getMimeType(path);
 
+    setHttpVersion(HTTP_VERSION);
+    setStatusCode(200);
+    setReasonPhrase("OK");
+    setFile(path);
+
+    setContentLength();
+    addHeader(std::string("Content-Type"), contentType);
+    addHeader(std::string("Connection"), connection);
+
+    return (0);
+}
+
+int Response::createResponseStream()
+{
+    if (_response.empty())
+    {
+        // Build the response line
+        std::ostringstream responseStream;
+        responseStream << _httpVersion << " " << _statusCode << " " << _reasonPhrase << "\r\n";
+
+        // Add headers
+        std::map<std::string, std::string>::const_iterator it;
+        for (it = _headers.begin(); it != _headers.end(); it++)
+        {
+            responseStream << it->first << ": " << it->second << "\r\n";
+        }
+        responseStream << "\r\n";
+        if (!_file.empty())
+            responseStream << _file;
+        else if (!_textBody.empty())
+            responseStream << _textBody;
+
+        _response = responseStream.str();
+    }
+
+    _progress = SEND_RESPONSE;
     return (0);
 }
 

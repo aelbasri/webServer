@@ -2,29 +2,32 @@
 server:
     name           :           "zaki el khadir"     
     host: 127.0.0.1
-    port:   1800
+    port:   3000
     max_body_size :       1456
 
     error_pages:
-      410: /errors/404.html
-      420: /errors/403.html
-      300:  /errors/4045.html
+      404: /home/saad/code/1337/webServer/assets/errors/404.html
+      500: /home/saad/code/1337/webServer/assets/errors/50x.html
+      302:  /home/saad/code/1337/webServer/assets/errors/302.html
     location :
       type : /
-      root_directory: /root2
+      # root_directory: /root2
+      root_directory: /home/saad/code/1337/webServer/assets
       allowed_methods:
         - POST
         - DELETE
         - GET
-      index  : index2.htm index2.html
+      index  : index.html
       # upload_dir :  hala madrid
     location :
-      type : zara
-      root_directory: /root1
+      type : /zara
+      root_directory: /home/saad/code/1337/webServer/assets
       allowed_methods:
         - POST
+        - DELETE
 
-      index  : index1.htm index1.html
+        #index  : index1.htm index1.html
+      index  : page.html
     
     location :
       type : /upload
@@ -43,90 +46,3 @@ server:
         - GET
       root_directory: /root              
       index  : index.htm index.html
-
-
-server:
-  name           :           "zaki el khadir"     
-  host: 127.0.0.1
-  port:   4000
-  max_body_size :       1
-  error_pages:
-    410: /errors/404.html
-    420: /errors/403.html
-    300:  /errors/4045.html
-    
-  location :
-    type : /
-    root_directory: /root2
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    index  : index2.htm index2.html
-    # upload_dir :  hala madrid
-  location :
-    type : zara
-    root_directory: /root1
-    allowed_methods:
-      - POST
-    index  : index1.htm index1.html
-  
-  location :
-    type : /upload
-    root_directory:  hala kkkkk              
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    index  : index.htm index.html
-  location :
-    type : uploadafvc a gv
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    root_directory: /root              
-    index  : index.htm index.html
-    
-server:
-  name           :           "zaki el khadir"     
-  host: 127.0.0.1
-  port:   3000
-  max_body_size :       1
-  error_pages:
-    410: /errors/404.html
-    420: /errors/403.html
-    300:  /errors/4045.html
-    
-  location :
-    type : /
-    root_directory: /root2
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    index  : index2.htm index2.html
-    # upload_dir :  hala madrid
-  location :
-    type : zara
-    root_directory: /root1
-    allowed_methods:
-      - POST
-    index  : index1.htm index1.html
-  
-  location :
-    type : /upload
-    root_directory:  hala kkkkk              
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    index  : index.htm index.html
-  location :
-    type : uploadafvc a gv
-    allowed_methods:
-      - POST
-      - DELETE
-      - GET
-    root_directory: /root              
-    index  : index.htm index.html
