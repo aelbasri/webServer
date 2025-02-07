@@ -7,12 +7,15 @@ pipeline{
     stages{
         stage('Build'){
             steps{
-                echo 'Build'
-                sh'''
-                git stash
-                git checkout request
-                git pull
-                '''
+                withCredentials(['c8604461-0dd1-47d7-9af8-faaeefaab89f'])
+                {
+                    echo 'Build'
+                    sh'''
+                    git stash
+                    git checkout request
+                    git pull
+                    '''
+                }
             }
         }
         stage('Test'){
