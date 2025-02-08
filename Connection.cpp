@@ -34,6 +34,8 @@ void Connection::sockRead()
 
 void Connection::sockWrite()
 {
+    if (!_server)
+        throw std::runtime_error("Server not found");
     if (_request.getState() != DONE || _response.getProgress() == FINISHED)
         return;
     if (_response.getProgress() == BUILD_RESPONSE)

@@ -8,8 +8,8 @@ std::string NumberToString ( T Number )
     return ss.str();
 }
 
-std::string getErrorPage(int status, server &serv) {
-    std::map<std::string, std::string> errorPages = serv.GetErr();
+std::string getErrorPage(int status, server *serv) {
+    std::map<std::string, std::string> errorPages = serv->GetErr();
 
     std::string statusStr = NumberToString(status);
     std::map<std::string, std::string>::const_iterator it = errorPages.find(statusStr);
@@ -33,7 +33,7 @@ std::string getCustomHtmlString(int status, std::string message)
     return customHtml;
 }
 
-int setError(int status, std::string message, Response &response, server &serv) {
+int setError(int status, std::string message, Response &response, server *serv) {
     std::string customHtml = "";
     std::string path = getErrorPage(status, serv);
     if (path.empty()) {

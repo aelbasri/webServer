@@ -63,7 +63,7 @@ class Response
         void setContentLength(void); 
 
         int buildResponse(Request &request);
-        int buildResponse2(Request &request, server &serv);
+        int buildResponse2(Request &request, server *serv);
         int createResponseStream();
         bool responseSent() const { return _sent; };
 
@@ -73,4 +73,4 @@ class Response
 std::string getMimeType(const std::string& filename);
 location* getLocationMatch(std::string target, location *locations, int size);
 bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods);
-int setError(int status, std::string message, Response &response, server &serv);
+int setError(int status, std::string message, Response &response, server *serv);

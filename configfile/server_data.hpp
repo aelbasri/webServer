@@ -87,7 +87,12 @@ public:
 
     server();
     virtual ~server();
+    server(const server &server)
+    {
+        *this = server;
+    }
 
+    server& operator=(const server &server);
 
     location* GetLocations() const
     {
