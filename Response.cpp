@@ -63,13 +63,20 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-int Response::buildResponse2(Request &request, server &serv)
+int Response::buildResponse2(Request &request, server *serv)
 {
+    if (!serv)
+    {
+        std::cout << "Server not found" << std::endl;
+        // return 500
+        setError(500, "Internal Server Error", *this, serv);
+        return (1);
+    }
     // find the location match
     location* locationMatch = getLocationMatch(
                                     request.getRequestTarget(),
-                                    serv.GetLocations(),
-                                    serv.Get_number_of_location());
+                                    serv->GetLocations(),
+                                    serv->Get_number_of_location());
     if (locationMatch == nullptr)
     {
         std::cout << "Location not found" << std::endl;

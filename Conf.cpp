@@ -139,19 +139,17 @@ void Config::creatPoll()
             if(evlist[i].events & EPOLLIN)
             {
                 int server_fd = -1;
-                server tmp;
+                server *tmp;
                 // std::cout << "aji nakhdo siservi" << std::endl;
                 for(size_t j = 0; j < _nembre_of_server; j++)
                 {
                     if (_fd == _server[j].getSock())
                     {
                         server_fd = _server[j].getSock();
-                        tmp = _server[j];
+                        tmp = &_server[j];
                         break;
                     }
                 }
-                // std::cout << "khdina" << std::endl;
-                // std::cout << tmp.getSock() << std::endl;
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
