@@ -186,6 +186,7 @@ void Config::creatPoll()
                 if (connections[_fd]->toBeClosed())
                 {
                     close(_fd);
+                    delete connections[_fd];
                     connections.erase(_fd);
                 }
             }
