@@ -26,7 +26,7 @@ void Connection::sockRead()
     if(_request.getState() == DONE)
     {
         std::cout << "Request Done" << std::endl;
-        // _request.printRequestElement(); 
+        _request.printRequestElement(); 
         // close(_socket);
         _request.closeContentFile();
     }
