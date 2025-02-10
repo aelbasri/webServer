@@ -38,9 +38,7 @@ std::string generate_unique_path() {
     return ss.str();
 }
 
-void   CGI::RunCgi() {
-    std::string filename = generate_unique_path();
-    
+std::string  CGI::RunCgi() {    
         std::stringstream  command ;
         command << _type.c_str() << _path;
         std::string tmp = command.str();
@@ -48,7 +46,7 @@ void   CGI::RunCgi() {
     FILE* pipe = popen(tmp.c_str(), "r");
     if (!pipe) {
         std::cerr << "Error executing command." << std::endl;
-        return;
+        return NULL;
     }
 
     char buffer[128];
@@ -58,18 +56,5 @@ void   CGI::RunCgi() {
     }
 
     pclose(pipe);
-
-
-    std::ofstream file;
-    file.open(filename.c_str());
-
-    if (!file.is_open())
-    {
-        std::cout << "Error in creating file!" << std::endl;
-        return;
-    }
-    file << "<html><body><h1>Script Output</h1><pre>" << result << "</pre></body></html>";
-
-    _PathOfExecutable = filename;
-    return ;
+    return(result);
 }
