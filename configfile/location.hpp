@@ -21,6 +21,7 @@ private:
     std::string _index;
     std::string _root_directory;
     std::string _upload_dir;
+    std::string _rewrite;
     std::vector<std::string>  _allowed_methods;
     long long _max_body_size;
     
@@ -35,6 +36,7 @@ public:
     void SetAllowed_methods(std::vector<std::string> &target);
     void SetUpload_dir(std::string __upload_dir);
     void SetMax_body_size(long long __max_body_size);
+    void SetRewrite(std::string __rewrite);
 
     std::vector<std::string> GetAllowed_methods();
     std::string GetType_of_location();    
@@ -42,5 +44,7 @@ public:
     std::string GetRoot_directory();    
     std::string GetUpload_dir();
     long long GetMax_body_size();
+    std::string  GetRewrite();
+
     
 };

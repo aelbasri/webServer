@@ -11,8 +11,6 @@ int main()
 
         _Server.loadContentServer();
         _Server.SetupServers();
-        // exit(0);
-
      }
      catch (std::runtime_error &e)
      {

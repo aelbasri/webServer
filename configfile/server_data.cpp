@@ -38,7 +38,15 @@ server& server::operator=(const server &server)
     return *this;
 }
 
-server::server():_indixL(0),_location(nullptr),_name("localhost"), _host("127.0.0.0"),_port("80"),_max_body_size(1048576){}
+server::server(){
+    _name = "localhost";
+    _port.push_back("8080");
+    _NPort = 0;
+    _location = nullptr;
+    _indixL = 0;
+    _max_body_size = 1048576;
+    _host = "127.0.0.0";
+}
 
 server::~server() {
     if (_location != nullptr) {
@@ -59,7 +67,7 @@ void server::Set_host(std::string __host){
     _host = __host;
 }
 
-void server::Set_port(std::string __port){
+void server::Set_port(std::vector<std::string> __port){
     _port = __port;
 }
 
@@ -79,7 +87,7 @@ std::string server::Get_host(){
     return(_host) ;
 }
 
-std::string server::Get_port(){
+std::vector<std::string> server::Get_port(){
     return(_port);
 }
 
@@ -148,6 +156,17 @@ int server::getAddI()  {
 void server::setAddI(int newAddI) {
     addI = newAddI;
 }
+
+
+std::vector<cgi_data> server::GetCgi(){
+    return _CGI;
+}
+
+void  server::SetCgi(std::vector<cgi_data> __cgi){
+    _CGI = __cgi;
+
+}
+
 int server::CheckNumberOfLocation(){
     std::string sentence = "location";
     int cont = 0;
@@ -225,6 +244,9 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         else if (key == "index") {
             _location[_indixL].SetIndex(value);
         }
+        else if (key == "rewrite") {
+            _location[_indixL].SetRewrite(value);
+        }
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
             i--;
@@ -239,17 +261,52 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
 void server::Getlocation(){
     for (int i = 0; i < _number_of_location; i++)
     {
-        // std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-        // std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        // std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        // std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
-        // for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
-        //     std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        // }   
+        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
+        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
+        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
+        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
+
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
+            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
+        }
+
+        
     }
 }
 
+void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
+    size_t found_at;
+    std::string key;
+    std::string value;
+    cgi_data tmp;
+
+    while (i++ < lines.size() -1) {
+        if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
+        found_at = lines[i].find(':');
+        key = trim(lines[i].substr(0, found_at));
+        value = trim(lines[i].substr(found_at + 1));
+        if (found_at == std::string::npos) 
+            continue;
+        if (key == "types"){
+            if (value == "bash" || value == "PhP" || value == "python")
+                 tmp.SetType(value);
+            else
+                throw std::runtime_error("Invalid script: " + trim(lines[i]));  
+        }
+        else if (key == "indix"){
+            if (removeWhitespace(value).empty())
+                throw std::runtime_error("enter indix for CGI : " + trim(lines[i]));  
+            tmp.SetPath(value);
+        }
+        else
+            break;
+    }
+    _CGI.push_back(tmp);
+}    
+
 void server::loadingDataserver(){
+    int flage = 0;
     size_t found_at;
     std::string key;
     std::string value;
@@ -277,10 +334,16 @@ void server::loadingDataserver(){
             }
         }
         else if (key == "port") {
-            _port = value;
-            if (!isValidPort(_port)) {
-                throw std::runtime_error("Invalid port: " + _port);
+            if (!isValidPort(value)) {
+                throw std::runtime_error("Invalid port: " + value);
             }
+            if (flage == 0){
+                _port[_NPort] = value;
+                flage = 1;
+            }
+            else
+                _port.push_back(value);
+            _NPort++;
         }
         else if (key == "max_body_size") {
             if (!parseBodySize(value, _max_body_size)) {
@@ -294,9 +357,13 @@ void server::loadingDataserver(){
         else if (key == "location") {
             loadingLocationContent(lines, i);
             i--;
-        }   
+        }
+        else if (key == "CGI") {
+            loadingCgiContent(lines, i);
+            i--;
+        }
     }
-    Getlocation();
+    // Getlocation();
 }
 
 
@@ -316,48 +383,67 @@ int server::run()
     int yes = 1;
     int addI;
 
-    memset(&hints, 0,  sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
 
-    if ((addI = getaddrinfo(_host.c_str(), _port.c_str(), &hints, &res)) != 0)
+    std::cout << "---------- CGI ---------------------------------------" << std::endl;
+    for (std::vector<cgi_data>::size_type i = 0; i < _CGI.size(); i++)
     {
-        std::cerr << gai_strerror(addI) << std::endl;
-        return -1;
+        std::cout << "the type is : " << _CGI[i].GetType() << std::endl;
+        std::cout << "the indix is : " << _CGI[i].GetPath() << std::endl;
+
     }
+    
+    std::cout << "------------------------------------------------" << std::endl;
 
-    for(p = res; p; p = p->ai_next)
+
+    for (std::vector<std::string>::size_type y = 0; y < _port.size();  y++)
     {
-        if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-            continue;
-        if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+        
+        memset(&hints, 0,  sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+
+        std::cout << "aaa chabab" << _port[y].c_str() << std::endl;
+        if ((addI = getaddrinfo(_host.c_str(), _port[y].c_str(), &hints, &res)) != 0)
         {
-            perror("setsockopt");
+            std::cerr << gai_strerror(addI) << std::endl;
+            return -1;
+        }
+
+        for(p = res; p; p = p->ai_next)
+        {
+            if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+                continue;
+            if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+            {
+                perror("setsockopt");
+                return (-1);
+                /*exit(1);*/
+            }
+            //bind
+            if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
+                continue;
+            break;
+        }
+
+        freeaddrinfo(res); 
+        if (!p)
+        {
+            perror("bind failed");
             return (-1);
             /*exit(1);*/
         }
-        //bind
-        if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
-            continue;
-        break;
-    }
 
-    freeaddrinfo(res); 
-    if (!p)
-    {
-        perror("bind failed");
-        return (-1);
-        /*exit(1);*/
+        if (listen(_sock, 10) == -1)
+        {
+            perror("listen() failed");
+            return (-1);
+            /*exit(1);*/
+        }
+        /* code */
+        std::cout << "Server is listening on " << _host << ":" << _port[y] << std::endl; 
     }
+    
 
-    if (listen(_sock, 10) == -1)
-    {
-        perror("listen() failed");
-        return (-1);
-        /*exit(1);*/
-    }
-
-    std::cout << "Server is listening on " << _host << ":" << _port << std::endl; 
     return (0);
 }
 

@@ -14,6 +14,9 @@
 
 #include "error_pages.hpp"
 #include "location.hpp"
+#include "../Request.hpp"
+#include "../Response.hpp"
+#include "cgi_data.hpp"
 
 #include <clocale>
 #include <fcntl.h>
@@ -32,24 +35,26 @@
 #include <vector>
 #include <sys/epoll.h>
 
-
-#include "../Request.hpp"
-#include "../Response.hpp"
+class cgi_data;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
 
-class server : public error_pages
+class server : public error_pages 
 {
 private:
-    size_t _indixL;
     int     _number_of_location;
-    location *_location;
     std::string _content;
     std::string _name;
     std::string _host;
-    std::string _port;
     long long _max_body_size;
+
+    size_t _indixL;
+    int     _NPort;
+
+    std::vector<std::string> _port;
+    std::vector<cgi_data> _CGI;
+    location *_location;
 
     int         _sock;
     struct addrinfo hints;
@@ -62,21 +67,22 @@ public:
     void Set_content(std::string __content);
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
-    void Set_port(std::string __port);
+    void Set_port(std::vector<std::string> __port);
     void Set_max_body_size(long long __max_body_size);
     void setSock(int sock);
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
-    void setAddI(int newAddI);
-    // void Set
+    void setAddI(int newAddI);\
+    void SetCgi(std::vector<cgi_data> __cgi);
 
     
     int Get_number_of_location();
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
-    std::string Get_port();
+    std::vector<std::string> Get_port();
     long long Get_max_body_size();
+    std::vector<cgi_data> GetCgi();
 
     int getSock() ;
     struct addrinfo &getHints() ;
@@ -105,6 +111,7 @@ public:
     void loadingDataserver();
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
+    void loadingCgiContent(std::vector<std::string> lines,size_t &i);
     int run();
 
     public:
