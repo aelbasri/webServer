@@ -26,6 +26,6 @@ public:
     std::string GetPath();
     std::string GetType();
 
-    void RunCgi();
+    std::string RunCgi();
 };
 
