@@ -58,20 +58,99 @@ void Response::setContentLength()
 
 #define RESPONSE_CHUNCK_SIZE 1024
 
+
+
+// std::string RunCgi() {    
+//         std::stringstream  command;
+//         command << "g++ " << "cgi-bin/login.cpp";
+//         std::string tmp = command.str();
+
+//     FILE* pipe = popen(tmp.c_str(), "r");
+//     if (!pipe) {
+//         std::cerr << "Error executing command." << std::endl;
+//         return NULL;
+//     }
+
+//     char buffer[128];
+//     std::string result = "";
+//     while (fgets(buffer, sizeof(buffer), pipe) != 0) {
+//         result += buffer;
+//     }
+
+//     pclose(pipe);
+//     return result;
+
+// }
+
+
 int Response::buildResponse(Request &request)
 {
     // Response response;
-    std::string path("./");
+
+
     
+    std::string path("./");
+        
     if (request.getRequestTarget() == "/")
-        path += "/index.html";
+        path += "assets/authentification/login.html";
     else
         path += request.getRequestTarget();
     std::ifstream file(path.c_str());
 
     std::cout << "PATH: "  << path << std::endl;
 
-    if (request.getRequestTarget() == "/redirection")
+    if (request.getRequestTarget().find("cgi-bin/login.cgi")){
+        // std::cout << "*******************> " << request.headers(); << std::endl;
+
+        // size_t usernamePos =  request. .find("username=");
+        // size_t passwordPos = input.find("&password=");
+
+        // if (usernamePos != string::npos && passwordPos != string::npos) {
+        //     username = urlDecode(input.substr(usernamePos + 9, passwordPos - (usernamePos + 9)));
+        //     password = urlDecode(input.substr(passwordPos + 10));
+        // }
+
+        // // Hardcoded credentials for demonstration
+        // std::string validUsername = "admin";
+        // std::string validPassword = "password";
+
+        // // Check credentials
+        // if (username == validUsername && password == validPassword) {
+        //     cout << "<h1>Login Successful!</h1>";
+        //     cout << "<p>Welcome, " << username << "!</p>";
+        // } else {
+        //     cout << "<h1>Login Failed</h1>";
+        //     cout << "<p>Invalid username or password.</p>";
+        // }
+    // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // path = RunCgi();
+        // std::string connection = "close";
+        // std::string contentType = getMimeType(path);
+
+        // setHttpVersion(HTTP_VERSION);
+        // setStatusCode(200);
+        // setReasonPhrase("OK");
+        // setFile(path);
+
+        // setContentLength();
+        // addHeader(std::string("Content-Type"), contentType);
+        // addHeader(std::string("Connection"), connection);
+    }
+     if(request.getRequestTarget() == "/redirection")
     {
 	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
 
