@@ -68,7 +68,6 @@ int Response::buildResponse2(Request &request, server *serv)
     if (!serv)
     {
         std::cout << "Server not found" << std::endl;
-        // return 500
         setError(500, "Internal Server Error", *this, serv);
         return (1);
     }
@@ -80,11 +79,19 @@ int Response::buildResponse2(Request &request, server *serv)
     if (locationMatch == nullptr)
     {
         std::cout << "Location not found" << std::endl;
-        // return 404
         setError(404, "Not Found", *this, serv);
         return (1);
     }
     std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
+
+    // check for redirection 
+    if (!locationMatch->GetRewrite().empty())
+    {
+        std::string redirectURL = locationMatch->GetRewrite();
+        addHeader(std::string("Location"), redirectURL);
+        setError(302, "Moved Permanently", *this, serv);
+        return (1);
+    }
 
     // check if the file exists
     std::string path = locationMatch->GetRoot_directory();
