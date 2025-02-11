@@ -63,7 +63,7 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-int Response::buildResponse2(Request &request, server *serv)
+int Response::buildResponse(Request &request, server *serv)
 {
     if (!serv)
     {
@@ -89,170 +89,98 @@ int Response::buildResponse2(Request &request, server *serv)
     {
         std::string redirectURL = locationMatch->GetRewrite();
         addHeader(std::string("Location"), redirectURL);
-        setError(302, "Moved Permanently", *this, serv);
+        setError(301, "Moved Permanently", *this, serv);
         return (1);
     }
 
     // check if the file exists
     std::string path = locationMatch->GetRoot_directory();
-    if ((path.size() > 0 && request.getRequestTarget().size() > 0) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
+    if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
-    std::ifstream file(path.c_str());
-    std::cout << "Looking for file: " << path << std::endl;
-    if (!file.good())
+
+
+    // if directory, if path not ends with '/` redirect to path/ , then check if there is index, else directory listing
+    // else, regular file handling
+    FileState fileState = getFileState(path.c_str());
+    if (fileState == FILE_DOES_NOT_EXIST)
     {
         std::cout << "File not found" << std::endl;
         // return 404
         setError(404, "Not Found", *this, serv);
         return (1);
     }
-    std::cout << "File found " << path << std::endl;
-    file.close();
-
-    // check if the method is allowed
-    if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+    else if (fileState == FILE_IS_DIRECTORY)
     {
-        std::cout << "Method not allowed" << std::endl;
-        // return 405
-        setError(405, "Method Not Allowed", *this, serv);
-        return (1);
-    }
-    std::cout << "Method allowed: " << request.getMethod() << std::endl;
-
-
-    // check if the file is a directory
-    struct stat fileStat;
-    if (stat(path.c_str(), &fileStat) < 0)
-    {
-        std::cout << "Stat error" << std::endl;
-        // return 500
-        setError(500, "Internal Server Error", *this, serv);
-        return (1);
-    }
-    if (S_ISDIR(fileStat.st_mode))
-    {
-        std::cout << "Is a directory" << std::endl;
-        // if autoindex is on, return the list of files, else
-        // handle index files
-        path += locationMatch->GetIndex();
-    }
-    else if (S_ISREG(fileStat.st_mode))
-    {
-        std::cout << "Is a file" << std::endl;
-    }
-    else
-    {
-        std::cout << "Not a file or directory" << std::endl;
-        // return 500
-        setError(500, "Internal Server Error", *this, serv);
-        return (1);
-    }
-
-    // check if the file exists
-    std::cout << "Now looking for file: " << path << std::endl;
-    std::ifstream file2(path.c_str());
-    if (!file2.good())
-    {
-        std::cout << "File not found" << std::endl;
-        // return 404
-        setError(404, "Not Found", *this, serv);
-        return (1);
-    }
-
-    std::cout << "File found " << path << std::endl;
-    // generate response
-    std::string connection = "close";
-    std::string contentType = getMimeType(path);
-
-    setHttpVersion(HTTP_VERSION);
-    setStatusCode(200);
-    setReasonPhrase("OK");
-    setFile(path);
-
-    setContentLength();
-    addHeader(std::string("Content-Type"), contentType);
-    addHeader(std::string("Connection"), connection);
-
-    return (0);
-}
-
-int Response::createResponseStream()
-{
-    if (_response.empty())
-    {
-        // Build the response line
-        std::ostringstream responseStream;
-        responseStream << _httpVersion << " " << _statusCode << " " << _reasonPhrase << "\r\n";
-
-        // Add headers
-        std::map<std::string, std::string>::const_iterator it;
-        for (it = _headers.begin(); it != _headers.end(); it++)
+        std::cout << "FILE IS A DIRECTORY " << path <<  std::endl;
+        if (!path.empty() && path[path.size() - 1] != '/')
         {
-            responseStream << it->first << ": " << it->second << "\r\n";
+            // choose host and port of request !!!!
+            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
+            std::cout << "Redirect to " << redirectURL << std::endl;
+            addHeader(std::string("Location"), redirectURL);
+            setError(301, "Moved Permanently", *this, serv);
+            return (1);
         }
-        responseStream << "\r\n";
-        if (!_file.empty())
-            responseStream << _file;
-        else if (!_textBody.empty())
-            responseStream << _textBody;
+        if (!locationMatch->GetIndex().empty())
+        {
+            std::string dirIndexPath = path + locationMatch->GetIndex();
+            FileState indexState = getFileState(dirIndexPath.c_str());
+            if (indexState == FILE_IS_REGULAR)
+            {
+                std::string connection = "close";
+                std::string contentType = getMimeType(dirIndexPath);
 
-        _response = responseStream.str();
+                setHttpVersion(HTTP_VERSION);
+                setStatusCode(200);
+                setReasonPhrase("OK");
+                setFile(dirIndexPath);
+                setContentLength();
+                addHeader(std::string("Content-Type"), contentType);
+                addHeader(std::string("Connection"), connection);
+                return (0);
+            }
+            // else: if cant open file, return 403 (I GUESS !!)
+        }
+        bool directoryListing = true; // this should come from config file
+        if (directoryListing)
+        {
+            std::string htmlDirectoryListing = listDirectoryHTML(path.c_str());
+            if (htmlDirectoryListing.empty()) // if empty, handle error (probably syscall failed) 500 response
+            {
+                std::cout << "dirlist error" << std::endl;
+                // return 500
+                setError(500, "Internal Server Error", *this, serv);
+                return (1);
+            }
+            
+            std::string connection = "close";
+            std::string contentType = getMimeType("foo.html");
+
+            setHttpVersion(HTTP_VERSION);
+            setStatusCode(200);
+            setReasonPhrase("OK");
+            setTextBody(htmlDirectoryListing);
+            setContentLength();
+            addHeader(std::string("Content-Type"), contentType);
+            addHeader(std::string("Connection"), connection);
+            return (0);
+        }
     }
-
-    _progress = SEND_RESPONSE;
-    return (0);
-}
-
-int Response::buildResponse(Request &request)
-{
-    // Response response;
-    std::string path("./assets");
-    
-    if (request.getRequestTarget() == "/")
-        path += "/index.html";
-    else
-        path += request.getRequestTarget();
-    std::ifstream file(path.c_str());
-
-    std::cout << "PATH: "  << path << std::endl;
-
-    if (request.getRequestTarget() == "/redirection")
+    else if (fileState == FILE_IS_REGULAR)
     {
-	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
+        // check if the method is allowed
+        if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+        {
+            std::cout << "Method not allowed" << std::endl;
+            // return 405
+            setError(405, "Method Not Allowed", *this, serv);
+            return (1);
+        }
+        std::cout << "Method allowed: " << request.getMethod() << std::endl;
 
-        std::cout << "Ridddddaryrikchn" << std::endl;
-        path = "./assets/302.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
-
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(302);
-        setReasonPhrase("Moved Temporarily");
-        setFile(path);
-
-        addHeader(std::string("Location"), location);
-        addHeader(std::string("Connection"), connection);
-    }
-    else if (!file.good()) {
-        std::cout << "iror nat found" << std::endl;
-        path = "./assets/404.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
-
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(404);
-        setReasonPhrase("Not Found");
-        setFile(path);
-
-        setContentLength();
-        addHeader(std::string("Content-Type"), contentType);
-        addHeader(std::string("Connection"), connection);
-    }
-    else
-    {
-        std::cout << "saad t3asb "  << path << std::endl;
-
+        std::cout << "File found " << path << std::endl;
+        // generate response
         std::string connection = "close";
         std::string contentType = getMimeType(path);
 
@@ -264,8 +192,15 @@ int Response::buildResponse(Request &request)
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
         addHeader(std::string("Connection"), connection);
+        return (0);
     }
 
+
+    return (0);
+}
+
+int Response::createResponseStream()
+{
     if (_response.empty())
     {
         // Build the response line

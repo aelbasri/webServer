@@ -40,13 +40,11 @@ void Connection::sockWrite()
         return;
     if (_response.getProgress() == BUILD_RESPONSE)
     {
-        _response.buildResponse2(_request, _server);
+        _response.buildResponse(_request, _server);
         _response.createResponseStream();
-        // _response.buildResponse(_request);
     }
     if (_response.getProgress() == SEND_RESPONSE)
     {
-        // _response.sendResponse(_socket);
         ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), 0);
         if (bytesSent == -1)
         {

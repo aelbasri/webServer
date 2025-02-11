@@ -157,3 +157,84 @@ int parseCGI(std::string &CgiOutput, Response &response) {
 
     return 0;
 }
+
+FileState getFileState(const char *path) {
+    struct stat fileInfo;
+    if (stat(path, &fileInfo) == 0) {
+        if (S_ISREG(fileInfo.st_mode)) {
+            return FILE_IS_REGULAR;
+        } else if (S_ISDIR(fileInfo.st_mode)) {
+            return FILE_IS_DIRECTORY;
+        } else {
+            return FILE_IS_OTHER;
+        }
+    } else {
+        return FILE_DOES_NOT_EXIST;
+    }
+}
+
+// deepseek a3chiri 
+std::string listDirectoryHTML(const char *path) {
+    std::ostringstream htmlOutput;
+
+    DIR *dir = opendir(path);
+    if (!dir) {
+        htmlOutput << "Error: Could not open directory " << path << std::endl;
+        return htmlOutput.str();
+    }
+
+    htmlOutput << "<html>\n"
+               << "<head><title>Index of " << path << "</title></head>\n"
+               << "<body>\n"
+               << "<h1>Index of " << path << "</h1><hr><pre>\n"
+               << "<a href=\"../\">../</a>\n";
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        // Skip "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Construct the full path
+        std::string fullPath = std::string(path) + "/" + entry->d_name;
+
+        // Get file info using lstat
+        struct stat fileInfo;
+        if (lstat(fullPath.c_str(), &fileInfo) == 0) {
+            // File name (linked)
+            htmlOutput << "<a href=\"" << entry->d_name << "\">" << entry->d_name << "</a>";
+
+            // Format the output to align columns
+            htmlOutput << std::setw(50 - strlen(entry->d_name)) << " "; // Adjust spacing
+
+            // Modification date
+            char dateBuffer[20];
+            strftime(dateBuffer, sizeof(dateBuffer), "%d-%b-%Y %H:%M", localtime(&fileInfo.st_mtime));
+            htmlOutput << dateBuffer << "  ";
+
+            // File size
+            htmlOutput << std::setw(10) << std::right << fileInfo.st_size;
+
+            // Handle symbolic links
+            if (S_ISLNK(fileInfo.st_mode)) {
+                char target[1024];
+                ssize_t len = readlink(fullPath.c_str(), target, sizeof(target) - 1);
+                if (len != -1) {
+                    target[len] = '\0';
+                    htmlOutput << " -&gt; " << target;
+                }
+            }
+
+            htmlOutput << "\n";
+        } else {
+            htmlOutput << "Error: Could not stat " << fullPath << "\n";
+        }
+    }
+
+    htmlOutput << "</pre><hr></body>\n</html>\n";
+
+    closedir(dir);
+
+    return htmlOutput.str();
+}
