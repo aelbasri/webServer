@@ -19,5 +19,5 @@ class Connection
         void sockRead();
         int getSocket() const {return _socket;};
         bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};
-        void sockWrite();
+        int sockWrite();
 };

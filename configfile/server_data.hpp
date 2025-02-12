@@ -117,8 +117,8 @@ public:
     public:
         class InternalServerError : public std::exception
         {
-            public:
-                const char* what() const throw(); 
+            public :
+                const char *what() const throw();
         };
 };
 
