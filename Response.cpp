@@ -15,7 +15,7 @@ void Response::setReasonPhrase(const std::string &phrase)
     _reasonPhrase = phrase;
 }
 
-void Response::addHeader(const std::string &key, std::string &value)
+void Response::addHeader(const std::string &key, const std::string &value)
 {
     _headers[key] = value;
 }
@@ -203,6 +203,8 @@ int Response::buildResponse(Request &request)
 
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
+        // addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
+        // addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
         addHeader(std::string("Connection"), connection);
 
         // std::co

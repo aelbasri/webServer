@@ -60,7 +60,7 @@ class Response
         void setHttpVersion(const std::string &version);
         void setStatusCode(int status);
         void setReasonPhrase(const std::string &phrase);
-        void addHeader(const std::string &key, std::string &value);
+        void addHeader(const std::string &key, const std::string &value);
         void setTextBody(const std::string &body);
         void setFile(const std::string &filepath);
         void setContentLength(void); 
