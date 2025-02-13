@@ -17,6 +17,7 @@ private:
     std::string _path;
 
 public:
+    CGI(std::string __path, std::string __type);
     CGI();
     ~CGI();
 
@@ -26,6 +27,6 @@ public:
     std::string GetPath();
     std::string GetType();
 
-    std::string RunCgi();
+    std::string RunCgi(const std::string& requestBody);
 };
 

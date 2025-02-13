@@ -1,4 +1,11 @@
 #include "Response.hpp"
+#include "configfile/location.hpp"
+#include <clocale>
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 
 void Response::setHttpVersion(const std::string &version)
 {
@@ -56,143 +63,138 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-#define RESPONSE_CHUNCK_SIZE 1024
-
-
-
-// std::string RunCgi() {    
-//         std::stringstream  command;
-//         command << "g++ " << "cgi-bin/login.cpp";
-//         std::string tmp = command.str();
-
-//     FILE* pipe = popen(tmp.c_str(), "r");
-//     if (!pipe) {
-//         std::cerr << "Error executing command." << std::endl;
-//         return NULL;
-//     }
-
-//     char buffer[128];
-//     std::string result = "";
-//     while (fgets(buffer, sizeof(buffer), pipe) != 0) {
-//         result += buffer;
-//     }
-
-//     pclose(pipe);
-//     return result;
-
-// }
-
-
-int Response::buildResponse(Request &request)
+int Response::buildResponse(Request &request, server *serv)
 {
-    // Response response;
-
-
-    
-    std::string path("./");
+//     if (request.getRequestTarget() == "/cgi-bin/login.py"){
+//         std::string s;
+//         CGI _cgi("./cgi-bin/login.py", "/usr/bin/python3");
         
-    if (request.getRequestTarget() == "/")
-        path += "assets/authentification/login.html";
-    else
-        path += request.getRequestTarget();
-    std::ifstream file(path.c_str());
-
-    std::cout << "PATH: "  << path << std::endl;
-
-    if (request.getRequestTarget().find("cgi-bin/login.cgi")){
-        // std::cout << "*******************> " << request.headers(); << std::endl;
-
-        // size_t usernamePos =  request. .find("username=");
-        // size_t passwordPos = input.find("&password=");
-
-        // if (usernamePos != string::npos && passwordPos != string::npos) {
-        //     username = urlDecode(input.substr(usernamePos + 9, passwordPos - (usernamePos + 9)));
-        //     password = urlDecode(input.substr(passwordPos + 10));
-        // }
-
-        // // Hardcoded credentials for demonstration
-        // std::string validUsername = "admin";
-        // std::string validPassword = "password";
-
-        // // Check credentials
-        // if (username == validUsername && password == validPassword) {
-        //     cout << "<h1>Login Successful!</h1>";
-        //     cout << "<p>Welcome, " << username << "!</p>";
-        // } else {
-        //     cout << "<h1>Login Failed</h1>";
-        //     cout << "<p>Invalid username or password.</p>";
-        // }
-    // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // path = RunCgi();
-        // std::string connection = "close";
-        // std::string contentType = getMimeType(path);
-
-        // setHttpVersion(HTTP_VERSION);
-        // setStatusCode(200);
-        // setReasonPhrase("OK");
-        // setFile(path);
-
-        // setContentLength();
-        // addHeader(std::string("Content-Type"), contentType);
-        // addHeader(std::string("Connection"), connection);
-    }
-     if(request.getRequestTarget() == "/redirection")
+//         std::ifstream myfile;
+//         myfile.open("/tmp/.contentData");
+//         while (getline(myfile, s))
+//         {
+//             s += s;
+//             if (!s.empty())
+//                 s.push_back('\n');
+//         }
+//         std::string executable = _cgi.RunCgi(s);
+//         return 1;
+//     }
+    if (!serv)
     {
-	std::string location = "https://www.youtube.com/watch?v=vmDIwhP6Q18&list=RDQn-UcLOWOdM&index=2";
-
-        std::cout << "Ridddddaryrikchn" << std::endl;
-        path = "./assets/302.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
-
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(302);
-        setReasonPhrase("Moved Temporarily");
-        setFile(path);
-
-        addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
+        std::cout << "Server not found" << std::endl;
+        setError(500, "Internal Server Error", *this, serv);
+        return (1);
     }
-    else if (!file.good()) {
-        std::cout << "iror nat found" << std::endl;
-        path = "./assets/404.html";
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
-
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(404);
-        setReasonPhrase("Not Found");
-        setFile(path);
-
-        setContentLength();
-        addHeader(std::string("Content-Type"), contentType);
-        addHeader(std::string("Connection"), connection);
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
-    }
-    else
+    // find the location match
+    location* locationMatch = getLocationMatch(
+                                    request.getRequestTarget(),
+                                    serv->GetLocations(),
+                                    serv->Get_number_of_location());
+    if (locationMatch == nullptr)
     {
-        std::cout << "saad t3asb "  << path << std::endl;
+        std::cout << "Location not found" << std::endl;
+        setError(404, "Not Found", *this, serv);
+        return (1);
+    }
+    std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
 
+    // check for redirection 
+    if (!locationMatch->GetRewrite().empty())
+    {
+        std::string redirectURL = locationMatch->GetRewrite();
+        addHeader(std::string("Location"), redirectURL);
+        setError(301, "Moved Permanently", *this, serv);
+        return (1);
+    }
+
+    // check if the file exists
+    std::string path = locationMatch->GetRoot_directory();
+    if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
+        path += "/";
+    path += request.getRequestTarget();
+
+    // if directory, if path not ends with '/` redirect to path/ , then check if there is index, else directory listing
+    // else, regular file handling
+    FileState fileState = getFileState(path.c_str());
+    if (fileState == FILE_DOES_NOT_EXIST)
+    {
+        std::cout << "File not found" << std::endl;
+        // return 404
+        setError(404, "Not Found", *this, serv);
+        return (1);
+    }
+    else if (fileState == FILE_IS_DIRECTORY)
+    {
+        std::cout << "FILE IS A DIRECTORY " << path <<  std::endl;
+        if (!path.empty() && path[path.size() - 1] != '/')
+        {
+            // choose host and port of request !!!!
+            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
+            std::cout << "Redirect to " << redirectURL << std::endl;
+            addHeader(std::string("Location"), redirectURL);
+            setError(301, "Moved Permanently", *this, serv);
+            return (1);
+        }
+        if (!locationMatch->GetIndex().empty())
+        {
+            std::string dirIndexPath = path + locationMatch->GetIndex();
+            FileState indexState = getFileState(dirIndexPath.c_str());
+            if (indexState == FILE_IS_REGULAR)
+            {
+                std::string connection = "close";
+                std::string contentType = getMimeType(dirIndexPath);
+
+                setHttpVersion(HTTP_VERSION);
+                setStatusCode(200);
+                setReasonPhrase("OK");
+                setFile(dirIndexPath);
+                setContentLength();
+                addHeader(std::string("Content-Type"), contentType);
+                addHeader(std::string("Connection"), connection);
+                return (0);
+            }
+            // else: if cant open file, return 403 (I GUESS !!)
+        }
+        bool directoryListing = true; // this should come from config file
+        if (directoryListing)
+        {
+            std::string htmlDirectoryListing = listDirectoryHTML(path.c_str());
+            if (htmlDirectoryListing.empty()) // if empty, handle error (probably syscall failed) 500 response
+            {
+                std::cout << "dirlist error" << std::endl;
+                // return 500
+                setError(500, "Internal Server Error", *this, serv);
+                return (1);
+            }
+            
+            std::string connection = "close";
+            std::string contentType = getMimeType("foo.html");
+
+            setHttpVersion(HTTP_VERSION);
+            setStatusCode(200);
+            setReasonPhrase("OK");
+            setTextBody(htmlDirectoryListing);
+            setContentLength();
+            addHeader(std::string("Content-Type"), contentType);
+            addHeader(std::string("Connection"), connection);
+            return (0);
+        }
+    }
+    else if (fileState == FILE_IS_REGULAR)
+    {
+        // check if the method is allowed
+        if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+        {
+            std::cout << "Method not allowed" << std::endl;
+            // return 405
+            setError(405, "Method Not Allowed", *this, serv);
+            return (1);
+        }
+        std::cout << "Method allowed: " << request.getMethod() << std::endl;
+
+        std::cout << "File found " << path << std::endl;
+        // generate response
         std::string connection = "close";
         std::string contentType = getMimeType(path);
 
@@ -203,25 +205,18 @@ int Response::buildResponse(Request &request)
 
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
-        addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
-        addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
+        // addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
+        // addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
         addHeader(std::string("Connection"), connection);
-
-        // std::co
-        /*response.sendResponse(new_fd);*/
-        // int sent = 0;
-        // while (!sent)
-        //     sent = sendResponse(_sock);
+        return (0);
     }
-    _progress = SEND_RESPONSE;
+
+
     return (0);
 }
 
-int Response::sendResponse(int clientSocket)
+int Response::createResponseStream()
 {
-    if (_sent)
-        return (1);
-
     if (_response.empty())
     {
         // Build the response line
@@ -243,19 +238,6 @@ int Response::sendResponse(int clientSocket)
         _response = responseStream.str();
     }
 
-    // Send the response in chunks
-    /*ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, _response.size() - _totalBytesSent, 0);*/
-    size_t remaining = _response.size() - _totalBytesSent;
-    ssize_t bytesSent = send(clientSocket, _response.c_str() + _totalBytesSent, (RESPONSE_CHUNCK_SIZE < remaining) ? RESPONSE_CHUNCK_SIZE : remaining, 0);
-    if (bytesSent == -1)
-    {
-        perror("Failed to send response");
-        return (-1);
-    }
-    _totalBytesSent += bytesSent;
-    std::cout << "***********Sent: " << _totalBytesSent << std::endl;
-    if (_totalBytesSent == _response.size())
-        _sent = true, _progress = FINISHED;
-    return (_sent);
+    _progress = SEND_RESPONSE;
+    return (0);
 }
-

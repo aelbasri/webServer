@@ -2,11 +2,6 @@
 
 #include <string>
 #include <cstring>
-#include <fstream>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
 #include <cstdio>
 #include <map>
 #include <cmath>
@@ -16,8 +11,16 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "Request.hpp"
+#include "configfile/server_data.hpp"
+#include <sys/stat.h>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <cstring>
+#include <dirent.h>
 
 #define HTTP_VERSION "HTTP/1.1"
+#define RESPONSE_CHUNCK_SIZE 1024
 
 enum Progress
 {
@@ -25,6 +28,14 @@ enum Progress
     SEND_RESPONSE,
     FINISHED,
 };
+
+enum FileState {
+    FILE_DOES_NOT_EXIST,
+    FILE_IS_REGULAR,
+    FILE_IS_DIRECTORY,
+    FILE_IS_OTHER
+};
+
 
 class Response
 {
@@ -65,10 +76,17 @@ class Response
         void setFile(const std::string &filepath);
         void setContentLength(void); 
 
-        int buildResponse(Request &request);
+        int buildResponse(Request &request, server *serv);
+        int createResponseStream();
         bool responseSent() const { return _sent; };
 
         int sendResponse(int socket);
 };
 
 std::string getMimeType(const std::string& filename);
+location* getLocationMatch(std::string target, location *locations, int size);
+bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods);
+int setError(int status, std::string message, Response &response, server *serv);
+int parseCGI(std::string &CgiOutput, Response &response);
+FileState getFileState(const char *path);
+std::string listDirectoryHTML(const char *path);
