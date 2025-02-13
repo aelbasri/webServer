@@ -1,6 +1,6 @@
 CXX = c++
 CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
-SRCS = main.cpp Connection.cpp Request.cpp Conf.cpp Response.cpp response_utils.cpp error_utils.cpp \
+SRCS = main.cpp Connection.cpp Request.cpp Conf.cpp Response.cpp response_utils.cpp \
 		$(addprefix configfile/,  error_pages.cpp server_data.cpp location.cpp utils.cpp cgi_data.cpp)
 OBJS = $(SRCS:.cpp=.o)
 HEDERS =  Connection.hpp Request.hpp Response.hpp Conf.hpp Response.hpp colors.hpp

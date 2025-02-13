@@ -74,7 +74,7 @@ void Response::buildResponse(Request &request, server *serv)
                                     serv->GetLocations(),
                                     serv->Get_number_of_location());
     if (locationMatch == nullptr)
-        return (setError(404, "Not Found", *this, serv));
+        return (setHttpResponse(404, "Not Found", *this, serv));
     // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
 
     // check for redirection 
@@ -82,21 +82,20 @@ void Response::buildResponse(Request &request, server *serv)
     {
         std::string redirectURL = locationMatch->GetRewrite();
         addHeader(std::string("Location"), redirectURL);
-        return (setError(301, "Moved Permanently", *this, serv));
+        return (setHttpResponse(301, "Moved Permanently", *this, serv));
     }
 
-    // check if the file exists
+    // Construct full requested path
     std::string path = locationMatch->GetRoot_directory();
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
 
-
     // if directory, if path not ends with '/` redirect to path/ , then check if there is index, else directory listing
     // else, regular file handling
     FileState fileState = getFileState(path.c_str());
     if (fileState == FILE_DOES_NOT_EXIST)
-        return (setError(404, "Not Found", *this, serv));
+        return (setHttpResponse(404, "Not Found", *this, serv));
     else if (fileState == FILE_IS_DIRECTORY)
     {
         if (!path.empty() && path[path.size() - 1] != '/')
@@ -105,7 +104,7 @@ void Response::buildResponse(Request &request, server *serv)
             std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
             std::cout << "Redirect to " << redirectURL << std::endl;
             addHeader(std::string("Location"), redirectURL);
-            return (setError(301, "Moved Permanently", *this, serv));
+            return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
         if (!locationMatch->GetIndex().empty())
         {
@@ -125,6 +124,8 @@ void Response::buildResponse(Request &request, server *serv)
                 addHeader(std::string("Connection"), connection);
                 return ;
             }
+            else
+                return (setHttpResponse(403, "Forbidden", *this, serv));
             // else: if cant open file, return 403 (I GUESS !!)
         }
         bool directoryListing = true; // this should come from config file
@@ -151,22 +152,37 @@ void Response::buildResponse(Request &request, server *serv)
     {
         // check if the method is allowed
         if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
-            return (setError(405, "Method Not Allowed", *this, serv));
+            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         // std::cout << "Method allowed: " << request.getMethod() << std::endl;
+        //
 
-        // generate response
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+        if (request.getMethod() == "GET")
+        {
+            // generate response
+            std::string connection = "close";
+            std::string contentType = getMimeType(path);
 
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(200);
-        setReasonPhrase("OK");
-        setFile(path);
+            setHttpVersion(HTTP_VERSION);
+            setStatusCode(200);
+            setReasonPhrase("OK");
+            setFile(path);
 
-        setContentLength();
-        addHeader(std::string("Content-Type"), contentType);
-        addHeader(std::string("Connection"), connection);
-        return ;
+            setContentLength();
+            addHeader(std::string("Content-Type"), contentType);
+            addHeader(std::string("Connection"), connection);
+            return ;
+        }
+        else if (request.getMethod() == "POST")
+            return (setHttpResponse(201, "Created", *this, serv));
+        else if (request.getMethod() == "DELETE")
+        {
+            // Delete the file
+            // if success, or forbidden, or 500
+            if (true)
+                return (setHttpResponse(200, "OK", *this, serv));
+            else
+                throw server::InternalServerError();
+        }
     }
 }
 

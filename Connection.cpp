@@ -44,7 +44,7 @@ int Connection::sockWrite()
         try {
             _response.buildResponse(_request, _server);
         } catch (const server::InternalServerError &e) {
-            setError(500, "Internal Server Error", _response, _server);
+            setHttpResponse(500, "Internal Server Error", _response, _server);
         }
         _response.createResponseStream();
     }

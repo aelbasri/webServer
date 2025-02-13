@@ -87,7 +87,7 @@ class Response
 std::string getMimeType(const std::string& filename);
 location* getLocationMatch(std::string target, location *locations, int size);
 bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods);
-void setError(int status, std::string message, Response &response, server *serv);
+void setHttpResponse(int status, std::string message, Response &response, server *serv);
 int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
