@@ -203,8 +203,8 @@ int Response::buildResponse(Request &request)
 
         setContentLength();
         addHeader(std::string("Content-Type"), contentType);
-        // addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
-        // addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
+        addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
+        addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
         addHeader(std::string("Connection"), connection);
 
         // std::co
