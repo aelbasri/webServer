@@ -232,7 +232,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
             _location[_indixL].SetRoot_directory(value);
         }
         else if (key == "index") {
-            _location[_indixL].SetIndex(value);
+            _location[_indixL].GetIndex().push_back(value);
         }
         else if (key == "rewrite") {
             _location[_indixL].SetRewrite(value);
@@ -240,6 +240,12 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
             i--;
+        }
+        else if (key == "directoryListing"){
+            if (value == "on")
+                _location[_indixL].SetDirectoryListing(true);
+            else
+                _location[_indixL].SetDirectoryListing(false);   
         }
         else{
             _indixL ++;
@@ -253,13 +259,16 @@ void server::Getlocation(){
     {
         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        std::cout <<  " directoryListing  : " <<_location[i].GetDirectoryListing() << std::endl;
+        std::cout <<  "_root_directory    : " <<_location[i].GetRoot_directory() << std::endl;
         std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
-
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetIndex().size(); y++) {
+            std::cout << " indix :  "<<_location[i].GetIndex()[y] << std::endl;
+        }
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
         }
+
     }
 }
 
