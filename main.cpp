@@ -10,7 +10,7 @@ int main()
         Config _Server("config_file.yaml");
 
         _Server.loadContentServer();
-        _Server.SetupServers();
+        _Server.SetupServers();z
      }
      catch (std::runtime_error &e)
      {
