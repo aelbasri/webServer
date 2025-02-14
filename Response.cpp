@@ -63,7 +63,7 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-int Response::buildResponse(Request &request, server *serv)
+void Response::buildResponse(Request &request, server *serv)
 {
 //     if (request.getRequestTarget() == "/cgi-bin/login.py"){
 //         std::string s;
@@ -81,31 +81,23 @@ int Response::buildResponse(Request &request, server *serv)
 //         return 1;
 //     }
     if (!serv)
-    {
-        std::cout << "Server not found" << std::endl;
-        setError(500, "Internal Server Error", *this, serv);
-        return (1);
-    }
+        throw server::InternalServerError();
+
     // find the location match
     location* locationMatch = getLocationMatch(
                                     request.getRequestTarget(),
                                     serv->GetLocations(),
                                     serv->Get_number_of_location());
     if (locationMatch == nullptr)
-    {
-        std::cout << "Location not found" << std::endl;
-        setError(404, "Not Found", *this, serv);
-        return (1);
-    }
-    std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
+        return (setError(404, "Not Found", *this, serv));
+    // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
 
     // check for redirection 
     if (!locationMatch->GetRewrite().empty())
     {
         std::string redirectURL = locationMatch->GetRewrite();
         addHeader(std::string("Location"), redirectURL);
-        setError(301, "Moved Permanently", *this, serv);
-        return (1);
+        return (setError(301, "Moved Permanently", *this, serv));
     }
 
     // check if the file exists
@@ -118,23 +110,16 @@ int Response::buildResponse(Request &request, server *serv)
     // else, regular file handling
     FileState fileState = getFileState(path.c_str());
     if (fileState == FILE_DOES_NOT_EXIST)
-    {
-        std::cout << "File not found" << std::endl;
-        // return 404
-        setError(404, "Not Found", *this, serv);
-        return (1);
-    }
+        return (setError(404, "Not Found", *this, serv));
     else if (fileState == FILE_IS_DIRECTORY)
     {
-        std::cout << "FILE IS A DIRECTORY " << path <<  std::endl;
         if (!path.empty() && path[path.size() - 1] != '/')
         {
             // choose host and port of request !!!!
             std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
             std::cout << "Redirect to " << redirectURL << std::endl;
             addHeader(std::string("Location"), redirectURL);
-            setError(301, "Moved Permanently", *this, serv);
-            return (1);
+            return (setError(301, "Moved Permanently", *this, serv));
         }
         if (!locationMatch->GetIndex().empty())
         {
@@ -152,7 +137,7 @@ int Response::buildResponse(Request &request, server *serv)
                 setContentLength();
                 addHeader(std::string("Content-Type"), contentType);
                 addHeader(std::string("Connection"), connection);
-                return (0);
+                return ;
             }
             // else: if cant open file, return 403 (I GUESS !!)
         }
@@ -161,12 +146,7 @@ int Response::buildResponse(Request &request, server *serv)
         {
             std::string htmlDirectoryListing = listDirectoryHTML(path.c_str());
             if (htmlDirectoryListing.empty()) // if empty, handle error (probably syscall failed) 500 response
-            {
-                std::cout << "dirlist error" << std::endl;
-                // return 500
-                setError(500, "Internal Server Error", *this, serv);
-                return (1);
-            }
+                throw server::InternalServerError();
             
             std::string connection = "close";
             std::string contentType = getMimeType("foo.html");
@@ -178,22 +158,16 @@ int Response::buildResponse(Request &request, server *serv)
             setContentLength();
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
-            return (0);
+            return ;
         }
     }
     else if (fileState == FILE_IS_REGULAR)
     {
         // check if the method is allowed
         if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
-        {
-            std::cout << "Method not allowed" << std::endl;
-            // return 405
-            setError(405, "Method Not Allowed", *this, serv);
-            return (1);
-        }
-        std::cout << "Method allowed: " << request.getMethod() << std::endl;
+            return (setError(405, "Method Not Allowed", *this, serv));
+        // std::cout << "Method allowed: " << request.getMethod() << std::endl;
 
-        std::cout << "File found " << path << std::endl;
         // generate response
         std::string connection = "close";
         std::string contentType = getMimeType(path);
@@ -208,14 +182,11 @@ int Response::buildResponse(Request &request, server *serv)
         // addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
         // addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
         addHeader(std::string("Connection"), connection);
-        return (0);
+        return ;
     }
-
-
-    return (0);
 }
 
-int Response::createResponseStream()
+void Response::createResponseStream()
 {
     if (_response.empty())
     {
@@ -237,7 +208,5 @@ int Response::createResponseStream()
 
         _response = responseStream.str();
     }
-
     _progress = SEND_RESPONSE;
-    return (0);
 }

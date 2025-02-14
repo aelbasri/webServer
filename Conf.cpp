@@ -5,6 +5,7 @@
 #include "Connection.hpp"
 #include "configfile/server_data.hpp"
 #include <stdlib.h>
+#include "colors.hpp"
 
 Config::Config():_server(nullptr){}
 
@@ -173,20 +174,29 @@ void Config::creatPoll()
                 else
                 {
                     std::cout << "request socket READ:" << connections[_fd]->getSocket() << std::endl;
+                    std::cout << YELLOW << BOLD << "== REQUEST PROCESSING ==" << RESET << std::endl;
+                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
                     connections[_fd]->sockRead();
+                    std::cout << YELLOW << BOLD << "== END OF REQUEST PROCESSING ==" << RESET << std::endl;
+                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
+                    std::cout << std::endl;
                 }
             }
             else if(evlist[i].events & EPOLLOUT)
             {
                 // send response
                 std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
-                connections[_fd]->sockWrite();
-                if (connections[_fd]->toBeClosed())
+                std::cout << GREEN << BOLD << "== RESPONSE PROCESSING ==" << RESET << std::endl;
+                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
+                if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
                     close(_fd);
                     delete connections[_fd];
                     connections.erase(_fd);
                 }
+                std::cout << GREEN << BOLD << "== END RESPONSE PROCESSING ==" << RESET << std::endl;
+                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
+                std::cout << std::endl;
             }
         }
     }

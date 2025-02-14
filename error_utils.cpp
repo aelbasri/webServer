@@ -33,7 +33,7 @@ std::string getCustomHtmlString(int status, std::string message)
     return customHtml;
 }
 
-int setError(int status, std::string message, Response &response, server *serv) {
+void setError(int status, std::string message, Response &response, server *serv) {
     std::string customHtml = "";
     std::string path = getErrorPage(status, serv);
     if (path.empty()) {
@@ -67,7 +67,5 @@ int setError(int status, std::string message, Response &response, server *serv) 
     response.setContentLength();
     response.addHeader(std::string("Content-Type"), contentType);
     response.addHeader(std::string("Connection"), connection);
-
-    return (1);
 }
 

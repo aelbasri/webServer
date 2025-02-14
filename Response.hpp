@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numeric>
 #include <string>
 #include <cstring>
 #include <cstdio>
@@ -76,8 +77,8 @@ class Response
         void setFile(const std::string &filepath);
         void setContentLength(void); 
 
-        int buildResponse(Request &request, server *serv);
-        int createResponseStream();
+        void buildResponse(Request &request, server *serv);
+        void createResponseStream();
         bool responseSent() const { return _sent; };
 
         int sendResponse(int socket);
@@ -86,7 +87,7 @@ class Response
 std::string getMimeType(const std::string& filename);
 location* getLocationMatch(std::string target, location *locations, int size);
 bool methodAllowed(const std::string& method, const std::vector<std::string>& allowedMethods);
-int setError(int status, std::string message, Response &response, server *serv);
+void setError(int status, std::string message, Response &response, server *serv);
 int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);

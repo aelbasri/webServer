@@ -1,16 +1,19 @@
 #include "Connection.hpp"
-#include <cstddef>
+#include "Response.hpp"
+#include "colors.hpp"
 
 void Connection::sockRead()
 {
     long bytesRec;
     char buffer[BUFF_SIZE];
 
+
     if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
         return ;
-    std::cout << "=======bytes recived: " << bytesRec << std::endl;
+    std::cout << RED << "bytes recived: " << bytesRec << RESET << std::endl;
+    std::cout << RED << "==============" << RESET <<std::endl;
     write(1, buffer, bytesRec); 
-    std::cout << "===============================================" << std::endl;
+    std::cout << RED << "==============" << RESET <<std::endl;
 
     try
     {
@@ -32,25 +35,24 @@ void Connection::sockRead()
     }
 }
 
-void Connection::sockWrite()
+int Connection::sockWrite()
 {
-    if (!_server)
-        throw std::runtime_error("Server not found");
     if (_request.getState() != DONE || _response.getProgress() == FINISHED)
-        return;
+        return (0);
     if (_response.getProgress() == BUILD_RESPONSE)
     {
-        _response.buildResponse(_request, _server);
+        try {
+            _response.buildResponse(_request, _server);
+        } catch (const server::InternalServerError &e) {
+            setError(500, "Internal Server Error", _response, _server);
+        }
         _response.createResponseStream();
     }
     if (_response.getProgress() == SEND_RESPONSE)
     {
         ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), 0);
         if (bytesSent == -1)
-        {
-            // Throw exception
-            return;
-        }
+            return (-1);
         _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
         if (_response.getTotalBytesSent() == _response.getResponse().size())
         {
@@ -59,4 +61,5 @@ void Connection::sockWrite()
             std::cout << "Response Done" << std::endl;
         }
     }
+    return (0);
 }
