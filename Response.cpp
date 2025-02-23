@@ -178,8 +178,16 @@ void Response::buildResponse(Request &request, server *serv)
             return (setHttpResponse(201, "Created", *this, serv));
         else if (request.getMethod() == "DELETE")
         {
+            // std::cout << "DELETing file: " << path << std::endl;
             if (unlink(path.c_str()) == 0)
-                return (setHttpResponse(204, "No Content", *this, serv));
+            {
+                std::string connection = "close";
+                addHeader(std::string("Connection"), connection);
+                setHttpVersion(HTTP_VERSION);
+                setStatusCode(204);
+                setReasonPhrase("No Content");
+                return ;
+            }
             else
             {
                 if (errno == EACCES || errno == EPERM || errno == EISDIR) // EACCES: permission denied, EPERM: operation not permitted, EISDIR: is a directory

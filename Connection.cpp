@@ -1,4 +1,5 @@
 #include "Connection.hpp"
+#include "Request.hpp"
 #include "Response.hpp"
 #include "colors.hpp"
 
@@ -19,12 +20,14 @@ void Connection::sockRead()
     {
         _request.handle_request(buffer, bytesRec);
     }
-    catch(const std::exception& e)
+    catch (const Request::badRequest &e)
     {
         std::cerr << e.what() << std::endl;
+        _request.setState(DONE);
+        setHttpResponse(400, "Bad Request", _response, _server);
+        _response.createResponseStream();
     }
-    
-    
+
     //after completing the request
     if(_request.getState() == DONE)
     {

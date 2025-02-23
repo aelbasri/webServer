@@ -99,6 +99,8 @@ class Request
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
+
+        void setState(State state) { mainState = state; }
         // int parseRequestLine(int socket, int &offset, int &nBytes);
         // int parseHeader(int socket, int &offset, int &nBytes);
         // int parseBody(int socket, int &offset, int &nBytes);
