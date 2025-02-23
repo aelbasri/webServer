@@ -6,6 +6,7 @@
 #include "configfile/server_data.hpp"
 #include <stdlib.h>
 #include "colors.hpp"
+#include "log.hpp"
 
 Config::Config():_server(nullptr){}
 
@@ -154,6 +155,7 @@ void Config::creatPoll()
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
+                    webServLog("New connection accepted", INFO);
                     // std::cout << "accept new_fd: " << new_fd << std::endl;
 
                     struct epoll_event ev;
@@ -173,30 +175,33 @@ void Config::creatPoll()
                 }
                 else
                 {
-                    std::cout << "request socket READ:" << connections[_fd]->getSocket() << std::endl;
-                    std::cout << YELLOW << BOLD << "== REQUEST PROCESSING ==" << RESET << std::endl;
-                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
+                    // std::cout << "request socket READ:" << connections[_fd]->getSocket() << std::endl;
+                    // std::cout << YELLOW << BOLD << "== REQUEST PROCESSING ==" << RESET << std::endl;
+                    // std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
                     connections[_fd]->sockRead();
-                    std::cout << YELLOW << BOLD << "== END OF REQUEST PROCESSING ==" << RESET << std::endl;
-                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
-                    std::cout << std::endl;
+                    // std::cout << YELLOW << BOLD << "== END OF REQUEST PROCESSING ==" << RESET << std::endl;
+                    // std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
+                    // std::cout << std::endl;
                 }
             }
             else if(evlist[i].events & EPOLLOUT)
             {
                 // send response
-                std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
-                std::cout << GREEN << BOLD << "== RESPONSE PROCESSING ==" << RESET << std::endl;
-                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
+                // std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
+                // std::cout << GREEN << BOLD << "== RESPONSE PROCESSING ==" << RESET << std::endl;
+                // std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
                     close(_fd);
                     delete connections[_fd];
                     connections.erase(_fd);
+                    // remove from epoll
+                    epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                    webServLog("Connection closed", INFO);
                 }
-                std::cout << GREEN << BOLD << "== END RESPONSE PROCESSING ==" << RESET << std::endl;
-                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
-                std::cout << std::endl;
+                // std::cout << GREEN << BOLD << "== END RESPONSE PROCESSING ==" << RESET << std::endl;
+                // std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
+                // std::cout << std::endl;
             }
         }
     }

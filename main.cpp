@@ -2,6 +2,7 @@
 #include "Conf.hpp"
 #include <exception>
 #include <iostream>
+#include "log.hpp"
 
 int main()
 {
@@ -9,6 +10,7 @@ int main()
     {
         Config _Server("config_file.yaml");
 
+        webServLog("Server is starting...", INFO);
         _Server.loadContentServer();
         _Server.SetupServers();
      }
