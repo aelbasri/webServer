@@ -77,6 +77,11 @@ void Response::buildResponse(Request &request, server *serv)
         return (setHttpResponse(404, "Not Found", *this, serv));
     // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
 
+    // check if the method is allowed
+    if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+        return (setHttpResponse(405, "Method Not Allowed", *this, serv));
+        // std::cout << "Method allowed: " << request.getMethod() << std::endl;
+
     // check for redirection 
     if (!locationMatch->GetRewrite().empty())
     {
@@ -106,6 +111,8 @@ void Response::buildResponse(Request &request, server *serv)
             addHeader(std::string("Location"), redirectURL);
             return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
+        if (request.getMethod() != "GET")
+            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         if (!locationMatch->GetIndex().empty())
         {
             std::string dirIndexPath = path + locationMatch->GetIndex();
@@ -126,7 +133,6 @@ void Response::buildResponse(Request &request, server *serv)
             }
             else
                 return (setHttpResponse(403, "Forbidden", *this, serv));
-            // else: if cant open file, return 403 (I GUESS !!)
         }
         bool directoryListing = true; // this should come from config file
         if (directoryListing)
@@ -147,15 +153,11 @@ void Response::buildResponse(Request &request, server *serv)
             addHeader(std::string("Connection"), connection);
             return ;
         }
+        else
+            return (setHttpResponse(403, "Forbidden", *this, serv));
     }
     else if (fileState == FILE_IS_REGULAR)
     {
-        // check if the method is allowed
-        if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
-            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
-        // std::cout << "Method allowed: " << request.getMethod() << std::endl;
-        //
-
         if (request.getMethod() == "GET")
         {
             // generate response
@@ -176,12 +178,15 @@ void Response::buildResponse(Request &request, server *serv)
             return (setHttpResponse(201, "Created", *this, serv));
         else if (request.getMethod() == "DELETE")
         {
-            // Delete the file
-            // if success, or forbidden, or 500
-            if (true)
-                return (setHttpResponse(200, "OK", *this, serv));
+            if (unlink(path.c_str()) == 0)
+                return (setHttpResponse(204, "No Content", *this, serv));
             else
-                throw server::InternalServerError();
+            {
+                if (errno == EACCES || errno == EPERM || errno == EISDIR) // EACCES: permission denied, EPERM: operation not permitted, EISDIR: is a directory
+                    return (setHttpResponse(403, "Forbidden", *this, serv));
+                else
+                    return (setHttpResponse(500, "Internal Server Error", *this, serv));
+            }
         }
     }
 }
