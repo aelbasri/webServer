@@ -182,7 +182,10 @@ void Response::buildResponse(Request &request, server *serv)
             if (unlink(path.c_str()) == 0)
             {
                 std::string connection = "close";
+                std::string contentLength = "0";
+
                 addHeader(std::string("Connection"), connection);
+                addHeader(std::string("Content-Length"), contentLength);
                 setHttpVersion(HTTP_VERSION);
                 setStatusCode(204);
                 setReasonPhrase("No Content");
