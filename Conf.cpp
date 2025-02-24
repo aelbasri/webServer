@@ -184,7 +184,7 @@ void Config::creatPoll()
                     // std::cout << std::endl;
                 }
             }
-            else if(evlist[i].events & EPOLLOUT)
+            if (evlist[i].events & EPOLLOUT)
             {
                 // send response
                 // std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;

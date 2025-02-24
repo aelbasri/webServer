@@ -134,12 +134,29 @@ void Response::buildResponse(Request &request, server *serv)
             webServLog(logMessage, INFO);
             return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
-        if (request.getMethod() != "GET")
+        // if (request.getMethod() != "GET")
+        // {
+        //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
+        //     webServLog(logMessage, ERROR);
+        //     return (setHttpResponse(405, "Method Not Allowed", *this, serv));
+        // }
+
+        //FIXME: CHECK CHECK
+
+        if (request.getMethod() == "POST")
         {
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
-            webServLog(logMessage, ERROR);
-            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
+            if (request.getState() == WAIT)
+            {
+                // std::cout << "Swich state to BODY state" << std::endl;
+                request.setState(BODY);
+                return ;
+            }
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
+            webServLog(logMessage, INFO);
+            return (setHttpResponse(201, "Created", *this, serv));
         }
+        // end CHECK CHECK
+        
         if (!locationMatch->GetIndex().empty())
         {
             std::string dirIndexPath = path + locationMatch->GetIndex();
@@ -221,6 +238,12 @@ void Response::buildResponse(Request &request, server *serv)
         }
         else if (request.getMethod() == "POST")
         {
+            if (request.getState() == WAIT)
+            {
+                std::cout << "Swich state to BODY state" << std::endl;
+                request.setState(BODY);
+                return ;
+            }
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
             webServLog(logMessage, INFO);
             return (setHttpResponse(201, "Created", *this, serv));
