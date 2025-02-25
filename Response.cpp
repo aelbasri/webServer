@@ -63,6 +63,11 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
+std::string set_cookie(const std::string& username) {
+    std::string cookie = "Set-Cookie: username=" + username + "; Max-Age=3600";
+    return cookie;
+}
+
 void Response::buildResponse(Request &request, server *serv)
 {
     if (request.getRequestTarget() == "/cgi-bin/login.py"){

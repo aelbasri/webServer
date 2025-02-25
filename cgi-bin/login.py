@@ -20,19 +20,24 @@ def parse_body(body):
     for pair in body.split("&"):
         if "=" in pair:
             key, value = pair.split("=", 1)  # Split on the first '=' only
+            # Strip whitespace (including newlines) from key and value
+            key = key.strip()
+            value = value.strip()
             data[key] = value
         else:
             # Handle malformed pairs (e.g., missing '=')
-            data[pair] = ""  # Assign an empty value
+            data[pair.strip()] = ""  # Assign an empty value
     return data
 
 # Main function
 def main():
     # Read the request body from stdin
     body = sys.stdin.read()
+    print(f"Raw Request Body: {body}")  # Debug: Print the raw request body
 
     # Parse the request body
     form_data = parse_body(body)
+    print(f"Parsed Form Data: {form_data}")  # Debug: Print the parsed form data
 
     # Extract form fields
     username = form_data.get("username", "")
@@ -43,7 +48,7 @@ def main():
     print("Content-Type: text/plain\n")  # Temporarily use text/plain for debugging
     print(f"Username: {username}")
     print(f"Password: {password}")
-    print(f"Remember Me: {remember_me}")
+    print(f"Remember Me: {remember_me} (Type: {type(remember_me)})")
 
     # Validate the username and password
     if username == VALID_USERNAME and password == VALID_PASSWORD:
