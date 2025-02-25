@@ -17,7 +17,6 @@ void Connection::sockRead()
             _request.setOffset(0);
             _request.setBytrec(0);
             _request.setBuffer();
-            std::cout << "BODY:==================================" << std::endl;
             return ;
         }
     }
@@ -38,14 +37,13 @@ void Connection::sockRead()
         _response.createResponseStream();
     }
 
+    //if the request is done or waiting
+    if (_request.getState() == DONE || _request.getState() == WAIT)
+        _readyToWrite = true;
+
     //after completing the request
     if(_request.getState() == DONE)
-    {
-        // std::cout << "Request Done" << std::endl;
-        // _request.printRequestElement(); 
-        // close(_socket);
         _request.closeContentFile();
-    }
 }
 
 int Connection::sockWrite()

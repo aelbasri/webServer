@@ -11,13 +11,14 @@ class Connection
         Request _request;
         Response _response;
         server *_server;
-        // bool _isComplete;
+        bool _readyToWrite;
     
     public:
-        Connection() : _server(nullptr) {};
-        Connection(int sock, server *serv) : _socket(sock), _server(serv) {};
+        Connection() : _server(nullptr), _readyToWrite(false) {};
+        Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {};
         void sockRead();
         int getSocket() const {return _socket;};
         bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};
+        bool readyToWrite() const {return _readyToWrite;};
         int sockWrite();
 };
