@@ -35,7 +35,7 @@
 #include <vector>
 #include <sys/epoll.h>
 
-class cgi_data;
+class CGI;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
@@ -53,7 +53,7 @@ private:
     int     _NPort;
 
     // std::vector<std::string> _port;
-    std::vector<cgi_data> _CGI;
+    std::vector<CGI> _CGI;
     location *_location;
 
     std::vector<std::pair<std::string, int> >  _sock;
@@ -73,7 +73,7 @@ public:
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
     void setAddI(int newAddI);\
-    void SetCgi(std::vector<cgi_data> __cgi);
+    void SetCgi(std::vector<CGI> __cgi);
 
     
     int Get_number_of_location();
@@ -82,7 +82,7 @@ public:
     std::string Get_host(); 
     //  std::vector<std::string> Get_port() { retru};
     long long Get_max_body_size();
-    std::vector<cgi_data> GetCgi();
+    std::vector<CGI> GetCgi();
 
     std::vector<std::pair<std::string, int> >  getSock() ;
     struct addrinfo &getHints() ;

@@ -135,47 +135,39 @@ struct addrinfo &server::getHints()  {
     return hints;
 }
 
-    // Setter for hints
 void server::setHints( struct addrinfo& newHints) {
     hints = newHints;
 }
 
-    // Getter for res
 struct addrinfo* &server::getRes() {
     return res;
 }
 
-    // Setter for res
 void server::setRes(struct addrinfo* newRes) {
     res = newRes;
 }
 
-    // Getter for p
 struct addrinfo* &server::getP() {
     return p;
 }
 
-    // Setter for p
 void server::setP(struct addrinfo* newP) {
     p = newP;
 }
 
-    // Getter for addI
 int server::getAddI()  {
     return addI;
 }
 
-    // Setter for addI
 void server::setAddI(int newAddI) {
     addI = newAddI;
 }
 
-
-std::vector<cgi_data> server::GetCgi(){
+std::vector<CGI> server::GetCgi(){
     return _CGI;
 }
 
-void  server::SetCgi(std::vector<cgi_data> __cgi){
+void  server::SetCgi(std::vector<CGI> __cgi){
     _CGI = __cgi;
 
 }
@@ -255,7 +247,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
             _location[_indixL].SetRoot_directory(value);
         }
         else if (key == "index") {
-            _location[_indixL].SetIndex(value);
+            _location[_indixL].GetIndex().push_back(value);
         }
         else if (key == "rewrite") {
             _location[_indixL].SetRewrite(value);
@@ -263,6 +255,12 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
             i--;
+        }
+        else if (key == "directoryListing"){
+            if (value == "on")
+                _location[_indixL].SetDirectoryListing(true);
+            else
+                _location[_indixL].SetDirectoryListing(false);   
         }
         else{
             _indixL ++;
@@ -276,15 +274,16 @@ void server::Getlocation(){
     {
         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        std::cout <<  " directoryListing  : " <<_location[i].GetDirectoryListing() << std::endl;
+        std::cout <<  "_root_directory    : " <<_location[i].GetRoot_directory() << std::endl;
         std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
-
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetIndex().size(); y++) {
+            std::cout << " indix :  "<<_location[i].GetIndex()[y] << std::endl;
+        }
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
         }
 
-        
     }
 }
 
@@ -292,7 +291,7 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
-    cgi_data tmp;
+    CGI tmp;
 
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
@@ -398,7 +397,7 @@ int server::run()
 
 
     std::cout << "---------- CGI ---------------------------------------" << std::endl;
-    for (std::vector<cgi_data>::size_type i = 0; i < _CGI.size(); i++)
+    for (std::vector<CGI>::size_type i = 0; i < _CGI.size(); i++)
     {
         std::cout << "the type is : " << _CGI[i].GetType() << std::endl;
         std::cout << "the indix is : " << _CGI[i].GetPath() << std::endl;
