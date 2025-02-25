@@ -15,7 +15,8 @@ void Connection::sockRead()
         if ((bytesRec = recv(_socket, _request.getBuffer(), BUFF_SIZE, 0)) <= 0)
         {
             _request.setOffset(0);
-            _request.setOffset(0);
+            _request.setBytrec(0);
+            _request.setBuffer();
             std::cout << "BODY:==================================" << std::endl;
             return ;
         }
@@ -51,14 +52,15 @@ int Connection::sockWrite()
 {
     if ((_request.getState() != DONE && _request.getState() != WAIT) || _response.getProgress() == FINISHED)
         return (0);
-    if (_response.getProgress() == BUILD_RESPONSE)
+    if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD)
     {
         try {
             _response.buildResponse(_request, _server);
         } catch (const server::InternalServerError &e) {
             setHttpResponse(500, "Internal Server Error", _response, _server);
         }
-        _response.createResponseStream();
+        if (_response.getProgress() != POST_HOLD)
+            _response.createResponseStream();
     }
     if (_response.getProgress() == SEND_RESPONSE)
     {

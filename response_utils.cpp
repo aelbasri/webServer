@@ -307,3 +307,8 @@ void setHttpResponse(int status, std::string message, Response &response, server
     response.addHeader(std::string("Content-Type"), contentType);
     response.addHeader(std::string("Connection"), connection);
 }
+
+std::string getFilenameFromPath(std::string path) {
+    (void)path;
+    return (std::string("someRandomName"));
+}

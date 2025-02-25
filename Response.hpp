@@ -26,6 +26,7 @@
 enum Progress
 {
     BUILD_RESPONSE,
+    POST_HOLD,
     SEND_RESPONSE,
     FINISHED,
 };
@@ -91,3 +92,4 @@ void setHttpResponse(int status, std::string message, Response &response, server
 int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
+std::string getFilenameFromPath(std::string path);

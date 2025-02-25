@@ -76,6 +76,28 @@ void Response::buildResponse(Request &request, server *serv)
         throw server::InternalServerError();
     }
 
+    if (getProgress() == POST_HOLD)
+    {
+        if (request.getMethod() != "POST")
+        {
+            // Unexpected state Error
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+        // TODO: check max body size
+        if (request.getState() != DONE)
+        {
+            std::cout << "Still waiting for body" << std::endl;
+            return ;
+        }
+        std::cout << "Body received" << std::endl;
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
+        webServLog(logMessage, INFO);
+        setProgress(BUILD_RESPONSE);
+        return (setHttpResponse(201, "Created", *this, serv));
+    }
+
     // find the location match
     location* locationMatch = getLocationMatch(
                                     request.getRequestTarget(),
@@ -108,6 +130,27 @@ void Response::buildResponse(Request &request, server *serv)
         return (setHttpResponse(301, "Moved Permanently", *this, serv));
     }
 
+
+    // handle POST request
+    if (request.getMethod() == "POST")
+    {
+        // TODO: UPLOAD TO UPLOAD_DIR, Check filename if already exists
+        if (request.getState() == WAIT)
+        {
+            // std::cout << "Swich state to BODY state" << std::endl;
+            request.setState(BODY);
+            setProgress(POST_HOLD);
+            return ;
+        }
+        else
+        {
+            // Unexpected state error
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+    }
+
     // Construct full requested path
     std::string path = locationMatch->GetRoot_directory();
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
@@ -134,28 +177,13 @@ void Response::buildResponse(Request &request, server *serv)
             webServLog(logMessage, INFO);
             return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
-        // if (request.getMethod() != "GET")
-        // {
-        //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
-        //     webServLog(logMessage, ERROR);
-        //     return (setHttpResponse(405, "Method Not Allowed", *this, serv));
-        // }
 
-        //FIXME: CHECK CHECK
-
-        if (request.getMethod() == "POST")
+        if (request.getMethod() != "GET")
         {
-            if (request.getState() == WAIT)
-            {
-                // std::cout << "Swich state to BODY state" << std::endl;
-                request.setState(BODY);
-                return ;
-            }
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
-            webServLog(logMessage, INFO);
-            return (setHttpResponse(201, "Created", *this, serv));
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         }
-        // end CHECK CHECK
         
         if (!locationMatch->GetIndex().empty())
         {
@@ -238,15 +266,10 @@ void Response::buildResponse(Request &request, server *serv)
         }
         else if (request.getMethod() == "POST")
         {
-            if (request.getState() == WAIT)
-            {
-                std::cout << "Swich state to BODY state" << std::endl;
-                request.setState(BODY);
-                return ;
-            }
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
-            webServLog(logMessage, INFO);
-            return (setHttpResponse(201, "Created", *this, serv));
+            // Unexpected state Error, POST request should be handled before this point
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
         }
         else if (request.getMethod() == "DELETE")
         {
