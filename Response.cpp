@@ -24,7 +24,7 @@ void Response::setReasonPhrase(const std::string &phrase)
     _reasonPhrase = phrase;
 }
 
-void Response::addHeader(const std::string &key, std::string &value)
+void Response::addHeader(const std::string &key, const std::string &value)
 {
     _headers[key] = value;
 }
@@ -187,7 +187,8 @@ void Response::buildResponse(Request &request, server *serv)
         
         if (!locationMatch->GetIndex().empty())
         {
-            std::string dirIndexPath = path + locationMatch->GetIndex();
+            // TODO: WHIli 3lihoum
+            std::string dirIndexPath = path + locationMatch->GetIndex()[0];
             FileState indexState = getFileState(dirIndexPath.c_str());
             if (indexState == FILE_IS_REGULAR)
             {
