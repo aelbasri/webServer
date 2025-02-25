@@ -171,7 +171,7 @@ void Response::buildResponse(Request &request, server *serv)
         if (!path.empty() && path[path.size() - 1] != '/')
         {
             // choose host and port of request !!!!
-            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
+            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";
             addHeader(std::string("Location"), redirectURL);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
             webServLog(logMessage, INFO);
