@@ -68,6 +68,21 @@ void Response::setContentLength()
 void Response::buildResponse(Request &request, server *serv)
 {
     // log format: [METHOD] [PATH] [STATUS_CODE] [STATUS_MESSAGE] [ERROR_MESSAGE]
+    // if (request.getRequestTarget() == "/cgi-bin/login.py"){
+    //     std::string s;
+    //     CGI _cgi("./cgi-bin/login.py", "/usr/bin/python3");
+        
+    //     std::ifstream myfile;
+    //     myfile.open("/tmp/.contentData");
+    //     while (getline(myfile, s))
+    //     {
+    //         s += s;
+    //         if (!s.empty())
+    //             s.push_back('\n');
+    //     }
+    //     std::string executable = _cgi.RunCgi(s);
+    //     return ;
+    // }
 
     if (!serv)
     {
@@ -185,7 +200,8 @@ void Response::buildResponse(Request &request, server *serv)
             return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         }
         
-        if (!locationMatch->GetIndex().empty())
+        //TODO: whili 3lihoum
+        if (locationMatch->GetIndex().size() > 0 && !locationMatch->GetIndex()[0].empty())
         {
             // TODO: WHIli 3lihoum
             std::string dirIndexPath = path + locationMatch->GetIndex()[0];
@@ -213,7 +229,7 @@ void Response::buildResponse(Request &request, server *serv)
                 return (setHttpResponse(403, "Forbidden", *this, serv));
             }
         }
-        bool directoryListing = true; // this should come from config file
+        bool directoryListing = locationMatch->GetDirectoryListing();
         if (directoryListing)
         {
             std::string htmlDirectoryListing = listDirectoryHTML(path.c_str());

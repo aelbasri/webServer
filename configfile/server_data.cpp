@@ -283,7 +283,6 @@ void server::Getlocation(){
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
         }
-
     }
 }
 
