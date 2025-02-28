@@ -127,7 +127,7 @@ void Response::buildResponse(Request &request, server *serv)
 
     if (request.getRequestTarget() == "/cgi-bin/login.py"){
         std::string s;
-        CGI _cgi("./cgi-bin/login.py", "/usr/bin/python3");
+        CGI _cgi("./cgi-bin/test.pl");
         
         std::ifstream myfile;
         myfile.open("/tmp/.contentData");
@@ -142,7 +142,7 @@ void Response::buildResponse(Request &request, server *serv)
         std::string cookie = set_cookie("username", password);
         if (remember_me == true)
             addHeader(std::string("Set-Cookie"), cookie);
-        std::cout << "the autput of cgi is : |" << executable <<"|" <<  std::endl;
+        std::cout << "the autput of cgi is : |" << executable <<"|" << " and the exit status is : " << _cgi.GetExitStatus() <<   std::endl;
     }
     if (!serv)
     {

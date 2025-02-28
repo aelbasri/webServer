@@ -29,7 +29,7 @@ void err(){
     exit(1);
 }
 
-server *Config::getServer(){
+server *Config::getServer() const{
     return(_server);
 }
 
@@ -76,7 +76,7 @@ void Config::loidingFile(std::string file){
     f.close();
 }
 
-int Config::get_nembre_of_server(){
+int Config::get_nembre_of_server() const{
     return(_nembre_of_server);
 }
 

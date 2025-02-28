@@ -46,13 +46,15 @@ public:
     ~Config();
 
     void loidingFile(std::string file);
-    server *getServer();
     void loadContentServer();
-    int get_nembre_of_server();
-    std::string& setFileContent();
     int CheckNumberOfServer();
     void creatPoll();
 
+    
+    server *getServer() const;
+    int get_nembre_of_server() const;
+    
+    std::string& setFileContent();
     int SetupServers();
 };
 

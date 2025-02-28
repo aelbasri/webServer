@@ -19,7 +19,7 @@ void Connection::sockRead()
             _request.setBuffer();
             return ;
         }
-        write(1, _request.getBuffer(), BUFF_SIZE);
+        // write(1, _request.getBuffer(), BUFF_SIZE);
     }
     try
     {
