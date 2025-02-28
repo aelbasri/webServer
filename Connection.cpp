@@ -20,9 +20,9 @@ ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkF
         response << sizeInHex << "\r\n";
         response << buffer << "\r\n";
         size += sizeInHex.size() + 4;
-        return (send(socket, response.str().c_str(), size, 0));
+        return (send(socket, response.str().c_str(), size, MSG_NOSIGNAL));
     }
-    return (send(socket, buffer, size, 0));
+    return (send(socket, buffer, size, MSG_NOSIGNAL));
 }
 
 bool Connection::sendRawBody()
@@ -33,7 +33,7 @@ bool Connection::sendRawBody()
     }
 
     // Send the content
-    ssize_t bytesSent = send(_socket, _response.getTextBody().data(), _response.getTextBody().size(), 0);
+    ssize_t bytesSent = send(_socket, _response.getTextBody().data(), _response.getTextBody().size(), MSG_NOSIGNAL);
     if (bytesSent < 0) {
         // Error occurred while sending
         throw server::InternalServerError();
@@ -48,7 +48,7 @@ bool Connection::sendRawBody()
 
 int Connection::sendFile(bool sendInChunkFormat)
 {
-    std::cout << "sendi aw9" << std::endl;
+    // std::cout << "sendi aw9" << std::endl;
     responseBodyFile *rfs = _response.getFileBody();
     if (!rfs)
         throw server::InternalServerError();
@@ -70,7 +70,7 @@ int Connection::sendFile(bool sendInChunkFormat)
         return (0);
     rfs->file.read(rfs->buffer, BUFFER_SIZE);
     int bytesRead = rfs->file.gcount();
-    std::cout << "9RINA " << bytesRead << std::endl;
+    // std::cout << "9RINA " << bytesRead << std::endl;
     if (bytesRead < 0)
         throw server::InternalServerError();
     rfs->nBytes = bytesRead;
@@ -84,27 +84,35 @@ int Connection::sendFile(bool sendInChunkFormat)
         }
         rfs->consumed += bytesSent;
         rfs->offset += bytesSent;
-        std::cout << "wgfnannnn" << std::endl;
+        // std::cout << "wgfnannnn" << std::endl;
         return (bytesSent);
     }
     return (0);
 }
 
-void Connection::sockRead()
+int Connection::sockRead()
 {
     long bytesRec = 0;
     // std::cout << "BODY:" << "offset: " << _request.getOffset() << ", bytesRec:" <<  _request.getBytesRec() << std::endl;
     if (_request.getState() ==  WAIT)
-        return ;
+        return (0);
     if((_request.getOffset() >= _request.getBytesRec()))
     {
         _request.setBuffer();
         if ((bytesRec = recv(_socket, _request.getBuffer(), BUFF_SIZE, 0)) <= 0)
         {
+            if (bytesRec == 0)
+            {
+                std::cout << "EOFFOFOFO" << std::endl;
+            }
+            else
+                std::cout << "irororor" << std::endl;
+            //exit(102);
+            // throw bad request if error
             _request.setOffset(0);
             _request.setBytrec(0);
             _request.setBuffer();
-            return ;
+            return (-1);
         }
     }
     try
@@ -131,6 +139,7 @@ void Connection::sockRead()
     //after completing the request
     if(_request.getState() == DONE)
         _request.closeContentFile();
+    return (0);
 }
 
 int Connection::sockWrite()
@@ -149,7 +158,7 @@ int Connection::sockWrite()
     }
     if (_response.getProgress() == SEND_HEADERS)
     {
-        ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), 0);
+        ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), MSG_NOSIGNAL);
         if (bytesSent == -1)
             return (-1);
         _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
