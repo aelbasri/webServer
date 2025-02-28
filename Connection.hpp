@@ -21,4 +21,8 @@ class Connection
         bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};
         bool readyToWrite() const {return _readyToWrite;};
         int sockWrite();
+        int sendFile(bool sendInChunkFormat);
+        bool sendRawBody();
 };
+
+// int sendFile(Connection cnx, Response response, bool sendInChunkFormat);

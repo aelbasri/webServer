@@ -191,6 +191,7 @@ void Config::creatPoll()
                 {
                     std::cout << "ayoub  -   - - - -  nchaat" << std::endl;
                     connections[_fd]->sockRead();
+                    std::cout << "ayoub ---- khraj" << std::endl;
                     if (connections[_fd]->readyToWrite())
                     {
                         std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;

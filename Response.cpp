@@ -54,13 +54,14 @@ void Response::setFile(const std::string &filepath)
     // else throw exception (or declare file not found somehow)
 }
 
-void Response::setContentLength()
+void Response::setContentLength(int length)
 {
     std::stringstream ss;
-    if (!_file.empty())
-        ss << _file.size();
-    else
-        ss << _textBody.size();
+    ss << length;
+    // if (!_file.empty())
+    //     ss << _file.size();
+    // else
+    //     ss << _textBody.size();
     std::string len = ss.str();
     addHeader(std::string("Content-Length"), len);
 }
@@ -214,8 +215,12 @@ void Response::buildResponse(Request &request, server *serv)
                 setHttpVersion(HTTP_VERSION);
                 setStatusCode(200);
                 setReasonPhrase("OK");
-                setFile(dirIndexPath);
-                setContentLength();
+
+                //setFile(dirIndexPath);
+
+                int length = setFileBody(dirIndexPath);
+                setContentLength(length);
+                
                 addHeader(std::string("Content-Type"), contentType);
                 addHeader(std::string("Connection"), connection);
                 std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
@@ -247,7 +252,7 @@ void Response::buildResponse(Request &request, server *serv)
             setStatusCode(200);
             setReasonPhrase("OK");
             setTextBody(htmlDirectoryListing);
-            setContentLength();
+            //setContentLength(100);
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
@@ -265,18 +270,24 @@ void Response::buildResponse(Request &request, server *serv)
     {
         if (request.getMethod() == "GET")
         {
+            std::cout << "================== dkhlna akhouya ayoub" << std::endl;
             // generate response
             std::string connection = "close";
             std::string contentType = getMimeType(path);
 
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
-            setReasonPhrase("OK");
-            setFile(path);
-
-            setContentLength();
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
+            setReasonPhrase("OK");
+            int length = setFileBody(path);
+            setContentLength(length);
+            
+            
+            //setFile(path);
+            // sendFile(path);
+            //call
+
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
             webServLog(logMessage, INFO);
             return ;
@@ -339,12 +350,13 @@ void Response::createResponseStream()
             responseStream << it->first << ": " << it->second << "\r\n";
         }
         responseStream << "\r\n";
-        if (!_file.empty())
-            responseStream << _file;
-        else if (!_textBody.empty())
-            responseStream << _textBody;
+        // if (!_file.empty())
+        //     responseStream << _file;
+        // else if (!_textBody.empty())
+        //     responseStream << _textBody;
 
         _response = responseStream.str();
     }
-    _progress = SEND_RESPONSE;
+    // _progress = SEND_RESPONSE;
+    _progress = SEND_HEADERS;
 }

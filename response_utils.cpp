@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "Connection.hpp"
 #include "configfile/location.hpp"
 
 std::map<std::string, std::string> initializeMimeTypes() {
@@ -284,7 +285,7 @@ void setHttpResponse(int status, std::string message, Response &response, server
     {
         // check if file exists
         std::ifstream file(path.c_str());
-        if (!file.is_open()) {
+        if (!file.good()) {
             std::cout << "Error page not found" << std::endl;
             // use custom html string
             customHtml = getCustomHtmlString(status, message);
@@ -298,17 +299,26 @@ void setHttpResponse(int status, std::string message, Response &response, server
     response.setHttpVersion(HTTP_VERSION);
     response.setStatusCode(status);
     response.setReasonPhrase(message);
-    if (customHtml.empty())
-        response.setFile(path);
-    else
-        response.setTextBody(customHtml);
-
-    response.setContentLength();
     response.addHeader(std::string("Content-Type"), contentType);
     response.addHeader(std::string("Connection"), connection);
+    if (customHtml.empty())
+    {
+        int length = response.setFileBody(path);
+        response.setContentLength(length);
+    }
+    else
+    {
+        response.setTextBody(customHtml);
+        response.setContentLength(customHtml.size());
+    }
 }
 
 std::string getFilenameFromPath(std::string path) {
     (void)path;
     return (std::string("someRandomName"));
 }
+
+
+
+
+
