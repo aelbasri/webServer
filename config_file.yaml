@@ -6,13 +6,13 @@ server:
     max_body_size :       1456
 
     error_pages:
-      404: /home/saad/code/1337/webServer/assets/errors/404.html
-      500: /home/saad/code/1337/webServer/assets/errors/50x.html
-      302:  /home/saad/code/1337/webServer/assets/errors/302.html
+      404: ./assets/errors/404.html
+      500: ./assets/errors/50x.html
+      302: ./assets/errors/302.html
     location :
       type : /
       # root_directory: /root2
-      root_directory: /home/zel-khad/Desktop/webServer/assets/authentification
+      root_directory: ./assets/authentification
       allowed_methods:
         - POST
         - DELETE
@@ -21,7 +21,7 @@ server:
       # upload_dir :  hala madrid
     location :
       type : /zara
-      root_directory: /home/saad/code/1337/webServer/assets
+      root_directory: ./assets
       allowed_methods:
         - POST
         - DELETE
@@ -55,12 +55,12 @@ server:
     max_body_size :       1456
 
     error_pages:
-      404: /home/saad/code/1337/webServer/assets/errors/404.html
-      500: /home/saad/code/1337/webServer/assets/errors/50x.html
-      302:  /home/saad/code/1337/webServer/assets/errors/302.html
+      404: ./assets/errors/404.html
+      500: ./assets/errors/50x.html
+      302: ./assets/errors/302.html
     location :
       type : /
-      root_directory: /home/zel-khad/Desktop/webServer/assets/authentification
+      root_directory: ./assets/authentification
 
       allowed_methods:
         - POST

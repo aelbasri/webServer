@@ -63,13 +63,67 @@ void Response::setContentLength()
     addHeader(std::string("Content-Length"), len);
 }
 
-std::string set_cookie(const std::string& username) {
-    std::string cookie = "Set-Cookie: username=" + username + "; Max-Age=3600";
+// std::string set_cookie(const std::string& username) {
+//     std::string cookie = "Set-Cookie: username=" + username + "; Max-Age=3600";
+//     return cookie;
+// }
+
+std::string set_cookie(const std::string& name, const std::string& value) {
+    // exit(10);
+    std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
     return cookie;
+}
+
+
+void parseCredentials(const std::string& input, std::string& username, std::string& password, bool& rememberMe) {
+    size_t userPos = input.find("username=");
+    if (userPos != std::string::npos) {
+        size_t userStart = userPos + 9;
+        size_t userEnd = input.find('&', userStart);
+        username = input.substr(userStart, userEnd - userStart);
+    }
+
+    size_t passPos = input.find("password=");
+    if (passPos != std::string::npos) {
+        size_t passStart = passPos + 9;
+        size_t passEnd = input.find('&', passStart);
+        password = input.substr(passStart, passEnd - passStart);
+    }
+
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos != std::string::npos) {
+        size_t rememberStart = rememberPos + 12;
+        size_t rememberEnd = input.find('&', rememberStart);
+        std::string rememberValue = input.substr(rememberStart, rememberEnd - rememberStart);
+        rememberMe = (rememberValue == "on");
+    } else {
+        rememberMe = false;
+    }
+}
+bool isRememberMeOn(const std::string& input) {
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos == std::string::npos) {
+        return false; 
+    }
+
+    size_t valueStart = rememberPos + 12;
+    size_t valueEnd = input.find('&', valueStart);
+
+    std::string rememberValue;
+    if (valueEnd == std::string::npos) {
+        rememberValue = input.substr(valueStart);
+    } else {
+        rememberValue = input.substr(valueStart, valueEnd - valueStart);
+    }
+    return (rememberValue == "on");
 }
 
 void Response::buildResponse(Request &request, server *serv)
 {
+    std::string username, password;
+    bool remember_me;
+
+
     if (request.getRequestTarget() == "/cgi-bin/login.py"){
         std::string s;
         CGI _cgi("./cgi-bin/login.py", "/usr/bin/python3");
@@ -82,8 +136,12 @@ void Response::buildResponse(Request &request, server *serv)
             if (!s.empty())
                 s.push_back('\n');
         }
+        parseCredentials(s, username, password, remember_me);
         std::string executable = _cgi.RunCgi(s);
-        return ;
+        std::cout << "hey im here ******************* " << executable << std::endl;
+        std::string cookie = set_cookie(username, password);
+        addHeader(std::string("Set-Cookie"), cookie);
+
     }
     if (!serv)
         throw server::InternalServerError();

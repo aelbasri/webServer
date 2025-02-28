@@ -51,47 +51,46 @@ std::string getInterpreter(const std::string& filePath) {
     return "";
 }
 
-std::string CGI::RunCgi(const std::string &requestBody){
-    if (!isFileValid(_path)) {
-        //throw exception
-        std::cout << "File '" << _path << "' is not valid or does not exist." << std::endl;
-        return "";
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+
+std::string CGI::RunCgi(const std::string &requestBody) {
+    if (!isFileValid(_path)) return "";
+
+    int in_pipe[2], out_pipe[2];
+    if (pipe(in_pipe) < 0 || pipe(out_pipe) < 0) return "";
+
+    pid_t pid = fork();
+    if (pid < 0) return "";
+
+    if (pid == 0) { // Child
+        close(in_pipe[1]);
+        close(out_pipe[0]);
+        
+        dup2(in_pipe[0], STDIN_FILENO);
+        dup2(out_pipe[1], STDOUT_FILENO);
+        
+        close(in_pipe[0]);
+        close(out_pipe[1]);
+
+        execl(_path.c_str(), _path.c_str(), NULL);
+        exit(1); // If exec fails
     }
+    else { // Parent
+        close(in_pipe[0]);
+        close(out_pipe[1]);
 
-    std::string interpreter = getInterpreter(_path);
-    if (!interpreter.empty()) {
-        std::cout << "Interpreter for " << _path << ": " << interpreter << std::endl;
-    } else {
-        std::cout << "No interpreter found for " << _path << std::endl;
+        // Write request body
+        write(in_pipe[1], requestBody.c_str(), requestBody.size());
+        close(in_pipe[1]);
+
+        // Read response (single read operation)
+        char buffer[4096];
+        int bytes = read(out_pipe[0], buffer, sizeof(buffer));
+        close(out_pipe[0]);
+
+        waitpid(pid, NULL, 0);
+        return bytes > 0 ? std::string(buffer, bytes) : "";
     }
-    std::string command = interpreter + " " + _path;
-    FILE *pipe;
-    char buffer[128];
-
-    std::cout << "---------------->>>>>>>> " << requestBody << std::endl;
-
-    pipe = popen(command.c_str(), "w");
-    if (!pipe)
-    {
-        std::cerr << "Error executing command." << std::endl;
-        return "";
-    }
-
-    fwrite(requestBody.c_str(), 1, requestBody.size(), pipe);
-    pclose(pipe);
-
-    pipe = popen(command.c_str(), "r");
-    if (!pipe)
-    {
-        std::cerr << "Error executing command." << std::endl;
-        return "";
-    }
-
-    std::string result = "";
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-    {
-        result += buffer;
-    }
-    pclose(pipe);
-    return result;
 }
