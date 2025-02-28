@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/01/25 12:13:26 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/02/25 11:02:49 by zel-khad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ server& server::operator=(const server &server)
     _content = server._content;
     _name = server._name;
     _host = server._host;
-    _port = server._port;
+    // _port = server._port;
     _max_body_size = server._max_body_size;
     _sock = server._sock;
     hints = server.hints;
@@ -40,7 +40,7 @@ server& server::operator=(const server &server)
 
 server::server(){
     _name = "localhost";
-    _port.push_back("8080");
+    _sock.push_back(std::make_pair("8080", 0));
     _NPort = 0;
     _location = nullptr;
     _indixL = 0;
@@ -67,9 +67,9 @@ void server::Set_host(std::string __host){
     _host = __host;
 }
 
-void server::Set_port(std::vector<std::string> __port){
-    _port = __port;
-}
+// void server::Set_port(std::vector<std::string> __port){
+//     _port = __port;
+// }
 
 void server::Set_max_body_size(long long __max_body_size){
     _max_body_size = __max_body_size;
@@ -87,9 +87,11 @@ std::string server::Get_host(){
     return(_host) ;
 }
 
-std::vector<std::string> server::Get_port(){
-    return(_port);
-}
+
+
+// std::vector<std::string> server::Get_port(){
+//     return(_port);
+// }
 
 long long server::Get_max_body_size(){
     return(_max_body_size);
@@ -108,14 +110,27 @@ void server::new_location(){
 }
 
 
-int server::getSock()  {
+std::vector<std::pair<std::string, int> > server::getSock()  {
     return _sock;
 }
 
-void server::setSock(int sock) {
-   _sock = sock;
+    // Setter for _sock
+void server::setSock(std::string port,int sock) {
+	for (size_t i = 0; i < _sock.size(); i++)
+	{
+		std::pair<std::string, int> tmp = _sock[i];
+        if (tmp.first == port)
+        {
+            tmp.second = sock;
+            break;
+        }
+	}
 }
 
+
+
+
+    // Getter for hints
 struct addrinfo &server::getHints()  {
     return hints;
 }
@@ -232,7 +247,7 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
             _location[_indixL].SetRoot_directory(value);
         }
         else if (key == "index") {
-            _location[_indixL].SetIndex(value);
+            _location[_indixL].GetIndex().push_back(value);
         }
         else if (key == "rewrite") {
             _location[_indixL].SetRewrite(value);
@@ -240,6 +255,12 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
             i--;
+        }
+        else if (key == "directoryListing"){
+            if (value == "on")
+                _location[_indixL].SetDirectoryListing(true);
+            else
+                _location[_indixL].SetDirectoryListing(false);   
         }
         else{
             _indixL ++;
@@ -253,10 +274,12 @@ void server::Getlocation(){
     {
         std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  "_index  : " <<_location[i].GetIndex() << std::endl;
-        std::cout <<  "_root_directory  : " <<_location[i].GetRoot_directory() << std::endl;
+        std::cout <<  " directoryListing  : " <<_location[i].GetDirectoryListing() << std::endl;
+        std::cout <<  "_root_directory    : " <<_location[i].GetRoot_directory() << std::endl;
         std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
-
+        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetIndex().size(); y++) {
+            std::cout << " indix :  "<<_location[i].GetIndex()[y] << std::endl;
+        }
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
             std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
         }
@@ -326,11 +349,11 @@ void server::loadingDataserver(){
                 throw std::runtime_error("Invalid port: " + value);
             }
             if (flage == 0){
-                _port[_NPort] = value;
+                _sock[_NPort] = make_pair(value, 0);
                 flage = 1;
             }
             else
-                _port.push_back(value);
+                _sock.push_back(make_pair(value, 0));
             _NPort++;
         }
         else if (key == "max_body_size") {
@@ -383,15 +406,15 @@ int server::run()
     std::cout << "------------------------------------------------" << std::endl;
 
 
-    for (std::vector<std::string>::size_type y = 0; y < _port.size();  y++)
+    for (std::vector<std::string>::size_type y = 0; y < _sock.size();  y++)
     {
         
         memset(&hints, 0,  sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
 
-        std::cout << "aaa chabab" << _port[y].c_str() << std::endl;
-        if ((addI = getaddrinfo(_host.c_str(), _port[y].c_str(), &hints, &res)) != 0)
+        std::cout << "aaa chabab" << _sock[y].first.c_str() << std::endl;
+        if ((addI = getaddrinfo(_host.c_str(), _sock[y].first.c_str(), &hints, &res)) != 0)
         {
             std::cerr << gai_strerror(addI) << std::endl;
             return -1;
@@ -399,16 +422,16 @@ int server::run()
 
         for(p = res; p; p = p->ai_next)
         {
-            if ((_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+            if ((_sock[y].second = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
                 continue;
-            if ((setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
+            if ((setsockopt(_sock[y].second, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
             {
                 perror("setsockopt");
                 return (-1);
                 /*exit(1);*/
             }
             //bind
-            if (bind(_sock, res->ai_addr, res->ai_addrlen) == -1)
+            if (bind(_sock[y].second, res->ai_addr, res->ai_addrlen) == -1)
                 continue;
             break;
         }
@@ -421,14 +444,14 @@ int server::run()
             /*exit(1);*/
         }
 
-        if (listen(_sock, 10) == -1)
+        if (listen(_sock[y].second, 10) == -1)
         {
             perror("listen() failed");
             return (-1);
             /*exit(1);*/
         }
         /* code */
-        std::cout << "Server is listening on " << _host << ":" << _port[y] << std::endl; 
+        std::cout << "Server is listening on " << _host << ":" << _sock[y].first << std::endl; 
     }
     
 

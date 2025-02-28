@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdio>
 #include <ctime>
+#include <sys/wait.h>
 #include <sys/time.h>
 #include <sstream>
 

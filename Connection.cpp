@@ -1,52 +1,65 @@
 #include "Connection.hpp"
+#include "Request.hpp"
 #include "Response.hpp"
 #include "colors.hpp"
 
 void Connection::sockRead()
 {
-    long bytesRec;
-    char buffer[BUFF_SIZE];
-
-
-    if((bytesRec = recv(_socket, buffer, BUFF_SIZE, 0)) <= 0)
+    long bytesRec = 0;
+    // std::cout << "BODY:" << "offset: " << _request.getOffset() << ", bytesRec:" <<  _request.getBytesRec() << std::endl;
+    if (_request.getState() ==  WAIT)
         return ;
-    std::cout << RED << "bytes recived: " << bytesRec << RESET << std::endl;
-    std::cout << RED << "==============" << RESET <<std::endl;
-    write(1, buffer, bytesRec); 
-    std::cout << RED << "==============" << RESET <<std::endl;
-
+    if((_request.getOffset() >= _request.getBytesRec()))
+    {
+        _request.setBuffer();
+        if ((bytesRec = recv(_socket, _request.getBuffer(), BUFF_SIZE, 0)) <= 0)
+        {
+            _request.setOffset(0);
+            _request.setBytrec(0);
+            _request.setBuffer();
+            return ;
+        }
+        write(1, _request.getBuffer(), BUFF_SIZE);
+    }
     try
     {
-        _request.handle_request(buffer, bytesRec);
+        if (_request.getOffset() >= _request.getBytesRec())
+        {
+            _request.setOffset(0);
+            _request.setBytrec(bytesRec);
+        }
+        _request.handle_request(_request.getBuffer());
     }
-    catch(const std::exception& e)
+    catch (const Request::badRequest &e)
     {
-        std::cerr << e.what() << std::endl;
+        // std::cerr << e.what() << std::endl;
+        _request.setState(DONE);
+        setHttpResponse(400, "Bad Request", _response, _server);
+        _response.createResponseStream();
     }
-    
-    
+
+    //if the request is done or waiting
+    if (_request.getState() == DONE || _request.getState() == WAIT)
+        _readyToWrite = true;
+
     //after completing the request
     if(_request.getState() == DONE)
-    {
-        std::cout << "Request Done" << std::endl;
-        _request.printRequestElement(); 
-        // close(_socket);
         _request.closeContentFile();
-    }
 }
 
 int Connection::sockWrite()
 {
-    if (_request.getState() != DONE || _response.getProgress() == FINISHED)
+    if ((_request.getState() != DONE && _request.getState() != WAIT) || _response.getProgress() == FINISHED)
         return (0);
-    if (_response.getProgress() == BUILD_RESPONSE)
+    if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD)
     {
         try {
             _response.buildResponse(_request, _server);
         } catch (const server::InternalServerError &e) {
-            setError(500, "Internal Server Error", _response, _server);
+            setHttpResponse(500, "Internal Server Error", _response, _server);
         }
-        _response.createResponseStream();
+        if (_response.getProgress() != POST_HOLD)
+            _response.createResponseStream();
     }
     if (_response.getProgress() == SEND_RESPONSE)
     {
@@ -58,7 +71,7 @@ int Connection::sockWrite()
         {
             _response.setSent(true);
             _response.setProgress(FINISHED);
-            std::cout << "Response Done" << std::endl;
+            // std::cout << "Response Done" << std::endl;
         }
     }
     return (0);

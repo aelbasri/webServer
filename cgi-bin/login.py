@@ -33,11 +33,10 @@ def parse_body(body):
 def main():
     # Read the request body from stdin
     body = sys.stdin.read()
-    print(f"Raw Request Body: {body}")  # Debug: Print the raw request body
 
     # Parse the request body
     form_data = parse_body(body)
-    print(f"Parsed Form Data: {form_data}")  # Debug: Print the parsed form data
+    # print(f"Parsed Form Data: {form_data}")  # Debug: Print the parsed form data
 
     # Extract form fields
     username = form_data.get("username", "")
@@ -45,10 +44,7 @@ def main():
     remember_me = form_data.get("remember_me", "")
 
     # Debug: Print the parsed data
-    print("Content-Type: text/plain\n")  # Temporarily use text/plain for debugging
-    print(f"Username: {username}")
-    print(f"Password: {password}")
-    print(f"Remember Me: {remember_me} (Type: {type(remember_me)})")
+
 
     # Validate the username and password
     if username == VALID_USERNAME and password == VALID_PASSWORD:

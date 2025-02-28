@@ -6,4 +6,8 @@ a.out
 *.png
 *.jpg
 *.jpeg
+<<<<<<< HEAD
 *.vscode
+=======
+
+>>>>>>> origin/response

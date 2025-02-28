@@ -51,46 +51,55 @@ std::string getInterpreter(const std::string& filePath) {
     return "";
 }
 
-#include <unistd.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-
 std::string CGI::RunCgi(const std::string &requestBody) {
-    if (!isFileValid(_path)) return "";
+    if (!isFileValid(_path)) {
+        std::cout << "File '" << _path << "' is invalid/missing" << std::endl;
+        return "";
+    }
 
-    int in_pipe[2], out_pipe[2];
-    if (pipe(in_pipe) < 0 || pipe(out_pipe) < 0) return "";
+    int stdin_pipe[2], stdout_pipe[2];
+    if (pipe(stdin_pipe) || pipe(stdout_pipe)) {
+        perror("pipe failed");
+        return "";
+    }
 
     pid_t pid = fork();
-    if (pid < 0) return "";
-
-    if (pid == 0) { // Child
-        close(in_pipe[1]);
-        close(out_pipe[0]);
-        
-        dup2(in_pipe[0], STDIN_FILENO);
-        dup2(out_pipe[1], STDOUT_FILENO);
-        
-        close(in_pipe[0]);
-        close(out_pipe[1]);
-
-        execl(_path.c_str(), _path.c_str(), NULL);
-        exit(1); // If exec fails
+    if (pid == -1) {
+        perror("fork failed");
+        return "";
     }
-    else { // Parent
-        close(in_pipe[0]);
-        close(out_pipe[1]);
 
-        // Write request body
-        write(in_pipe[1], requestBody.c_str(), requestBody.size());
-        close(in_pipe[1]);
+    if (pid == 0) { 
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        dup2(stdout_pipe[1], STDOUT_FILENO);
 
-        // Read response (single read operation)
+        close(stdin_pipe[0]); close(stdin_pipe[1]);
+        close(stdout_pipe[0]); close(stdout_pipe[1]);
+
+        std::string interpreter = getInterpreter(_path);
+        std::vector<const char*> args;
+        
+        if (!interpreter.empty()) {
+            args.push_back(interpreter.c_str());
+        }
+        args.push_back(_path.c_str());
+        args.push_back(NULL);
+
+        execvp(args[0], const_cast<char* const*>(&args[0]));
+        perror("execvp failed");
+        _exit(EXIT_FAILURE);
+    }
+    else {
+        close(stdin_pipe[0]); close(stdout_pipe[1]);
+
+        write(stdin_pipe[1], requestBody.c_str(), requestBody.size());
+        close(stdin_pipe[1]);
+
         char buffer[4096];
-        int bytes = read(out_pipe[0], buffer, sizeof(buffer));
-        close(out_pipe[0]);
+        ssize_t bytes_read = read(stdout_pipe[0], buffer, sizeof(buffer));
+        close(stdout_pipe[0]);
 
         waitpid(pid, NULL, 0);
-        return bytes > 0 ? std::string(buffer, bytes) : "";
+        return bytes_read > 0 ? std::string(buffer, bytes_read) : "";
     }
 }

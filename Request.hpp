@@ -43,6 +43,7 @@ enum State
     CHUNKS,
     CHUNK_HEADER,
     LOAD_CHUNK,
+    WAIT,
     DONE
 };
 
@@ -61,6 +62,9 @@ class Request
         State mainState;
         State subState;
 
+        char buffer[BUFF_SIZE];
+        long bytesRec;
+        long offset;
 
         int indexMethod;
         int indexHttp;
@@ -91,20 +95,28 @@ class Request
 
 
     public:
-        Request() : mainState(REQUEST_LINE), subState(METHOD), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0) {}
+        Request() : mainState(REQUEST_LINE), subState(METHOD), bytesRec(0), offset(0), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0) { memset(buffer, 0, BUFF_SIZE); }
         
-        void handle_request(char *buffer, long bytesRec);
+        void handle_request(char *buffer);
         
         State getState(void) const { return (mainState);}
+        long getOffset(void) const { return (offset); }
+        long getBytesRec(void) const { return (bytesRec); }
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
+        char *getBuffer() { return buffer; }
+
+        void setState(State state) { mainState = state; }
+        void setBytrec(long _bytesRec) { bytesRec = _bytesRec; }
+        void setOffset(long _offset) { offset = _offset; }
+        void setBuffer() {memset(buffer, 0, BUFF_SIZE);}
         // int parseRequestLine(int socket, int &offset, int &nBytes);
         // int parseHeader(int socket, int &offset, int &nBytes);
         // int parseBody(int socket, int &offset, int &nBytes);
-        void parseRequestLine(char *buffer, int i);
-        void parseHeader(char *buffer, int i);
-        void parseBody(char *buffer, int &i, long bytesRec);
+        void parseRequestLine(char *buffer, long i);
+        void parseHeader(char *buffer, long i);
+        void parseBody(char *buffer, long &i, long bytesRec);
 
         void closeContentFile();
 

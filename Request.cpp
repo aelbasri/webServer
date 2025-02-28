@@ -55,86 +55,6 @@ bool parseField(std::string field, std::string &fieldName, std::string &fieldVal
     return(true);
 }
 
-
-// int Request::parseRequestLine(int socket, int &offset, int &nBytes)
-// {
-//     std::string firstLine("");
-//     std::vector<std::string> elements;
-
-//     //Loop reach '\n'
-//     while ((nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
-//     {
-//         write(1, buffer , nBytes);
-//         offset = 0;
-//         while (offset < nBytes && buffer[offset] != '\n')
-//             firstLine += buffer[offset++];
-//         if(buffer[offset] == '\n')
-//             break;
-//     }
-    
-//     if(firstLine[offset - 1] != '\r' || firstLine.empty())
-//         return (temporaryPrintError());
-//     int start = 0;
-//     int i = 0;
-//     for(; i < offset - 1; i++)
-//     {
-//         if (isWhiteSpace(firstLine[start]))
-//             return (temporaryPrintError());
-//         if (isWhiteSpace(firstLine[i]))
-//         {
-//             elements.push_back(firstLine.substr(start, i - start));
-//             start = i + 1;
-//         }
-//     }
-//     if (i > 0 && isWhiteSpace(firstLine[i - 1]))
-//         return (temporaryPrintError());
-//     else
-//         elements.push_back(firstLine.substr(start, i - start));
-//     if (elements.size() != 3)
-//         return (temporaryPrintError());
-//     else
-//     {
-//         method = elements[0];
-//         requestTarget = elements[1];
-//         httpVersion = elements[2];
-//     }
-//     offset++;
-
-//     // parseMethod();
-//     // parseRequestTarget();
-//     // parseHttpVersion();
-//     return (0);
-// }
-
-// int Request::parseHeader(int socket, int &offset, int &nBytes)
-// {
-//     std::string field("");
-
-//     while(offset < nBytes || (offset = 0)|| (nBytes = recv(socket, buffer, BUFF_SIZE - 1, 0)) > 0)
-//     {
-//         if (buffer[offset] == '\n' && offset - 1 >= 0 && buffer[offset - 1] == '\r')
-//         {
-//             field.erase(field.end() - 1);
-//             if(field.empty())
-//                 break;
-//             std::string fieldName;
-//             std::string fieldValue;
-//             if(!parseField(field, fieldName, fieldValue))
-//                 return(temporaryPrintError());
-//             header.insert(std::make_pair(fieldName, fieldValue));
-//             field.clear();
-//         }
-//         else 
-//             field += buffer[offset];
-//         offset++;
-
-//     }
-//     return(0);
-// }
-
-//parse body
-
-
 bool skipHeader(int &count, int &offset, char *buffer, int nBytes)
 {
     while (offset < nBytes)
@@ -269,7 +189,7 @@ void loadChunk(parseBodyElement &body, int &chunkSize)
 // }
 
 
-void Request::parseRequestLine(char *buffer, int i)
+void Request::parseRequestLine(char *buffer, long i)
 {
     switch (subState)
     {
@@ -431,7 +351,7 @@ void ft_trim(std::string &fieldValue)
     fieldValue = fieldValue.substr(start, end - start + 1);
 }
 
-void Request::parseHeader(char *buffer, int i)
+void Request::parseHeader(char *buffer, long i)
 {
     switch (subState)
     {
@@ -482,7 +402,7 @@ void Request::parseHeader(char *buffer, int i)
             }
             if(fieldName.empty() && fieldValue.empty())
             {
-                mainState = BODY;
+                mainState = WAIT;
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
@@ -522,7 +442,7 @@ void Request::printRequestElement()
     // }
 }
 
-void Request::parseBody(char *buffer, int &i, long bytesRec)
+void Request::parseBody(char *buffer, long &i, long bytesRec)
 {
     // (void)i;
     // (void)bytesRec;
@@ -537,9 +457,10 @@ void Request::parseBody(char *buffer, int &i, long bytesRec)
                 contentFile.open("/tmp/.contentData", std::ios::binary);
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             contentFile.write(buffer + i, toBeConsumed);
-            std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
+            // std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
             i += toBeConsumed;
             consumed += toBeConsumed;
+            // std::cout << "consumed:" << consumed << "== content length:" << contentLength << std::endl;
             if (consumed == contentLength)
             {
                 mainState = DONE;
@@ -602,25 +523,30 @@ void Request::closeContentFile()
     contentFile.close();
 }
 
-void Request::handle_request(char *buffer, long bytesRec)
+void Request::handle_request(char *buffer)
 {
-    for(int i = 0; i < bytesRec; i++)
+    for(; offset < bytesRec; offset++)
     {
-        // std::cout << "->" << i << "=>" << buffer[i] << std::endl;
         switch (mainState)
         {
             case REQUEST_LINE:
-                parseRequestLine(buffer, i);
+                parseRequestLine(buffer, offset);
                 break;
             case HEADER:
-                parseHeader(buffer, i);
+                parseHeader(buffer, offset);
+                break;
+            case WAIT:
+                std::cout << "WAAAAAAIT:" << "offset: " << offset << ", bytesRec:" << bytesRec << std::endl;
+                goto exit_request_parsing;
                 break;
             case BODY:
-                parseBody(buffer, i, bytesRec);
+                parseBody(buffer, offset, bytesRec);
                 break;
             default:
                 break;
         }
     }
+    exit_request_parsing :       
+        return ;
 }
 

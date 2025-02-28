@@ -12,16 +12,15 @@
 
 #include "location.hpp"
 
-location::location(){}
+location::location():directoryListing(false){}
 
 location::~location(){}
-
 
 void location::SetType_of_location(std::string __type_of_location){
     _type_of_location = __type_of_location;
 }
 
-void location::SetIndex(std::string __index){
+void location::SetIndex(std::vector<std::string> __index){
     _index = __index;
 }
 
@@ -29,7 +28,7 @@ void location::SetRoot_directory(std::string __root_directory){
     _root_directory = __root_directory;
 }
 
-void location::SetAllowed_methods(std::vector<std::string> &target){
+void location::SetAllowed_methods(std::vector<std::string> target){
     _allowed_methods = target;
 }
 
@@ -45,11 +44,15 @@ void location::SetRewrite(std::string __rewrite){
     _rewrite = __rewrite;
 }
 
+void location::SetDirectoryListing(bool __directoryListing){
+    directoryListing = __directoryListing;
+}
+
 std::string location::GetType_of_location(){
     return _type_of_location;
 }
 
-std::string location::GetIndex(){
+std::vector<std::string> &location::GetIndex(){
     return _index;
 }
 
@@ -67,4 +70,8 @@ long long location::GetMax_body_size(){
 
 std::string location::GetRewrite(){
     return _rewrite;
+}
+
+bool location::GetDirectoryListing(){
+    return directoryListing;
 }

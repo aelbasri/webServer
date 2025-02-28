@@ -52,11 +52,11 @@ private:
     size_t _indixL;
     int     _NPort;
 
-    std::vector<std::string> _port;
+    // std::vector<std::string> _port;
     std::vector<CGI> _CGI;
     location *_location;
 
-    int         _sock;
+    std::vector<std::pair<std::string, int> >  _sock;
     struct addrinfo hints;
     struct addrinfo *res ,*p;
     int addI;
@@ -67,9 +67,9 @@ public:
     void Set_content(std::string __content);
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
-    void Set_port(std::vector<std::string> __port);
+    // void Set_port(std::vector<std::string> __port);
     void Set_max_body_size(long long __max_body_size);
-    void setSock(int sock);
+    void setSock(std::string port,int sock);
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
     void setAddI(int newAddI);\
@@ -80,11 +80,11 @@ public:
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
-    std::vector<std::string> Get_port();
+    //  std::vector<std::string> Get_port() { retru};
     long long Get_max_body_size();
     std::vector<CGI> GetCgi();
 
-    int getSock() ;
+    std::vector<std::pair<std::string, int> >  getSock() ;
     struct addrinfo &getHints() ;
     void setHints( struct addrinfo& newHints);
     struct addrinfo* &getRes();

@@ -6,6 +6,7 @@
 #include "configfile/server_data.hpp"
 #include <stdlib.h>
 #include "colors.hpp"
+#include "log.hpp"
 
 Config::Config():_server(nullptr){}
 
@@ -113,14 +114,18 @@ void Config::creatPoll()
 
     for(size_t i = 0; i < _nembre_of_server; i++)
     {
-        struct epoll_event ev;
-        ev.data.fd = _server[i].getSock();
-        ev.events = EPOLLIN;
-        if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock(), &ev) == -1)
-        {
-            // Throw exception )
-            return;
-        }
+         for (std::vector<std::string>::size_type y = 0; y < _server[i].getSock().size();  y++){
+
+            struct epoll_event ev;
+            ev.data.fd = _server[i].getSock()[y].second;
+            ev.events = EPOLLIN;
+            if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock()[y].second, &ev) == -1)
+            {
+                // Throw exception )
+                return;
+            }
+         }
+
     }
 
     std::map<int, Connection*> connections;
@@ -139,67 +144,93 @@ void Config::creatPoll()
             int _fd = evlist[i].data.fd;
             if(evlist[i].events & EPOLLIN)
             {
+                std::cout << "EPOLLIN ON SOCKET: " << _fd << std::endl;
                 int server_fd = -1;
                 server *tmp;
-                // std::cout << "aji nakhdo siservi" << std::endl;
+            
                 for(size_t j = 0; j < _nembre_of_server; j++)
                 {
-                    if (_fd == _server[j].getSock())
-                    {
-                        server_fd = _server[j].getSock();
-                        tmp = &_server[j];
-                        break;
+                    for (std::vector<std::string>::size_type y = 0; y < _server[j].getSock().size();  y++){
+                        if (_fd == _server[j].getSock()[y].second)
+                        {
+                            server_fd = _server[j].getSock()[y].second;
+                            std::cout << "L9ina " << server_fd << std::endl;
+
+                            tmp = &_server[j];
+                            break;
+                        }
                     }
+
+                // std::cout << "aji nakhdo siservi" << std::endl;
                 }
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
-                    // std::cout << "accept new_fd: " << new_fd << std::endl;
+                    std::cout << "new_fd: " << new_fd << std::endl;
+
+                    webServLog("New connection accepted", INFO);
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
-                    ev.events = EPOLLIN | EPOLLOUT;
+                    // ev.events = EPOLLIN | EPOLLOUT;
+                    ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
                     // evlist[i].data.fd = new_fd;
                     // evlist[i].events = EPOLLIN;
 
                     if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
                     {
+                            std::cout << "ayou lghza zin lbogoss " << std::endl;
+
                         // Throw exception
                         return;
                     }
                     fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
                     connections[new_fd] = new Connection(new_fd, tmp);
-                    // std::cout << "new connection: " << new_fd << std::endl;
                 }
                 else
                 {
-                    std::cout << "request socket READ:" << connections[_fd]->getSocket() << std::endl;
-                    std::cout << YELLOW << BOLD << "== REQUEST PROCESSING ==" << RESET << std::endl;
-                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
+                    std::cout << "ayoub  -   - - - -  nchaat" << std::endl;
                     connections[_fd]->sockRead();
-                    std::cout << YELLOW << BOLD << "== END OF REQUEST PROCESSING ==" << RESET << std::endl;
-                    std::cout << YELLOW << BOLD << "===============================================" << RESET <<std::endl;
-                    std::cout << std::endl;
+                    if (connections[_fd]->readyToWrite())
+                    {
+                        std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
+                        struct epoll_event ev;
+                        ev.data.fd = _fd;
+                        ev.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLERR;
+                        if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
+                        {
+                            // Throw exception
+                            return;
+                        }
+                    }
                 }
             }
-            else if(evlist[i].events & EPOLLOUT)
+            if (evlist[i].events & EPOLLOUT)
             {
-                // send response
-                std::cout << "request socket WRITE: " << connections[_fd]->getSocket() << std::endl;
-                std::cout << GREEN << BOLD << "== RESPONSE PROCESSING ==" << RESET << std::endl;
-                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
+                // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
                     close(_fd);
                     delete connections[_fd];
                     connections.erase(_fd);
+                    // remove from epoll
+                    epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                    webServLog("Connection closed", INFO);
                 }
-                std::cout << GREEN << BOLD << "== END RESPONSE PROCESSING ==" << RESET << std::endl;
-                std::cout << GREEN << BOLD << "===============================================" << RESET << std::endl;
-                std::cout << std::endl;
+            }
+            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
+            {
+                std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
+                close(_fd);
+                delete connections[_fd];
+                connections.erase(_fd);
+                // remove from epoll
+                epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                webServLog("Connection closed", INFO);
             }
         }
     }
+
 }
 
 int Config::SetupServers()
