@@ -4,7 +4,7 @@
 
 CGI::CGI(){}
 
-CGI::CGI(std::string __path, std::string __type): _type(__type), _path(__path){} 
+CGI::CGI(std::string __path): _path(__path){} 
 
 CGI::~CGI(){}
 
@@ -16,12 +16,16 @@ void CGI::SetType(std::string __type){
 	_type = __type;
 }
 
-std::string CGI::GetPath(){
+std::string CGI::GetPath() const{
 	return (_path);
 }
 
-std::string CGI::GetType(){
+std::string CGI::GetType() const{
 	return (_type);
+}
+
+int CGI::GetExitStatus() const{
+    return _ExitStatus;
 }
 
 bool isFileValid(const std::string& filePath) {
@@ -51,48 +55,66 @@ std::string getInterpreter(const std::string& filePath) {
     return "";
 }
 
-std::string CGI::RunCgi(const std::string &requestBody){
+std::string CGI::RunCgi(const std::string &requestBody) {
     if (!isFileValid(_path)) {
-        //throw exception
-        std::cout << "File '" << _path << "' is not valid or does not exist." << std::endl;
+        std::cout << "File '" << _path << "' is invalid/missing" << std::endl;
         return "";
     }
 
-    std::string interpreter = getInterpreter(_path);
-    if (!interpreter.empty()) {
-        std::cout << "Interpreter for " << _path << ": " << interpreter << std::endl;
-    } else {
-        std::cout << "No interpreter found for " << _path << std::endl;
-    }
-    std::string command = interpreter + " " + _path;
-    FILE *pipe;
-    char buffer[128];
-
-    std::cout << "---------------->>>>>>>> " << requestBody << std::endl;
-
-    pipe = popen(command.c_str(), "w");
-    if (!pipe)
-    {
-        std::cerr << "Error executing command." << std::endl;
+    int stdin_pipe[2], stdout_pipe[2];
+    if (pipe(stdin_pipe) || pipe(stdout_pipe)) {
+        perror("pipe failed");
         return "";
     }
 
-    fwrite(requestBody.c_str(), 1, requestBody.size(), pipe);
-    // whili 3la file
-    pclose(pipe);
-
-    pipe = popen(command.c_str(), "r");
-    if (!pipe)
-    {
-        std::cerr << "Error executing command." << std::endl;
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork failed");
         return "";
     }
 
-    std::string result = "";
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-    {
-        result += buffer;
+    if (pid == 0) { 
+        dup2(stdin_pipe[0], STDIN_FILENO); 
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+
+        close(stdin_pipe[0]); close(stdin_pipe[1]);
+        close(stdout_pipe[0]); close(stdout_pipe[1]);
+
+        std::string interpreter = getInterpreter(_path);
+        std::vector<const char*> args;
+        
+        if (!interpreter.empty()) {
+            args.push_back(interpreter.c_str());
+        }
+        args.push_back(_path.c_str());
+        args.push_back(NULL);
+
+        execv(args[0], const_cast<char* const*>(&args[0])); 
+        perror("execv failed");
+        _exit(EXIT_FAILURE); 
     }
-    pclose(pipe);
-    return result;
+    else {
+        close(stdin_pipe[0]); close(stdout_pipe[1]);
+
+        write(stdin_pipe[1], requestBody.c_str(), requestBody.size()); 
+        close(stdin_pipe[1]);
+
+        char buffer[4096];
+        ssize_t bytes_read = read(stdout_pipe[0], buffer, sizeof(buffer));
+        close(stdout_pipe[0]); 
+
+        int status;
+        waitpid(pid, &status, 0); 
+
+        if (WIFEXITED(status)) {
+            _ExitStatus = WEXITSTATUS(status);
+        }
+        else if (WIFSIGNALED(status)) {
+            _ExitStatus = WTERMSIG(status); 
+        }
+        else {
+            _ExitStatus = -1;
+        }
+        return bytes_read > 0 ? std::string(buffer, bytes_read) : "";
+    }
 }

@@ -66,8 +66,107 @@ void Response::setContentLength(int length)
     addHeader(std::string("Content-Length"), len);
 }
 
+std::string set_cookie(const std::string& name, const std::string& value) {
+    std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
+    return cookie;
+}
+
+
+void parseCredentials(const std::string& input, std::string& username, std::string& password, bool& rememberMe) {
+    size_t userPos = input.find("username=");
+    if (userPos != std::string::npos) {
+        size_t userStart = userPos + 9;
+        size_t userEnd = input.find('&', userStart);
+        username = input.substr(userStart, userEnd - userStart);
+    }
+
+    size_t passPos = input.find("password=");
+    if (passPos != std::string::npos) {
+        size_t passStart = passPos + 9;
+        size_t passEnd = input.find('&', passStart);
+        password = input.substr(passStart, passEnd - passStart);
+    }
+
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos != std::string::npos) {
+        size_t rememberStart = rememberPos + 12;
+        size_t rememberEnd = input.find('&', rememberStart);
+        std::string rememberValue = input.substr(rememberStart, rememberEnd - rememberStart);
+        rememberMe = (rememberValue == "on");
+    } else {
+        rememberMe = false;
+    }
+}
+bool isRememberMeOn(const std::string& input) {
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos == std::string::npos) {
+        return false; 
+    }
+
+    size_t valueStart = rememberPos + 12;
+    size_t valueEnd = input.find('&', valueStart);
+
+    std::string rememberValue;
+    if (valueEnd == std::string::npos) {
+        rememberValue = input.substr(valueStart);
+    } else {
+        rememberValue = input.substr(valueStart, valueEnd - valueStart);
+    }
+    return (rememberValue == "on");
+}
+
+std::string generateSecureToken(size_t length = 32) {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1; 
+
+    std::string token;
+    token.reserve(length);
+
+    std::srand(static_cast<unsigned int>(std::time(0)));
+
+    for (size_t i = 0; i < length; ++i) {
+        token += charset[std::rand() % charsetSize];
+    }
+    return token;
+}
+
 void Response::buildResponse(Request &request, server *serv)
 {
+    std::string username, password;
+    bool remember_me;
+
+    if (request.getRequestTarget() == "/cgi-bin/login.py") {
+        std::string s;
+        CGI _cgi("./cgi-bin/login.py");
+
+        std::ifstream myfile("/tmp/.contentData");
+        if (!myfile.is_open()) {
+            webServLog("Failed to open /tmp/.contentData", ERROR);
+            setStatusCode(500);
+            return;
+        }
+        std::string line;
+        while (getline(myfile, line)) {
+            s += line + "\n";
+        }
+        myfile.close();
+        std::string executable = _cgi.RunCgi(s);
+        std::string postData;
+        if (request.getMethod() == "POST") {
+            postData = s;
+        }
+
+        std::string cgiOutput = _cgi.RunCgi(postData);
+        parseCredentials(s, username, password, remember_me);
+        if (remember_me) {
+            std::string sessionToken = generateSecureToken();
+            std::string cookie = set_cookie("session_token", sessionToken);
+            addHeader("Set-Cookie", cookie);
+        }
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+        webServLog(logMessage, INFO);
+        return;
+    }
     if (!serv)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Server not found]";
@@ -117,7 +216,7 @@ void Response::buildResponse(Request &request, server *serv)
         webServLog(logMessage, ERROR);
         return (setHttpResponse(405, "Method Not Allowed", *this, serv));
     }
-        // std::cout << "Method allowed: " << request.getMethod() << std::endl;
+    // std::cout << "Method allowed: " << request.getMethod() << std::endl;
 
     // check for redirection 
     if (!locationMatch->GetRewrite().empty())
@@ -161,6 +260,7 @@ void Response::buildResponse(Request &request, server *serv)
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
+    // std::cout << "FULL PATH IS: " << path << std::endl;
 
     // if directory, if path not ends with '/` redirect to path/ , then check if there is index, else directory listing
     // else, regular file handling
@@ -189,12 +289,10 @@ void Response::buildResponse(Request &request, server *serv)
             webServLog(logMessage, ERROR);
             return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         }
-        
-        //TODO: whili 3lihoum
-        if (locationMatch->GetIndex().size() > 0 && !locationMatch->GetIndex()[0].empty())
+
+        for (size_t i = 0; i < locationMatch->GetIndex().size(); i++)
         {
-            // TODO: WHIli 3lihoum
-            std::string dirIndexPath = path + locationMatch->GetIndex()[0];
+            std::string dirIndexPath = path + locationMatch->GetIndex()[i];
             FileState indexState = getFileState(dirIndexPath.c_str());
             if (indexState == FILE_IS_REGULAR)
             {
@@ -206,23 +304,24 @@ void Response::buildResponse(Request &request, server *serv)
                 setReasonPhrase("OK");
 
                 //setFile(dirIndexPath);
+                addHeader(std::string("Content-Type"), contentType);
+                addHeader(std::string("Connection"), connection);
 
                 int length = setFileBody(dirIndexPath);
                 setContentLength(length);
                 
-                addHeader(std::string("Content-Type"), contentType);
-                addHeader(std::string("Connection"), connection);
                 std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
                 webServLog(logMessage, INFO);
                 return ;
             }
-            else
-            {
-                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Index file not found]";
-                webServLog(logMessage, ERROR);
-                return (setHttpResponse(403, "Forbidden", *this, serv));
-            }
         }
+        if (locationMatch->GetIndex().size())
+        {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Index file not found]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(403, "Forbidden", *this, serv));
+        }
+
         bool directoryListing = locationMatch->GetDirectoryListing();
         if (directoryListing)
         {
@@ -240,10 +339,10 @@ void Response::buildResponse(Request &request, server *serv)
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
             setReasonPhrase("OK");
-            setTextBody(htmlDirectoryListing);
-            //setContentLength(100);
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
+            setTextBody(htmlDirectoryListing);
+            setContentLength(htmlDirectoryListing.size());
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
             webServLog(logMessage, INFO);
             return ;
@@ -259,8 +358,6 @@ void Response::buildResponse(Request &request, server *serv)
     {
         if (request.getMethod() == "GET")
         {
-            std::cout << "================== dkhlna akhouya ayoub" << std::endl;
-            // generate response
             std::string connection = "close";
             std::string contentType = getMimeType(path);
 
@@ -271,11 +368,6 @@ void Response::buildResponse(Request &request, server *serv)
             setReasonPhrase("OK");
             int length = setFileBody(path);
             setContentLength(length);
-            
-            
-            //setFile(path);
-            // sendFile(path);
-            //call
 
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
             webServLog(logMessage, INFO);
@@ -301,6 +393,10 @@ void Response::buildResponse(Request &request, server *serv)
                 setHttpVersion(HTTP_VERSION);
                 setStatusCode(204);
                 setReasonPhrase("No Content");
+
+                setTextBody("");
+                setContentLength(0);
+                
                 std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [204] [No Content] [File deleted]";
                 webServLog(logMessage, INFO);
                 return ;
@@ -339,13 +435,8 @@ void Response::createResponseStream()
             responseStream << it->first << ": " << it->second << "\r\n";
         }
         responseStream << "\r\n";
-        // if (!_file.empty())
-        //     responseStream << _file;
-        // else if (!_textBody.empty())
-        //     responseStream << _textBody;
 
         _response = responseStream.str();
     }
-    // _progress = SEND_RESPONSE;
     _progress = SEND_HEADERS;
 }

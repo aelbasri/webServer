@@ -29,7 +29,7 @@ void err(){
     exit(1);
 }
 
-server *Config::getServer(){
+server *Config::getServer() const{
     return(_server);
 }
 
@@ -76,7 +76,7 @@ void Config::loidingFile(std::string file){
     f.close();
 }
 
-int Config::get_nembre_of_server(){
+int Config::get_nembre_of_server() const{
     return(_nembre_of_server);
 }
 
@@ -98,6 +98,12 @@ int Config::CheckNumberOfServer(){
             words++;
     }
     return words;
+}
+
+bool keyExist(std::map<int, Connection*> connections, int key)
+{
+    std::map<int, Connection*>::iterator it = connections.find(key);
+    return (it != connections.end());
 }
 
 void Config::creatPoll()
@@ -216,9 +222,9 @@ void Config::creatPoll()
                     }
                 }
             }
-            if (evlist[i].events & EPOLLOUT)
+            else if (evlist[i].events & EPOLLOUT)
             {
-                std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
+                // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
                     close(_fd);
@@ -229,7 +235,7 @@ void Config::creatPoll()
                     webServLog("Connection closed", INFO);
                 }
             }
-            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
+            else if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
                 std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
                 close(_fd);

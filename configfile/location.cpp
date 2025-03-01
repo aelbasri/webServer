@@ -32,7 +32,7 @@ void location::SetAllowed_methods(std::vector<std::string> target){
     _allowed_methods = target;
 }
 
-std::vector<std::string>  location::GetAllowed_methods(){
+std::vector<std::string>  location::GetAllowed_methods() const{
     return _allowed_methods;
 }
 
@@ -48,30 +48,30 @@ void location::SetDirectoryListing(bool __directoryListing){
     directoryListing = __directoryListing;
 }
 
-std::string location::GetType_of_location(){
+std::string location::GetType_of_location() const{
     return _type_of_location;
 }
 
-std::vector<std::string> &location::GetIndex(){
+std::vector<std::string> &location::GetIndex() {
     return _index;
 }
 
-std::string location::GetRoot_directory(){
+std::string location::GetRoot_directory() const{
     return _root_directory;
 }
 
-std::string location::GetUpload_dir(){
+std::string location::GetUpload_dir() const{
     return _upload_dir;
 }
 
-long long location::GetMax_body_size(){
+long long location::GetMax_body_size() const{
     return _max_body_size;
 }
 
-std::string location::GetRewrite(){
+std::string location::GetRewrite() const{
     return _rewrite;
 }
 
-bool location::GetDirectoryListing(){
+bool location::GetDirectoryListing() const{
     return directoryListing;
 }

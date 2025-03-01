@@ -40,13 +40,13 @@ public:
     void SetRewrite(std::string __rewrite);
     void SetDirectoryListing(bool __directoryListing);
 
-    std::vector<std::string> GetAllowed_methods();
-    std::vector<std::string> &GetIndex();
-    std::string GetType_of_location();    
-    std::string GetRoot_directory();    
-    std::string GetUpload_dir();
-    long long GetMax_body_size();
-    std::string  GetRewrite();
-    bool GetDirectoryListing();
+    std::vector<std::string> GetAllowed_methods() const;
+    std::vector<std::string> &GetIndex() ;
+    std::string GetType_of_location() const;    
+    std::string GetRoot_directory() const;    
+    std::string GetUpload_dir() const;
+    long long GetMax_body_size() const;
+    std::string  GetRewrite() const;
+    bool GetDirectoryListing() const;
     
 };

@@ -27,3 +27,6 @@
 #define BLINK       "\033[5m"
 #define REVERSE     "\033[7m" // Reverse foreground and background colors
 #define HIDDEN      "\033[8m" // Hidden text (useful for passwords)
+
+
+// /home/zel-khad/Documents/webServer/assets/authentification/login.html
