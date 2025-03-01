@@ -131,64 +131,6 @@ void loadChunk(parseBodyElement &body, int &chunkSize)
     }
 }
 
-// int Request::parseBody(int socket, int &offset, int &nBytes)
-// {
-//     parseBodyElement body;
-
-//     body.offset = ++offset;
-//     body.buffer = buffer;
-//     body.consumed = 0;
-//     body.nBytes = nBytes;
-//     body.file.open("out.jpg", std::ios::binary);
-
-//     fcntl(socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-
-//     if(headers["Transfer-Encoding"] == "chunked")
-//     {
-//         int chunkSize = -1;
-//         std::string s_number = "";
-//         while (1)
-//         {
-//             if((body.offset >= body.nBytes))
-//             {
-//                 if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE, 0)) <= 0)
-//                     break;
-//                 else
-//                     body.offset = 0;   
-//             }
-//             if(chunkSize == -1)
-//                 chunkSize = getChunkSize(body.offset, body.buffer ,body.nBytes, s_number);
-//             if (chunkSize == 0)
-//                 break;
-//             loadChunk(body, chunkSize);
-//         }
-//     }
-//     else if (headers.find("Content-Length") != headers.end())
-//     {
-//         int contentLen = strtol(headers["Content-Length"].c_str(), NULL, 10);
-
-//         if (body.offset < body.nBytes)
-//         {
-//             body.file.write(body.buffer + body.offset, body.nBytes - body.offset);
-//             body.consumed = body.nBytes - body.offset;
-//         }
-//         while (body.consumed < contentLen)
-//         {
-//             if ((body.nBytes = recv(socket, body.buffer, BUFF_SIZE, 0)) <= 0)
-//                     break;
-//             int toBeConsumed = std::min(body.nBytes, contentLen - body.consumed);
-//             body.file.write(body.buffer, toBeConsumed);
-//             body.consumed += toBeConsumed;
-//         }
-//     }
-//     else if (headers.find("Content-Length") != headers.end() && (headers["Content-Type"].find("boundary") != std::string::npos))
-//     {
-//     }
-//     body.file.close();
-//     return (0);
-// }
-
-
 void Request::parseRequestLine(char *buffer, long i)
 {
     switch (subState)
@@ -406,7 +348,10 @@ void Request::parseHeader(char *buffer, long i)
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
+                    std::cout << "saad mrtah" << contentLength << "==" << maxBodySize << std::endl;
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
+                    if (contentLength > maxBodySize)
+                        throw badRequest();
                 }
                 else if(headers["Transfer-Encoding"] == "chunked")
                     subState = CHUNK_HEADER;
@@ -422,25 +367,6 @@ void Request::parseHeader(char *buffer, long i)
             break;
     }
 }
-void Request::printRequestElement()
-{
-    std::cout << "{" << method << "}" << std::endl;
-    std::cout << "{" << requestTarget << "}" << std::endl;
-    std::cout << "{" << httpVersion << "}" << std::endl;
-
-    std::cout << "{==========}" << std::endl;
-
-    for (std::map<std::string , std::string>::iterator ite = headers.begin(); ite != headers.end(); ite++)
-    {
-        std::cout << "{" << ite->first << "}:{" << ite->second << "}" << std::endl;
-    }
-
-    // std::cout << "{==========}" << std::endl;
-    // for (std::map<std::string , std::string>::iterator ite = query.begin(); ite != query.end(); ite++)
-    // {
-    //     std::cout << "{" << ite->first << "}={" << ite->second << "}" << std::endl;
-    // }
-}
 
 void Request::parseBody(char *buffer, long &i, long bytesRec)
 {
@@ -448,14 +374,17 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
     // (void)bytesRec;
     // (void)buffer;
     int toBeConsumed = 0;
-
     switch (subState)
     {
         
         case CONTLEN :
             //check is open
             if (!contentFile.is_open())
-                contentFile.open("/tmp/.contentData", std::ios::binary);
+            {
+                if (_contentFile.empty())
+                    _contentFile = "/tmp/.contentFile";
+                contentFile.open(_contentFile.c_str(), std::ios::binary);
+            }
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             contentFile.write(buffer + i, toBeConsumed);
             // std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
@@ -471,7 +400,11 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             break;
         case CHUNK_HEADER:
             if (!contentFile.is_open())
-                contentFile.open("/tmp/.contentData", std::ios::binary);
+            {
+                if (_contentFile.empty())
+                    _contentFile = "/tmp/.contentFile";
+                contentFile.open(_contentFile.c_str(), std::ios::binary);
+            }
             if (buffer[i] == CR)
                 subState = LF_STATE;
             else
@@ -508,6 +441,9 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             contentFile.write(buffer + i, toBeConsumed);
             i += toBeConsumed;
             consumed += toBeConsumed;
+            contentBodySize += consumed;
+            if (contentBodySize > maxBodySize)
+                throw badRequest();
             if (consumed == chunkSizeL)
                 subState = LF_STATE;
             break;

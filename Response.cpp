@@ -134,9 +134,15 @@ void Response::buildResponse(Request &request, server *serv)
     if (request.getMethod() == "POST")
     {
         // TODO: UPLOAD TO UPLOAD_DIR, Check filename if already exists
+    
         if (request.getState() == WAIT)
         {
             // std::cout << "Swich state to BODY state" << std::endl;
+            std::string _contentFile = locationMatch->GetUpload_dir();
+            if ((!_contentFile.empty() && !request.getRequestTarget().empty()) && _contentFile[_contentFile.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
+                _contentFile += "/";
+            _contentFile += request.getRequestTarget();
+            request.setContentFile(_contentFile);
             request.setState(BODY);
             setProgress(POST_HOLD);
             return ;

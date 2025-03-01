@@ -15,7 +15,9 @@ class Connection
     
     public:
         Connection() : _server(nullptr), _readyToWrite(false) {};
-        Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {};
+        Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {
+            _request.setMaxBodySize(_server->Get_max_body_size());
+        };
         int sockRead();
         int getSocket() const {return _socket;};
         bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};

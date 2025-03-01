@@ -122,6 +122,7 @@ int Connection::sockRead()
             _request.setOffset(0);
             _request.setBytrec(bytesRec);
         }
+        
         _request.handle_request(_request.getBuffer());
     }
     catch (const Request::badRequest &e)
