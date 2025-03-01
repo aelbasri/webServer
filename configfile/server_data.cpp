@@ -237,6 +237,9 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         else if (key == "rewrite") {
             _location[_indixL].SetRewrite(value);
         }
+        else if (key == "upload_dir") {
+            _location[_indixL].SetUpload_dir(value);
+        }
         else if (key == "allowed_methods") {
             LoidingAllowedMethods(lines , i);
             i--;
@@ -261,6 +264,8 @@ void server::Getlocation(){
         std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
         std::cout <<  " directoryListing  : " <<_location[i].GetDirectoryListing() << std::endl;
         std::cout <<  "_root_directory    : " <<_location[i].GetRoot_directory() << std::endl;
+        std::cout <<  "uploiad_dir    : " <<_location[i].GetUpload_dir() << std::endl;
+
         std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
         for (std::vector<std::string>::size_type y = 0; y < _location[i].GetIndex().size(); y++) {
             std::cout << " indix :  "<<_location[i].GetIndex()[y] << std::endl;
@@ -360,7 +365,7 @@ void server::loadingDataserver(){
             i--;
         }
     }
-    // Getlocation();
+    Getlocation();
 }
 
 

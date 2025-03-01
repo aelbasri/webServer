@@ -12,7 +12,7 @@
 
 #include "location.hpp"
 
-location::location():directoryListing(false){}
+location::location():_upload_dir("./UPLOAD_DIRDFL/"), directoryListing(false){}
 
 location::~location(){}
 
@@ -46,6 +46,10 @@ void location::SetRewrite(std::string __rewrite){
 
 void location::SetDirectoryListing(bool __directoryListing){
     directoryListing = __directoryListing;
+}
+
+void location::SetUpload_dir(std::string __Upload_dir){
+    _upload_dir = __Upload_dir;
 }
 
 std::string location::GetType_of_location(){
