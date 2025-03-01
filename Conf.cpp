@@ -166,6 +166,10 @@ void Config::creatPoll()
                 if (server_fd != -1)
                 {
                     int new_fd = accept(server_fd, NULL,  0);
+                    struct timeval timeout;
+                    timeout.tv_sec = 10;
+                    timeout.tv_usec = 0;
+                    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
                     std::cout << "new_fd: " << new_fd << std::endl;
 
                     webServLog("New connection accepted", INFO);
@@ -179,7 +183,6 @@ void Config::creatPoll()
 
                     if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
                     {
-                            std::cout << "ayou lghza zin lbogoss " << std::endl;
 
                         // Throw exception
                         return;
@@ -189,9 +192,17 @@ void Config::creatPoll()
                 }
                 else
                 {
-                    std::cout << "ayoub  -   - - - -  nchaat" << std::endl;
-                    connections[_fd]->sockRead();
-                    if (connections[_fd]->readyToWrite())
+                    if (connections[_fd]->sockRead() == -1)
+                    {
+                        std::cout << "thanina mn 3adow lah" << std::endl;
+                        close(_fd);
+                        delete connections[_fd];
+                        connections.erase(_fd);
+                        // remove from epoll
+                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                        webServLog("Connection closed", INFO);
+                    }
+                    else if (connections[_fd]->readyToWrite())
                     {
                         std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
                         struct epoll_event ev;

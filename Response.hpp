@@ -22,12 +22,15 @@
 
 #define HTTP_VERSION "HTTP/1.1"
 #define RESPONSE_CHUNCK_SIZE 1024
+#define BUFFER_SIZE 100
 
 enum Progress
 {
     BUILD_RESPONSE,
     POST_HOLD,
     SEND_RESPONSE,
+    SEND_HEADERS,
+    SEND_BODY,
     FINISHED,
 };
 
@@ -36,6 +39,15 @@ enum FileState {
     FILE_IS_REGULAR,
     FILE_IS_DIRECTORY,
     FILE_IS_OTHER
+};
+
+struct responseBodyFile
+{
+    size_t offset;
+    size_t nBytes;
+    size_t consumed;
+    char buffer[BUFFER_SIZE];
+    std::ifstream file;
 };
 
 
@@ -59,13 +71,33 @@ class Response
         bool _sent;
 
         enum Progress _progress;
+        responseBodyFile *_fileBody;
 
     public:
-        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE) {};
-
+        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr) {};
+        ~Response() { if (_fileBody) { delete _fileBody; _fileBody = nullptr;} };
         enum Progress getProgress() const { return _progress; };
         std::string getResponse() const { return _response; };
+        responseBodyFile *getFileBody() { return _fileBody; };
+        std::string getTextBody() const { return _textBody; };
         size_t getTotalBytesSent() const { return _totalBytesSent; };
+        int setFileBody(std::string path) {
+            _fileBody = new responseBodyFile();
+            _fileBody->file.open(path.c_str());
+            if (!_fileBody->file.is_open()) {
+                //throw server::InternalServerError();
+                std::cout << "exititititia  " << path << std::endl;
+                exit(100);
+            }
+            _fileBody->file.seekg (0, _fileBody->file.end);
+            int length = _fileBody->file.tellg();
+            _fileBody->file.seekg (0, _fileBody->file.beg);
+
+            _fileBody->offset = 0;
+            _fileBody->consumed = 0;
+            _fileBody->nBytes = 0;
+            return (length);
+         } 
         void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
         void setSent(bool sent) { _sent = sent; };
         void setProgress(enum Progress progress) { _progress = progress; };
@@ -76,7 +108,7 @@ class Response
         void addHeader(const std::string &key, const std::string &value);
         void setTextBody(const std::string &body);
         void setFile(const std::string &filepath);
-        void setContentLength(void); 
+        void setContentLength(int length); 
 
         void buildResponse(Request &request, server *serv);
         void createResponseStream();
@@ -93,3 +125,5 @@ int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
 std::string getFilenameFromPath(std::string path);
+
+

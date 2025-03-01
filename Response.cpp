@@ -54,13 +54,14 @@ void Response::setFile(const std::string &filepath)
     // else throw exception (or declare file not found somehow)
 }
 
-void Response::setContentLength()
+void Response::setContentLength(int length)
 {
     std::stringstream ss;
-    if (!_file.empty())
-        ss << _file.size();
-    else
-        ss << _textBody.size();
+    ss << length;
+    // if (!_file.empty())
+    //     ss << _file.size();
+    // else
+    //     ss << _textBody.size();
     std::string len = ss.str();
     addHeader(std::string("Content-Length"), len);
 }
@@ -119,30 +120,68 @@ bool isRememberMeOn(const std::string& input) {
     return (rememberValue == "on");
 }
 
+std::string generateSecureToken(size_t length = 32) {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1; 
+
+    std::string token;
+    token.reserve(length);
+
+    std::srand(static_cast<unsigned int>(std::time(0)));
+
+    for (size_t i = 0; i < length; ++i) {
+        token += charset[std::rand() % charsetSize];
+    }
+    return token;
+}
+
 void Response::buildResponse(Request &request, server *serv)
 {
     std::string username, password;
     bool remember_me;
 
 
-    if (request.getRequestTarget() == "/cgi-bin/login.py"){
+    if (request.getRequestTarget() == "/cgi-bin/login.py") {
         std::string s;
-        CGI _cgi("./cgi-bin/test.pl");
-        
-        std::ifstream myfile;
-        myfile.open("/tmp/.contentData");
-        while (getline(myfile, s))
-        {
-            s += s;
-            if (!s.empty())
-                s.push_back('\n');
+        CGI _cgi("./cgi-bin/login.py");
+
+        std::ifstream myfile("/tmp/.contentData");
+        if (!myfile.is_open()) {
+            webServLog("Failed to open /tmp/.contentData", ERROR);
+            setStatusCode(500);
+            return;
         }
+
+        std::string line;
+        while (getline(myfile, line)) {
+            s += line + "\n";
+        }
+        myfile.close();
+
         std::string executable = _cgi.RunCgi(s);
         parseCredentials(s, username, password, remember_me);
-        std::string cookie = set_cookie("username", password);
-        if (remember_me == true)
-            addHeader(std::string("Set-Cookie"), cookie);
-        std::cout << "the autput of cgi is : |" << executable <<"|" << " and the exit status is : " << _cgi.GetExitStatus() <<   std::endl;
+
+        if (remember_me) {
+            std::string sessionToken = generateSecureToken();
+            std::string cookie = set_cookie("session_token", sessionToken);
+            addHeader("Set-Cookie", cookie);
+        }
+
+        setHttpVersion(HTTP_VERSION);
+        setStatusCode(200);
+        setReasonPhrase("OK");
+
+        int length = executable.size();
+        setContentLength(length);
+        setFileBody(executable); 
+
+        addHeader("Content-Type", getMimeType("text/html"));
+        addHeader("Connection", "close");
+
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Login processed]";
+        webServLog(logMessage, INFO);
+
+        return;
     }
     if (!serv)
     {
@@ -274,8 +313,12 @@ void Response::buildResponse(Request &request, server *serv)
                 setHttpVersion(HTTP_VERSION);
                 setStatusCode(200);
                 setReasonPhrase("OK");
-                setFile(dirIndexPath);
-                setContentLength();
+
+                //setFile(dirIndexPath);
+
+                int length = setFileBody(dirIndexPath);
+                setContentLength(length);
+                
                 addHeader(std::string("Content-Type"), contentType);
                 addHeader(std::string("Connection"), connection);
                 std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
@@ -307,7 +350,7 @@ void Response::buildResponse(Request &request, server *serv)
             setStatusCode(200);
             setReasonPhrase("OK");
             setTextBody(htmlDirectoryListing);
-            setContentLength();
+            //setContentLength(100);
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
@@ -325,18 +368,24 @@ void Response::buildResponse(Request &request, server *serv)
     {
         if (request.getMethod() == "GET")
         {
+            std::cout << "================== dkhlna akhouya ayoub" << std::endl;
             // generate response
             std::string connection = "close";
             std::string contentType = getMimeType(path);
 
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
-            setReasonPhrase("OK");
-            setFile(path);
-
-            setContentLength();
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
+            setReasonPhrase("OK");
+            int length = setFileBody(path);
+            setContentLength(length);
+            
+            
+            //setFile(path);
+            // sendFile(path);
+            //call
+
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
             webServLog(logMessage, INFO);
             return ;
@@ -399,12 +448,13 @@ void Response::createResponseStream()
             responseStream << it->first << ": " << it->second << "\r\n";
         }
         responseStream << "\r\n";
-        if (!_file.empty())
-            responseStream << _file;
-        else if (!_textBody.empty())
-            responseStream << _textBody;
+        // if (!_file.empty())
+        //     responseStream << _file;
+        // else if (!_textBody.empty())
+        //     responseStream << _textBody;
 
         _response = responseStream.str();
     }
-    _progress = SEND_RESPONSE;
+    // _progress = SEND_RESPONSE;
+    _progress = SEND_HEADERS;
 }
