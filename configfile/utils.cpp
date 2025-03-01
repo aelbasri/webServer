@@ -12,6 +12,13 @@
 
 #include "../Conf.hpp"
 
+bool startsWithSlash(const std::string& str) {
+    return (!str.empty() && str[0] == '/');
+}
+
+bool hasSpace(const std::string& str) {
+    return (str.find(' ') != std::string::npos);
+}
 
 void CheckKey(const std::string& key) {
     std::string arr[] = {"name", "host", "port", "max_body_size", "error_pages", "location", "rewrite", "CGI"};

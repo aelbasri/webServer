@@ -68,3 +68,5 @@ bool isValidHost(const std::string& host);
 std::string removeWhitespace(const std::string input);
 std::string escapeSpaces(const std::string input);
 void CheckKey(const std::string& key);
+bool hasSpace(const std::string& str);
+bool startsWithSlash(const std::string& str);
