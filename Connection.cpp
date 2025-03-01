@@ -27,8 +27,10 @@ ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkF
 
 bool Connection::sendRawBody()
 {
+    // std::cout << "AYOUB BGHA YK3AA" << std::endl;
     if (_response.getTextBody().empty()) {
         // Nothing to send
+        std::cout << "AYOUB KHAWI" << std::endl;
         return true;
     }
 
@@ -36,13 +38,14 @@ bool Connection::sendRawBody()
     ssize_t bytesSent = send(_socket, _response.getTextBody().data(), _response.getTextBody().size(), MSG_NOSIGNAL);
     if (bytesSent < 0) {
         // Error occurred while sending
+        // std::cout << "AYOUB INTERNAL IROR" << std::endl;
         throw server::InternalServerError();
     }
 
     // Update the httpBodyContent to remove the sent part
-    _response.getTextBody().erase(0, bytesSent);
-
+    _response.setTextBody(_response.getTextBody().erase(0, bytesSent));
     // Return true if all data was sent, false otherwise
+    std::cout  << bytesSent <<  _response.getTextBody() << std::endl;
     return _response.getTextBody().empty();
 }
 
@@ -123,7 +126,7 @@ int Connection::sockRead()
             _request.setOffset(0);
             _request.setBytrec(bytesRec);
         }
-        
+
         _request.handle_request(_request.getBuffer());
     }
     catch (const Request::badRequest &e)
@@ -132,6 +135,8 @@ int Connection::sockRead()
         _request.setState(DONE);
         setHttpResponse(400, "Bad Request", _response, _server);
         _response.createResponseStream();
+        std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [400] [Bad Request] [Request is invalid]";
+        webServLog(logMessage, WARNING);
     }
 
     //if the request is done or waiting

@@ -204,7 +204,7 @@ void Response::buildResponse(Request &request, server *serv)
     if (locationMatch == nullptr)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [404] [Not Found] [Location not found]";
-        webServLog(logMessage, ERROR);
+        webServLog(logMessage, WARNING);
         return (setHttpResponse(404, "Not Found", *this, serv));
     }
     // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
@@ -213,7 +213,7 @@ void Response::buildResponse(Request &request, server *serv)
     if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
-        webServLog(logMessage, ERROR);
+        webServLog(logMessage, WARNING);
         return (setHttpResponse(405, "Method Not Allowed", *this, serv));
     }
     // std::cout << "Method allowed: " << request.getMethod() << std::endl;
@@ -224,7 +224,7 @@ void Response::buildResponse(Request &request, server *serv)
         std::string redirectURL = locationMatch->GetRewrite();
         addHeader(std::string("Location"), redirectURL);
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
-        webServLog(logMessage, INFO);
+        webServLog(logMessage, WARNING);
         return (setHttpResponse(301, "Moved Permanently", *this, serv));
     }
 
@@ -242,6 +242,8 @@ void Response::buildResponse(Request &request, server *serv)
                 _contentFile += "/";
             _contentFile += request.getRequestTarget();
             request.setContentFile(_contentFile);
+            std::cout << "tabonmo howa lakhour" << std::endl;
+            // exit(10);
             request.setState(BODY);
             setProgress(POST_HOLD);
             return ;
@@ -268,7 +270,7 @@ void Response::buildResponse(Request &request, server *serv)
     if (fileState == FILE_DOES_NOT_EXIST)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [404] [Not Found] [File not found]";
-        webServLog(logMessage, ERROR);
+        webServLog(logMessage, WARNING);
         return (setHttpResponse(404, "Not Found", *this, serv));
     }
     else if (fileState == FILE_IS_DIRECTORY)
@@ -279,14 +281,14 @@ void Response::buildResponse(Request &request, server *serv)
             std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";
             addHeader(std::string("Location"), redirectURL);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
-            webServLog(logMessage, INFO);
+            webServLog(logMessage, WARNING);
             return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
 
         if (request.getMethod() != "GET")
         {
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
-            webServLog(logMessage, ERROR);
+            webServLog(logMessage, WARNING);
             return (setHttpResponse(405, "Method Not Allowed", *this, serv));
         }
 
@@ -314,12 +316,6 @@ void Response::buildResponse(Request &request, server *serv)
                 webServLog(logMessage, INFO);
                 return ;
             }
-        }
-        if (locationMatch->GetIndex().size())
-        {
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Index file not found]";
-            webServLog(logMessage, ERROR);
-            return (setHttpResponse(403, "Forbidden", *this, serv));
         }
 
         bool directoryListing = locationMatch->GetDirectoryListing();
@@ -350,7 +346,7 @@ void Response::buildResponse(Request &request, server *serv)
         else
         {
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Directory listing not allowed]";
-            webServLog(logMessage, ERROR);
+            webServLog(logMessage, WARNING);
             return (setHttpResponse(403, "Forbidden", *this, serv));
         }
     }
@@ -406,7 +402,7 @@ void Response::buildResponse(Request &request, server *serv)
                 if (errno == EACCES || errno == EPERM || errno == EISDIR) // EACCES: permission denied, EPERM: operation not permitted, EISDIR: is a directory
                 {
                     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Permission denied]";
-                    webServLog(logMessage, ERROR);
+                    webServLog(logMessage, WARNING);
                     return (setHttpResponse(403, "Forbidden", *this, serv));
                 }
                 else

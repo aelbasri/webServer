@@ -207,8 +207,9 @@ void Config::creatPoll()
                         // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                         webServLog("Connection closed", INFO);
+                        continue;
                     }
-                    else if (connections[_fd]->readyToWrite())
+                    if (connections[_fd]->readyToWrite())
                     {
                         std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
                         struct epoll_event ev;
@@ -217,12 +218,12 @@ void Config::creatPoll()
                         if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
                         {
                             // Throw exception
-                            return;
+                            return ;
                         }
                     }
                 }
             }
-            else if (evlist[i].events & EPOLLOUT)
+            if (evlist[i].events & EPOLLOUT)
             {
                 // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
@@ -233,9 +234,10 @@ void Config::creatPoll()
                     // remove from epoll
                     epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                     webServLog("Connection closed", INFO);
+                        continue;
                 }
             }
-            else if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
+            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
                 std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
                 close(_fd);
@@ -244,6 +246,8 @@ void Config::creatPoll()
                 // remove from epoll
                 epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                 webServLog("Connection closed", INFO);
+                        continue;
+
             }
         }
     }

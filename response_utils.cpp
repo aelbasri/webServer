@@ -294,7 +294,7 @@ void setHttpResponse(int status, std::string message, Response &response, server
     }
 
     std::string connection = "close";
-    std::string contentType = getMimeType(path);
+    std::string contentType = getMimeType("foo.html");
 
     response.setHttpVersion(HTTP_VERSION);
     response.setStatusCode(status);

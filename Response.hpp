@@ -85,9 +85,9 @@ class Response
             _fileBody = new responseBodyFile();
             _fileBody->file.open(path.c_str());
             if (!_fileBody->file.is_open()) {
-                //throw server::InternalServerError();
-                std::cout << "exititititia  " << path << std::endl;
-                exit(100);
+                throw server::InternalServerError();
+                // std::cout << "exititititia  " << path << std::endl;
+                // exit(100);
             }
             _fileBody->file.seekg (0, _fileBody->file.end);
             int length = _fileBody->file.tellg();

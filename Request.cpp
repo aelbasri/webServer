@@ -348,7 +348,8 @@ void Request::parseHeader(char *buffer, long i)
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
-                    std::cout << "saad mrtah" << contentLength << "==" << maxBodySize << std::endl;
+                    std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
+                    // exit(10);
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
                     if (contentLength > maxBodySize)
                         throw badRequest();
@@ -383,6 +384,8 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
+                // std::cout << "ghaanktbo f :" << _contentFile << std::endl;
+                // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
             }
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
@@ -403,6 +406,8 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
+                // std::cout << "ghaanktbo f :" << _contentFile << std::endl;
+                // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
             }
             if (buffer[i] == CR)

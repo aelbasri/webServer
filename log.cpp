@@ -6,7 +6,14 @@ void webServLog(const std::string& message, LogLevel level)
     char timestamp[20];
     std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
 
-    std::string logMessage = "[" + std::string(timestamp) + "] [" + (level == INFO ? GREEN "INFO" : RED "ERROR") + RESET "] " + message;
+    std::string logMessage = "[" + std::string(timestamp) + "] [";
+    if (level == INFO)
+        logMessage += GREEN "INFO";
+    else if (level == ERROR)
+        logMessage += RED "ERROR";
+    else
+        logMessage += YELLOW "WARNING";
+    logMessage += RESET "] " + message;
 
     if (level == INFO) {
         std::cout << logMessage << std::endl;
