@@ -52,7 +52,7 @@ std::string location::GetType_of_location() const{
     return _type_of_location;
 }
 
-std::vector<std::string> location::GetIndex() const{
+std::vector<std::string> &location::GetIndex() {
     return _index;
 }
 

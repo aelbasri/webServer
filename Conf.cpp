@@ -100,6 +100,12 @@ int Config::CheckNumberOfServer(){
     return words;
 }
 
+bool keyExist(std::map<int, Connection*> connections, int key)
+{
+    std::map<int, Connection*>::iterator it = connections.find(key);
+    return (it != connections.end());
+}
+
 void Config::creatPoll()
 {
     struct epoll_event evlist[MAX_EVENT];
@@ -216,7 +222,7 @@ void Config::creatPoll()
                     }
                 }
             }
-            if (evlist[i].events & EPOLLOUT)
+            else if (evlist[i].events & EPOLLOUT)
             {
                 // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
@@ -229,7 +235,7 @@ void Config::creatPoll()
                     webServLog("Connection closed", INFO);
                 }
             }
-            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
+            else if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
                 std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
                 close(_fd);

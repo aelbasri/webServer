@@ -41,7 +41,7 @@ public:
     void SetDirectoryListing(bool __directoryListing);
 
     std::vector<std::string> GetAllowed_methods() const;
-    std::vector<std::string> GetIndex() const;
+    std::vector<std::string> &GetIndex() ;
     std::string GetType_of_location() const;    
     std::string GetRoot_directory() const;    
     std::string GetUpload_dir() const;
