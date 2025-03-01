@@ -1,9 +1,11 @@
 CXX = c++
-CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
-SRCS = main.cpp Connection.cpp Request.cpp Conf.cpp Response.cpp response_utils.cpp error_utils.cpp \
+# CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
+CFLAGS = -Wall -Wextra -Werror -std=c++98
+SRCS = main.cpp Connection.cpp Request.cpp Conf.cpp Response.cpp response_utils.cpp log.cpp \
 		$(addprefix configfile/,  error_pages.cpp server_data.cpp location.cpp utils.cpp cgi_data.cpp)
 OBJS = $(SRCS:.cpp=.o)
-HEDERS =  Request.hpp Response.hpp Conf.hpp Response.hpp 
+HEDERS =  Connection.hpp Request.hpp Response.hpp Conf.hpp Response.hpp colors.hpp log.hpp \
+		$(addprefix configfile/,  error_pages.hpp server_data.hpp location.hpp cgi_data.hpp)
 NAME = webserv
 
 all : $(NAME)
@@ -12,7 +14,8 @@ debug: re
 	clear
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
 
-run: re
+# run: re
+run: all
 	clear
 	./$(NAME)
 

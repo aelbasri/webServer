@@ -1,10 +1,12 @@
 #include "Response.hpp"
 #include "configfile/location.hpp"
 #include <clocale>
+#include <cmath>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "log.hpp"
 
 
 void Response::setHttpVersion(const std::string &version)
@@ -52,40 +54,148 @@ void Response::setFile(const std::string &filepath)
     // else throw exception (or declare file not found somehow)
 }
 
-void Response::setContentLength()
+void Response::setContentLength(int length)
 {
     std::stringstream ss;
-    if (!_file.empty())
-        ss << _file.size();
-    else
-        ss << _textBody.size();
+    ss << length;
+    // if (!_file.empty())
+    //     ss << _file.size();
+    // else
+    //     ss << _textBody.size();
     std::string len = ss.str();
     addHeader(std::string("Content-Length"), len);
 }
 
-int Response::buildResponse(Request &request, server *serv)
+std::string set_cookie(const std::string& name, const std::string& value) {
+    std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
+    return cookie;
+}
+
+
+void parseCredentials(const std::string& input, std::string& username, std::string& password, bool& rememberMe) {
+    size_t userPos = input.find("username=");
+    if (userPos != std::string::npos) {
+        size_t userStart = userPos + 9;
+        size_t userEnd = input.find('&', userStart);
+        username = input.substr(userStart, userEnd - userStart);
+    }
+
+    size_t passPos = input.find("password=");
+    if (passPos != std::string::npos) {
+        size_t passStart = passPos + 9;
+        size_t passEnd = input.find('&', passStart);
+        password = input.substr(passStart, passEnd - passStart);
+    }
+
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos != std::string::npos) {
+        size_t rememberStart = rememberPos + 12;
+        size_t rememberEnd = input.find('&', rememberStart);
+        std::string rememberValue = input.substr(rememberStart, rememberEnd - rememberStart);
+        rememberMe = (rememberValue == "on");
+    } else {
+        rememberMe = false;
+    }
+}
+bool isRememberMeOn(const std::string& input) {
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos == std::string::npos) {
+        return false; 
+    }
+
+    size_t valueStart = rememberPos + 12;
+    size_t valueEnd = input.find('&', valueStart);
+
+    std::string rememberValue;
+    if (valueEnd == std::string::npos) {
+        rememberValue = input.substr(valueStart);
+    } else {
+        rememberValue = input.substr(valueStart, valueEnd - valueStart);
+    }
+    return (rememberValue == "on");
+}
+
+std::string generateSecureToken(size_t length = 32) {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1; 
+
+    std::string token;
+    token.reserve(length);
+
+    std::srand(static_cast<unsigned int>(std::time(0)));
+
+    for (size_t i = 0; i < length; ++i) {
+        token += charset[std::rand() % charsetSize];
+    }
+    return token;
+}
+
+void Response::buildResponse(Request &request, server *serv)
 {
-//     if (request.getRequestTarget() == "/cgi-bin/login.py"){
-//         std::string s;
-//         CGI _cgi("./cgi-bin/login.py", "/usr/bin/python3");
-        
-//         std::ifstream myfile;
-//         myfile.open("/tmp/.contentData");
-//         while (getline(myfile, s))
-//         {
-//             s += s;
-//             if (!s.empty())
-//                 s.push_back('\n');
-//         }
-//         std::string executable = _cgi.RunCgi(s);
-//         return 1;
-//     }
+    std::string username, password;
+    bool remember_me;
+
+    if (request.getRequestTarget() == "/cgi-bin/login.py") {
+        std::string s;
+        CGI _cgi("./cgi-bin/login.py");
+
+        std::ifstream myfile("/tmp/.contentData");
+        if (!myfile.is_open()) {
+            webServLog("Failed to open /tmp/.contentData", ERROR);
+            setStatusCode(500);
+            return;
+        }
+        std::string line;
+        while (getline(myfile, line)) {
+            s += line + "\n";
+        }
+        myfile.close();
+        std::string executable = _cgi.RunCgi(s);
+        std::string postData;
+        if (request.getMethod() == "POST") {
+            postData = s;
+        }
+
+        std::string cgiOutput = _cgi.RunCgi(postData);
+        parseCredentials(s, username, password, remember_me);
+        if (remember_me) {
+            std::string sessionToken = generateSecureToken();
+            std::string cookie = set_cookie("session_token", sessionToken);
+            addHeader("Set-Cookie", cookie);
+        }
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+        webServLog(logMessage, INFO);
+        return;
+    }
     if (!serv)
     {
-        std::cout << "Server not found" << std::endl;
-        setError(500, "Internal Server Error", *this, serv);
-        return (1);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Server not found]";
+        webServLog(logMessage, ERROR);
+        throw server::InternalServerError();
     }
+
+    if (getProgress() == POST_HOLD)
+    {
+        if (request.getMethod() != "POST")
+        {
+            // Unexpected state Error
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+        // TODO: check max body size
+        if (request.getState() != DONE)
+        {
+            std::cout << "Still waiting for body" << std::endl;
+            return ;
+        }
+        std::cout << "Body received" << std::endl;
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
+        webServLog(logMessage, INFO);
+        setProgress(BUILD_RESPONSE);
+        return (setHttpResponse(201, "Created", *this, serv));
+    }
+
     // find the location match
     location* locationMatch = getLocationMatch(
                                     request.getRequestTarget(),
@@ -93,52 +203,90 @@ int Response::buildResponse(Request &request, server *serv)
                                     serv->Get_number_of_location());
     if (locationMatch == nullptr)
     {
-        std::cout << "Location not found" << std::endl;
-        setError(404, "Not Found", *this, serv);
-        return (1);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [404] [Not Found] [Location not found]";
+        webServLog(logMessage, ERROR);
+        return (setHttpResponse(404, "Not Found", *this, serv));
     }
-    std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
+    // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
+
+    // check if the method is allowed
+    if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+    {
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
+        webServLog(logMessage, ERROR);
+        return (setHttpResponse(405, "Method Not Allowed", *this, serv));
+    }
+    // std::cout << "Method allowed: " << request.getMethod() << std::endl;
 
     // check for redirection 
     if (!locationMatch->GetRewrite().empty())
     {
         std::string redirectURL = locationMatch->GetRewrite();
         addHeader(std::string("Location"), redirectURL);
-        setError(301, "Moved Permanently", *this, serv);
-        return (1);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
+        webServLog(logMessage, INFO);
+        return (setHttpResponse(301, "Moved Permanently", *this, serv));
     }
 
-    // check if the file exists
+
+    // handle POST request
+    if (request.getMethod() == "POST")
+    {
+        // TODO: UPLOAD TO UPLOAD_DIR, Check filename if already exists
+        if (request.getState() == WAIT)
+        {
+            // std::cout << "Swich state to BODY state" << std::endl;
+            request.setState(BODY);
+            setProgress(POST_HOLD);
+            return ;
+        }
+        else
+        {
+            // Unexpected state error
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+    }
+
+    // Construct full requested path
     std::string path = locationMatch->GetRoot_directory();
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
+    // std::cout << "FULL PATH IS: " << path << std::endl;
 
     // if directory, if path not ends with '/` redirect to path/ , then check if there is index, else directory listing
     // else, regular file handling
     FileState fileState = getFileState(path.c_str());
     if (fileState == FILE_DOES_NOT_EXIST)
     {
-        std::cout << "File not found" << std::endl;
-        // return 404
-        setError(404, "Not Found", *this, serv);
-        return (1);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [404] [Not Found] [File not found]";
+        webServLog(logMessage, ERROR);
+        return (setHttpResponse(404, "Not Found", *this, serv));
     }
     else if (fileState == FILE_IS_DIRECTORY)
     {
-        std::cout << "FILE IS A DIRECTORY " << path <<  std::endl;
         if (!path.empty() && path[path.size() - 1] != '/')
         {
             // choose host and port of request !!!!
-            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->Get_port()[0] + request.getRequestTarget() + "/";
-            std::cout << "Redirect to " << redirectURL << std::endl;
+            std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";
             addHeader(std::string("Location"), redirectURL);
-            setError(301, "Moved Permanently", *this, serv);
-            return (1);
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
+            webServLog(logMessage, INFO);
+            return (setHttpResponse(301, "Moved Permanently", *this, serv));
         }
-        if (!locationMatch->GetIndex().empty())
+
+        if (request.getMethod() != "GET")
         {
-            std::string dirIndexPath = path + locationMatch->GetIndex();
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(405, "Method Not Allowed", *this, serv));
+        }
+
+        for (size_t i = 0; i < locationMatch->GetIndex().size(); i++)
+        {
+            std::string dirIndexPath = path + locationMatch->GetIndex()[i];
             FileState indexState = getFileState(dirIndexPath.c_str());
             if (indexState == FILE_IS_REGULAR)
             {
@@ -148,24 +296,35 @@ int Response::buildResponse(Request &request, server *serv)
                 setHttpVersion(HTTP_VERSION);
                 setStatusCode(200);
                 setReasonPhrase("OK");
-                setFile(dirIndexPath);
-                setContentLength();
+
+                //setFile(dirIndexPath);
                 addHeader(std::string("Content-Type"), contentType);
                 addHeader(std::string("Connection"), connection);
-                return (0);
+
+                int length = setFileBody(dirIndexPath);
+                setContentLength(length);
+                
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
+                webServLog(logMessage, INFO);
+                return ;
             }
-            // else: if cant open file, return 403 (I GUESS !!)
         }
-        bool directoryListing = true; // this should come from config file
+        if (locationMatch->GetIndex().size())
+        {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Index file not found]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(403, "Forbidden", *this, serv));
+        }
+
+        bool directoryListing = locationMatch->GetDirectoryListing();
         if (directoryListing)
         {
             std::string htmlDirectoryListing = listDirectoryHTML(path.c_str());
             if (htmlDirectoryListing.empty()) // if empty, handle error (probably syscall failed) 500 response
             {
-                std::cout << "dirlist error" << std::endl;
-                // return 500
-                setError(500, "Internal Server Error", *this, serv);
-                return (1);
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Directory listing failed]";
+                webServLog(logMessage, ERROR);
+                throw server::InternalServerError();
             }
             
             std::string connection = "close";
@@ -174,48 +333,88 @@ int Response::buildResponse(Request &request, server *serv)
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
             setReasonPhrase("OK");
-            setTextBody(htmlDirectoryListing);
-            setContentLength();
             addHeader(std::string("Content-Type"), contentType);
             addHeader(std::string("Connection"), connection);
-            return (0);
+            setTextBody(htmlDirectoryListing);
+            setContentLength(htmlDirectoryListing.size());
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
+            webServLog(logMessage, INFO);
+            return ;
+        }
+        else
+        {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Directory listing not allowed]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(403, "Forbidden", *this, serv));
         }
     }
     else if (fileState == FILE_IS_REGULAR)
     {
-        // check if the method is allowed
-        if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
+        if (request.getMethod() == "GET")
         {
-            std::cout << "Method not allowed" << std::endl;
-            // return 405
-            setError(405, "Method Not Allowed", *this, serv);
-            return (1);
+            std::string connection = "close";
+            std::string contentType = getMimeType(path);
+
+            setHttpVersion(HTTP_VERSION);
+            setStatusCode(200);
+            addHeader(std::string("Content-Type"), contentType);
+            addHeader(std::string("Connection"), connection);
+            setReasonPhrase("OK");
+            int length = setFileBody(path);
+            setContentLength(length);
+
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
+            webServLog(logMessage, INFO);
+            return ;
         }
-        std::cout << "Method allowed: " << request.getMethod() << std::endl;
+        else if (request.getMethod() == "POST")
+        {
+            // Unexpected state Error, POST request should be handled before this point
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+        else if (request.getMethod() == "DELETE")
+        {
+            // std::cout << "DELETing file: " << path << std::endl;
+            if (unlink(path.c_str()) == 0)
+            {
+                std::string connection = "close";
+                std::string contentLength = "0";
 
-        std::cout << "File found " << path << std::endl;
-        // generate response
-        std::string connection = "close";
-        std::string contentType = getMimeType(path);
+                addHeader(std::string("Connection"), connection);
+                addHeader(std::string("Content-Length"), contentLength);
+                setHttpVersion(HTTP_VERSION);
+                setStatusCode(204);
+                setReasonPhrase("No Content");
 
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(200);
-        setReasonPhrase("OK");
-        setFile(path);
-
-        setContentLength();
-        addHeader(std::string("Content-Type"), contentType);
-        // addHeader(std::string("Set-Cookie"), std::string("username=sdcsdc"));
-        // addHeader(std::string("Set-Cookie"), std::string("password=tabonmo"));
-        addHeader(std::string("Connection"), connection);
-        return (0);
+                setTextBody("");
+                setContentLength(0);
+                
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [204] [No Content] [File deleted]";
+                webServLog(logMessage, INFO);
+                return ;
+            }
+            else
+            {
+                if (errno == EACCES || errno == EPERM || errno == EISDIR) // EACCES: permission denied, EPERM: operation not permitted, EISDIR: is a directory
+                {
+                    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [Permission denied]";
+                    webServLog(logMessage, ERROR);
+                    return (setHttpResponse(403, "Forbidden", *this, serv));
+                }
+                else
+                {
+                    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [File deletion failed]";
+                    webServLog(logMessage, ERROR);
+                    throw server::InternalServerError();
+                }
+            }
+        }
     }
-
-
-    return (0);
 }
 
-int Response::createResponseStream()
+void Response::createResponseStream()
 {
     if (_response.empty())
     {
@@ -230,14 +429,8 @@ int Response::createResponseStream()
             responseStream << it->first << ": " << it->second << "\r\n";
         }
         responseStream << "\r\n";
-        if (!_file.empty())
-            responseStream << _file;
-        else if (!_textBody.empty())
-            responseStream << _textBody;
 
         _response = responseStream.str();
     }
-
-    _progress = SEND_RESPONSE;
-    return (0);
+    _progress = SEND_HEADERS;
 }

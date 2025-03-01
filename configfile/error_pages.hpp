@@ -32,6 +32,6 @@ public:
     void SetDefault(std::string __default);
     
 
-    std::map<std::string , std::string> GetErr();
-    std::string GetDefault();
+    std::map<std::string , std::string> GetErr() const;
+    std::string GetDefault() const;
 };
