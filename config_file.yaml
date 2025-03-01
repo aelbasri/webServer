@@ -14,7 +14,7 @@ server:
       type : /
       directoryListing : on
       # root_directory: /root2
-      root_directory: ./assets/authentification
+      root_directory: ./assets
       allowed_methods:
         - POST
         - DELETE

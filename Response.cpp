@@ -66,11 +66,6 @@ void Response::setContentLength(int length)
     addHeader(std::string("Content-Length"), len);
 }
 
-// std::string set_cookie(const std::string& username) {
-//     std::string cookie = "Set-Cookie: username=" + username + "; Max-Age=3600";
-//     return cookie;
-// }
-
 std::string set_cookie(const std::string& name, const std::string& value) {
     std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
     return cookie;
@@ -140,7 +135,6 @@ void Response::buildResponse(Request &request, server *serv)
     // std::string username, password;
     // bool remember_me;
 
-
     // if (request.getRequestTarget() == "/cgi-bin/login.py") {
     //     std::string s;
     //     CGI _cgi("./cgi-bin/login.py");
@@ -151,36 +145,26 @@ void Response::buildResponse(Request &request, server *serv)
     //         setStatusCode(500);
     //         return;
     //     }
-
     //     std::string line;
     //     while (getline(myfile, line)) {
     //         s += line + "\n";
     //     }
     //     myfile.close();
-
     //     std::string executable = _cgi.RunCgi(s);
-    //     parseCredentials(s, username, password, remember_me);
+    //     std::string postData;
+    //     if (request.getMethod() == "POST") {
+    //         postData = s;
+    //     }
 
+    //     std::string cgiOutput = _cgi.RunCgi(postData);
+    //     parseCredentials(s, username, password, remember_me);
     //     if (remember_me) {
     //         std::string sessionToken = generateSecureToken();
     //         std::string cookie = set_cookie("session_token", sessionToken);
     //         addHeader("Set-Cookie", cookie);
     //     }
-
-    //     setHttpVersion(HTTP_VERSION);
-    //     setStatusCode(200);
-    //     setReasonPhrase("OK");
-
-    //     int length = executable.size();
-    //     setContentLength(length);
-    //     setFileBody(executable); 
-
-    //     addHeader("Content-Type", getMimeType("text/html"));
-    //     addHeader("Connection", "close");
-
-    //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Login processed]";
+    //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
     //     webServLog(logMessage, INFO);
-
     //     return;
     // }
     if (!serv)
