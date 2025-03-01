@@ -137,52 +137,52 @@ std::string generateSecureToken(size_t length = 32) {
 
 void Response::buildResponse(Request &request, server *serv)
 {
-    std::string username, password;
-    bool remember_me;
+    // std::string username, password;
+    // bool remember_me;
 
 
-    if (request.getRequestTarget() == "/cgi-bin/login.py") {
-        std::string s;
-        CGI _cgi("./cgi-bin/login.py");
+    // if (request.getRequestTarget() == "/cgi-bin/login.py") {
+    //     std::string s;
+    //     CGI _cgi("./cgi-bin/login.py");
 
-        std::ifstream myfile("/tmp/.contentData");
-        if (!myfile.is_open()) {
-            webServLog("Failed to open /tmp/.contentData", ERROR);
-            setStatusCode(500);
-            return;
-        }
+    //     std::ifstream myfile("/tmp/.contentData");
+    //     if (!myfile.is_open()) {
+    //         webServLog("Failed to open /tmp/.contentData", ERROR);
+    //         setStatusCode(500);
+    //         return;
+    //     }
 
-        std::string line;
-        while (getline(myfile, line)) {
-            s += line + "\n";
-        }
-        myfile.close();
+    //     std::string line;
+    //     while (getline(myfile, line)) {
+    //         s += line + "\n";
+    //     }
+    //     myfile.close();
 
-        std::string executable = _cgi.RunCgi(s);
-        parseCredentials(s, username, password, remember_me);
+    //     std::string executable = _cgi.RunCgi(s);
+    //     parseCredentials(s, username, password, remember_me);
 
-        if (remember_me) {
-            std::string sessionToken = generateSecureToken();
-            std::string cookie = set_cookie("session_token", sessionToken);
-            addHeader("Set-Cookie", cookie);
-        }
+    //     if (remember_me) {
+    //         std::string sessionToken = generateSecureToken();
+    //         std::string cookie = set_cookie("session_token", sessionToken);
+    //         addHeader("Set-Cookie", cookie);
+    //     }
 
-        setHttpVersion(HTTP_VERSION);
-        setStatusCode(200);
-        setReasonPhrase("OK");
+    //     setHttpVersion(HTTP_VERSION);
+    //     setStatusCode(200);
+    //     setReasonPhrase("OK");
 
-        int length = executable.size();
-        setContentLength(length);
-        setFileBody(executable); 
+    //     int length = executable.size();
+    //     setContentLength(length);
+    //     setFileBody(executable); 
 
-        addHeader("Content-Type", getMimeType("text/html"));
-        addHeader("Connection", "close");
+    //     addHeader("Content-Type", getMimeType("text/html"));
+    //     addHeader("Connection", "close");
 
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Login processed]";
-        webServLog(logMessage, INFO);
+    //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Login processed]";
+    //     webServLog(logMessage, INFO);
 
-        return;
-    }
+    //     return;
+    // }
     if (!serv)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Server not found]";
