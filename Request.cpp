@@ -17,7 +17,7 @@ std::string Request::getHttpVersion(void) const
 std::string generateFilePath() {
     static int counter = 0;
     std::ostringstream oss;
-    oss << "./uploads/file_" << counter++;
+    oss << UPLOAD_DIRECTORY << "file_" << counter++;
     return oss.str();
 }
 

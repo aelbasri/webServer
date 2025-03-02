@@ -261,6 +261,62 @@ void Config::creatPoll()
     }
 
 }
+// Function to recursively remove directory contents
+void removeDirectoryContents(const std::string& path) {
+    DIR* dir = opendir(path.c_str());
+    if (!dir) {
+        std::cerr << "Failed to open directory: " << path << " - " << strerror(errno) << std::endl;
+        exit(1);
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        // Skip "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        std::string filePath = path + "/" + entry->d_name;
+
+        // Check if it's a directory
+        struct stat info;
+        if (stat(filePath.c_str(), &info) == 0) {
+            if (S_ISDIR(info.st_mode)) {
+                // Recursively remove subdirectories
+                removeDirectoryContents(filePath);
+                rmdir(filePath.c_str());
+            } else {
+                // Remove files
+                unlink(filePath.c_str());
+            }
+        }
+    }
+    closedir(dir);
+}
+
+// Function to remove and recreate the directory
+void removeAndRecreateDirectory(const std::string& path) {
+    // Check if the directory exists
+    struct stat info;
+    if (stat(path.c_str(), &info) == 0 && S_ISDIR(info.st_mode)) {
+        // Remove directory contents
+        removeDirectoryContents(path);
+
+        // Remove the directory itself
+        if (rmdir(path.c_str()) != 0) {
+            std::cerr << "Failed to remove directory: " << path << " - " << strerror(errno) << std::endl;
+            exit(1);
+        }
+        std::cout << "Directory removed: " << path << std::endl;
+    }
+
+    // Create the directory
+    if (mkdir(path.c_str(), 0777) != 0) {
+        std::cerr << "Failed to create directory: " << path << " - " << strerror(errno) << std::endl;
+        exit(1);
+    }
+    std::cout << "Directory created: " << path << std::endl;
+}
 
 int Config::SetupServers()
 {
@@ -269,10 +325,10 @@ int Config::SetupServers()
     {
         /*std::cout << "i: ============"<< i << std::endl; */
         /*std::cout << getpid() << std::endl;*/
-
         if (_server[i].run() == -1)
             exit(1);
     }
+    removeAndRecreateDirectory(UPLOAD_DIRECTORY);
     creatPoll();
     return (0);
 }
