@@ -87,7 +87,8 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
     if (!path.empty() && path[path.size() - 1] != '/')
     {
         //TODO: choose host and port of request !!!!
-        std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";
+        /*std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";*/
+        std::string redirectURL = "http://" + request.getHostHeader() + request.getRequestTarget() + "/";
         addHeader(std::string("Location"), redirectURL);
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
         webServLog(logMessage, WARNING);
@@ -315,9 +316,7 @@ void Response::createResponseStream()
         // Add headers
         std::map<std::string, std::string>::const_iterator it;
         for (it = _headers.begin(); it != _headers.end(); it++)
-        {
             responseStream << it->first << ": " << it->second << "\r\n";
-        }
         responseStream << "\r\n";
 
         _response = responseStream.str();

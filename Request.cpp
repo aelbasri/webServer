@@ -14,6 +14,13 @@ std::string Request::getHttpVersion(void) const
     return (httpVersion);
 }
 
+std::string generateFilePath() {
+    static int counter = 0;
+    std::ostringstream oss;
+    oss << "./uploads/file_" << counter++;
+    return oss.str();
+}
+
 int temporaryPrintError()
 {
     //throw BadRequestExeption
@@ -384,7 +391,10 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
+
+                _contentFile = generateFilePath();
                 std::cout << "ghaanktbo f :" << _contentFile << std::endl;
+
                 // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
@@ -408,7 +418,10 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
+
+                _contentFile = generateFilePath();
                 std::cout << "ghaanktbo fchunk:" << _contentFile << std::endl;
+
                 // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())

@@ -120,6 +120,18 @@ class Request
         void setBytrec(long _bytesRec) { bytesRec = _bytesRec; }
         void setOffset(long _offset) { offset = _offset; }
         void setBuffer() {memset(buffer, 0, BUFF_SIZE);}
+
+        std::string getHostHeader() const
+        {
+            //TODO: check Host header always exists
+            std::map<std::string, std::string>::const_iterator it;
+            for (it = headers.begin(); it != headers.end(); it++)
+            {
+                if (it->first == "Host")
+                    return (it->second);
+            }
+            throw badRequest();
+        }
         // int parseRequestLine(int socket, int &offset, int &nBytes);
         // int parseHeader(int socket, int &offset, int &nBytes);
         // int parseBody(int socket, int &offset, int &nBytes);

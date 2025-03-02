@@ -143,6 +143,7 @@ int Connection::sockRead()
     //after completing the request
     if(_request.getState() == DONE)
         _request.closeContentFile();
+
     return (0);
 }
 
@@ -167,11 +168,7 @@ int Connection::sockWrite()
             return (-1);
         _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
         if (_response.getTotalBytesSent() == _response.getResponse().size())
-        {
-            //_response.setSent(true);
             _response.setProgress(SEND_BODY);
-            // std::cout << "Response Done" << std::endl;
-        }
     }
     else if (_response.getProgress() == SEND_BODY)
     {
@@ -186,6 +183,7 @@ int Connection::sockWrite()
             }
             else if (_response.getTextBody().empty())
             {
+                //TODO: SEND IN CHUNKS ALSO
                 if (sendFile(false) != 0)
                     return (0);
                 _response.setSent(true);
