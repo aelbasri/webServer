@@ -96,7 +96,7 @@ class Response
         void setContentLength(int length); 
 
         void buildResponse(Request &request, server *serv);
-        void createResponseStream();
+        void createResponseStream(std::string &connectionHeader);
         bool responseSent() const { return _sent; };
 
         int sendResponse(int socket);

@@ -22,11 +22,17 @@ class Connection
         };
         int sockRead();
         int getSocket() const {return _socket;};
+        server *getServer() { return _server; };
         bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};
         bool readyToWrite() const {return _readyToWrite;};
         int sockWrite();
         int sendFile(bool sendInChunkFormat);
         bool sendRawBody();
+
+        bool keepAlive() const {
+            std::string conn = "Connection";
+             return _request.getHeader(conn) != "close";
+        }
 };
 
 // int sendFile(Connection cnx, Response response, bool sendInChunkFormat);

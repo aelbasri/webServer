@@ -131,7 +131,8 @@ int Connection::sockRead()
         // std::cerr << e.what() << std::endl;
         _request.setState(DONE);
         setHttpResponse(400, "Bad Request", _response, _server);
-        _response.createResponseStream();
+        std::string conn = "close";
+        _response.createResponseStream(conn);
         std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [400] [Bad Request] [Request is invalid]";
         webServLog(logMessage, WARNING);
     }
@@ -161,7 +162,10 @@ int Connection::sockWrite()
             setHttpResponse(400, "Bad Request", _response, _server);
         }
         if (_response.getProgress() != POST_HOLD)
-            _response.createResponseStream();
+        {
+            std::string conn = _request.getHeader("Connection");
+            _response.createResponseStream(conn);
+        }
     }
     if (_response.getProgress() == SEND_HEADERS)
     {

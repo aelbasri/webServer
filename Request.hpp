@@ -121,15 +121,9 @@ class Request
         void setOffset(long _offset) { offset = _offset; }
         void setBuffer() {memset(buffer, 0, BUFF_SIZE);}
 
-        bool HostHeaderExists() const
+        std::string getHeader(std::string header) const
         {
-            std::map<std::string, std::string>::const_iterator it = headers.find("Host");
-            return (it != headers.end());
-        }
-
-        std::string getHostHeader() const
-        {
-            std::map<std::string, std::string>::const_iterator it = headers.find("Host");
+            std::map<std::string, std::string>::const_iterator it = headers.find(header);
             if (it != headers.end())
                 return it->second;
             return ""; // should never happen
@@ -140,9 +134,6 @@ class Request
         void parseBody(char *buffer, long &i, long bytesRec);
 
         void closeContentFile();
-
-        //delete me
-        void printRequestElement();
 
 
         class badRequest : public std::exception 

@@ -234,13 +234,25 @@ void Config::creatPoll()
                 // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
-                    close(_fd);
+                    bool keepAlive = connections[_fd]->keepAlive();
+                    server *tmp = connections[_fd]->getServer();
                     delete connections[_fd];
                     connections.erase(_fd);
-                    // remove from epoll
-                    epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                    std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
-                    webServLog(logMessage, INFO);
+
+                    if (!keepAlive) // if Connection: close
+                    {
+                        close(_fd);
+                        // remove from epoll
+                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
+                    }
+                    else
+                    {
+                        std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
+                        connections[_fd] = new Connection(_fd, tmp);
+                    }
                     continue;
                 }
             }

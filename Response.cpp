@@ -88,7 +88,7 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
     {
         //TODO: choose host and port of request !!!!
         /*std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";*/
-        std::string redirectURL = "http://" + request.getHostHeader() + request.getRequestTarget() + "/";
+        std::string redirectURL = "http://" + request.getHeader("Host") + request.getRequestTarget() + "/";
         addHeader(std::string("Location"), redirectURL);
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
         webServLog(logMessage, WARNING);
@@ -108,13 +108,13 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
         FileState indexState = getFileState(dirIndexPath.c_str());
         if (indexState == FILE_IS_REGULAR)
         {
-            std::string connection = "close";
+            // std::string connection = "close";
             std::string contentType = getMimeType(dirIndexPath);
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
             setReasonPhrase("OK");
             addHeader(std::string("Content-Type"), contentType);
-            addHeader(std::string("Connection"), connection);
+            // addHeader(std::string("Connection"), connection);
             int length = setFileBody(dirIndexPath);
             setContentLength(length);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
@@ -133,13 +133,13 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
             webServLog(logMessage, ERROR);
             throw server::InternalServerError();
         }
-        std::string connection = "close";
+        // std::string connection = "close";
         std::string contentType = getMimeType("foo.html");
         setHttpVersion(HTTP_VERSION);
         setStatusCode(200);
         setReasonPhrase("OK");
         addHeader(std::string("Content-Type"), contentType);
-        addHeader(std::string("Connection"), connection);
+        // addHeader(std::string("Connection"), connection);
         setTextBody(htmlDirectoryListing);
         setContentLength(htmlDirectoryListing.size());
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
@@ -156,13 +156,13 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
 
 void Response::processGET(Request &request, std::string &path)
 {
-    std::string connection = "close";
+    // std::string connection = "close";
     std::string contentType = getMimeType(path);
 
     setHttpVersion(HTTP_VERSION);
     setStatusCode(200);
     addHeader(std::string("Content-Type"), contentType);
-    addHeader(std::string("Connection"), connection);
+    // addHeader(std::string("Connection"), connection);
     setReasonPhrase("OK");
     int length = setFileBody(path);
     setContentLength(length);
@@ -176,10 +176,10 @@ void Response::processDELETE(Request &request, server *serv, std::string &path)
 {
     if (unlink(path.c_str()) == 0)
     {
-        std::string connection = "close";
+        // std::string connection = "close";
         std::string contentLength = "0";
 
-        addHeader(std::string("Connection"), connection);
+        // addHeader(std::string("Connection"), connection);
         addHeader(std::string("Content-Length"), contentLength);
         setHttpVersion(HTTP_VERSION);
         setStatusCode(204);
@@ -218,7 +218,7 @@ void Response::buildResponse(Request &request, server *serv)
         throw server::InternalServerError();
     }
 
-    if (!request.HostHeaderExists())
+    if (request.getHeader("Host").empty())
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [400] [Bad Request] [Required Host Header]";
         webServLog(logMessage, ERROR);
@@ -312,7 +312,7 @@ void Response::buildResponse(Request &request, server *serv)
     }
 }
 
-void Response::createResponseStream()
+void Response::createResponseStream(std::string &connectionHeader)
 {
     if (_response.empty())
     {
@@ -324,6 +324,10 @@ void Response::createResponseStream()
         std::map<std::string, std::string>::const_iterator it;
         for (it = _headers.begin(); it != _headers.end(); it++)
             responseStream << it->first << ": " << it->second << "\r\n";
+        if (connectionHeader == "close")
+            responseStream << "Connection: close" << "\r\n";
+        else
+            responseStream << "Connection: keep-alive" << "\r\n"; 
         responseStream << "\r\n";
 
         _response = responseStream.str();
