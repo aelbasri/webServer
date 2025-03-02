@@ -218,6 +218,13 @@ void Response::buildResponse(Request &request, server *serv)
         throw server::InternalServerError();
     }
 
+    if (!request.HostHeaderExists())
+    {
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [400] [Bad Request] [Required Host Header]";
+        webServLog(logMessage, ERROR);
+        throw Request::badRequest();
+    }
+
     if (request.getRequestTarget() == "/cgi-bin/login.py")
         handleCGI(*this, request);
 

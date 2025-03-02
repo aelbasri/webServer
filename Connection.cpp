@@ -157,6 +157,8 @@ int Connection::sockWrite()
             _response.buildResponse(_request, _server);
         } catch (const server::InternalServerError &e) {
             setHttpResponse(500, "Internal Server Error", _response, _server);
+        } catch(const Request::badRequest &e) {
+            setHttpResponse(400, "Bad Request", _response, _server);
         }
         if (_response.getProgress() != POST_HOLD)
             _response.createResponseStream();
