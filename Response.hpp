@@ -1,5 +1,7 @@
 #pragma once
 
+#include "configfile/server_data.hpp"
+#include "Request.hpp"
 #include <numeric>
 #include <string>
 #include <cstring>
@@ -11,8 +13,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "Request.hpp"
-#include "configfile/server_data.hpp"
 #include <sys/stat.h>
 #include <ctime>
 #include <iomanip>
@@ -81,23 +81,8 @@ class Response
         responseBodyFile *getFileBody() { return _fileBody; };
         std::string getTextBody() const { return _textBody; };
         size_t getTotalBytesSent() const { return _totalBytesSent; };
-        int setFileBody(std::string path) {
-            _fileBody = new responseBodyFile();
-            _fileBody->file.open(path.c_str());
-            if (!_fileBody->file.is_open()) {
-                throw server::InternalServerError();
-                // std::cout << "exititititia  " << path << std::endl;
-                // exit(100);
-            }
-            _fileBody->file.seekg (0, _fileBody->file.end);
-            int length = _fileBody->file.tellg();
-            _fileBody->file.seekg (0, _fileBody->file.beg);
-
-            _fileBody->offset = 0;
-            _fileBody->consumed = 0;
-            _fileBody->nBytes = 0;
-            return (length);
-         } 
+        int getStatusCode() const { return _statusCode; };
+        int setFileBody(std::string path);
         void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
         void setSent(bool sent) { _sent = sent; };
         void setProgress(enum Progress progress) { _progress = progress; };
@@ -115,6 +100,12 @@ class Response
         bool responseSent() const { return _sent; };
 
         int sendResponse(int socket);
+
+        void processPOST(Request &request, location *locationMatch);
+        void processGET(Request &request, std::string &path);
+        void processDELETE(Request &request, server *serv, std::string &path);
+
+        void processDirectoryRequest(Request &request, location *locationMatch, server *serv, std::string &path);
 };
 
 std::string getMimeType(const std::string& filename);
@@ -125,5 +116,6 @@ int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
 std::string getFilenameFromPath(std::string path);
+void handleCGI(Response &response, Request &request);
 
 

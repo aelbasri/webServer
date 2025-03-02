@@ -27,7 +27,6 @@ ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkF
 
 bool Connection::sendRawBody()
 {
-    // std::cout << "AYOUB BGHA YK3AA" << std::endl;
     if (_response.getTextBody().empty()) {
         // Nothing to send
         std::cout << "AYOUB KHAWI" << std::endl;
@@ -55,8 +54,6 @@ int Connection::sendFile(bool sendInChunkFormat)
     responseBodyFile *rfs = _response.getFileBody();
     if (!rfs)
         throw server::InternalServerError();
-    
-
     
     // check wach baqi chi 7aja
     if (rfs->consumed < rfs->nBytes)
@@ -179,13 +176,21 @@ int Connection::sockWrite()
     else if (_response.getProgress() == SEND_BODY)
     {
         try {
-            if (_response.getTextBody().empty())
+            if (_response.getStatusCode() == 204)
+            {
+                _response.setSent(true);
+                _response.setProgress(FINISHED);
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [NO BODY CONTENT SENT]";
+                webServLog(logMessage, INFO);
+                return (0);
+            }
+            else if (_response.getTextBody().empty())
             {
                 if (sendFile(false) != 0)
                     return (0);
                 _response.setSent(true);
                 _response.setProgress(FINISHED);
-                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [200] [OK] [FILE SENT SUCCESSFULLY]";
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [RESPONSE BODY FILE SENT SUCCESSFULLY]";
                 webServLog(logMessage, INFO);
                 return (0);
             }
@@ -193,7 +198,7 @@ int Connection::sockWrite()
             {
                  _response.setSent(true);
                 _response.setProgress(FINISHED);
-                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [200] [OK] [CUSTOMHTML SENT SUCCESSFULLY]";
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [RESPONSE BODY CUSTOMHTML SENT SUCCESSFULLY]";
                 webServLog(logMessage, INFO);
                 return (0);
 

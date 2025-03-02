@@ -384,9 +384,11 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
-                // std::cout << "ghaanktbo f :" << _contentFile << std::endl;
+                std::cout << "ghaanktbo f :" << _contentFile << std::endl;
                 // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
+                if (!contentFile.is_open())
+                    exit(22);
             }
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             contentFile.write(buffer + i, toBeConsumed);
@@ -406,9 +408,11 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             {
                 if (_contentFile.empty())
                     _contentFile = "/tmp/.contentFile";
-                // std::cout << "ghaanktbo f :" << _contentFile << std::endl;
+                std::cout << "ghaanktbo fchunk:" << _contentFile << std::endl;
                 // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
+                if (!contentFile.is_open())
+                    exit(22);
             }
             if (buffer[i] == CR)
                 subState = LF_STATE;

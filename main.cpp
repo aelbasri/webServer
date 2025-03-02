@@ -1,4 +1,4 @@
-#include "configfile/server_data.hpp"
+/*#include "configfile/server_data.hpp"*/
 #include "Conf.hpp"
 #include <exception>
 #include <iostream>

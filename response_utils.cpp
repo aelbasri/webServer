@@ -1,6 +1,7 @@
 #include "Response.hpp"
 #include "Connection.hpp"
 #include "configfile/location.hpp"
+#include "log.hpp"
 
 std::map<std::string, std::string> initializeMimeTypes() {
     std::map<std::string, std::string> mimeTypes;
@@ -318,7 +319,103 @@ std::string getFilenameFromPath(std::string path) {
     return (std::string("someRandomName"));
 }
 
+std::string set_cookie(const std::string& name, const std::string& value) {
+    std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
+    return cookie;
+}
 
 
+void parseCredentials(const std::string& input, std::string& username, std::string& password, bool& rememberMe) {
+    size_t userPos = input.find("username=");
+    if (userPos != std::string::npos) {
+        size_t userStart = userPos + 9;
+        size_t userEnd = input.find('&', userStart);
+        username = input.substr(userStart, userEnd - userStart);
+    }
+
+    size_t passPos = input.find("password=");
+    if (passPos != std::string::npos) {
+        size_t passStart = passPos + 9;
+        size_t passEnd = input.find('&', passStart);
+        password = input.substr(passStart, passEnd - passStart);
+    }
+
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos != std::string::npos) {
+        size_t rememberStart = rememberPos + 12;
+        size_t rememberEnd = input.find('&', rememberStart);
+        std::string rememberValue = input.substr(rememberStart, rememberEnd - rememberStart);
+        rememberMe = (rememberValue == "on");
+    } else {
+        rememberMe = false;
+    }
+}
+bool isRememberMeOn(const std::string& input) {
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos == std::string::npos) {
+        return false; 
+    }
+
+    size_t valueStart = rememberPos + 12;
+    size_t valueEnd = input.find('&', valueStart);
+
+    std::string rememberValue;
+    if (valueEnd == std::string::npos) {
+        rememberValue = input.substr(valueStart);
+    } else {
+        rememberValue = input.substr(valueStart, valueEnd - valueStart);
+    }
+    return (rememberValue == "on");
+}
+
+std::string generateSecureToken(size_t length = 32) {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1; 
+
+    std::string token;
+    token.reserve(length);
+
+    std::srand(static_cast<unsigned int>(std::time(0)));
+
+    for (size_t i = 0; i < length; ++i) {
+        token += charset[std::rand() % charsetSize];
+    }
+    return token;
+}
 
 
+void handleCGI(Response &response, Request &request)
+{
+    std::string username, password;
+    bool remember_me;
+    std::string s;
+    CGI _cgi("./cgi-bin/login.py");
+
+    std::ifstream myfile("/tmp/.contentData");
+    if (!myfile.is_open()) {
+        webServLog("Failed to open /tmp/.contentData", ERROR);
+        response.setStatusCode(500);
+        return;
+    }
+    std::string line;
+    while (getline(myfile, line)) {
+        s += line + "\n";
+    }
+    myfile.close();
+    std::string executable = _cgi.RunCgi(s);
+    std::string postData;
+    if (request.getMethod() == "POST") {
+        postData = s;
+    }
+
+    std::string cgiOutput = _cgi.RunCgi(postData);
+    parseCredentials(s, username, password, remember_me);
+    if (remember_me) {
+        std::string sessionToken = generateSecureToken();
+        std::string cookie = set_cookie("session_token", sessionToken);
+        response.addHeader("Set-Cookie", cookie);
+    }
+    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+    webServLog(logMessage, INFO);
+    return;
+}

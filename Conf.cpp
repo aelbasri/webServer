@@ -8,6 +8,12 @@
 #include "colors.hpp"
 #include "log.hpp"
 
+std::string intToString(int num) {
+    std::ostringstream oss;
+    oss << num;
+    return oss.str();
+}
+
 Config::Config():_server(nullptr){}
 
 Config::~Config(){
@@ -160,8 +166,6 @@ void Config::creatPoll()
                         if (_fd == _server[j].getSock()[y].second)
                         {
                             server_fd = _server[j].getSock()[y].second;
-                            std::cout << "L9ina " << server_fd << std::endl;
-
                             tmp = &_server[j];
                             break;
                         }
@@ -176,9 +180,10 @@ void Config::creatPoll()
                     timeout.tv_sec = 10;
                     timeout.tv_usec = 0;
                     setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-                    std::cout << "new_fd: " << new_fd << std::endl;
+                    /*std::cout << "new_fd: " << new_fd << std::endl;*/
 
-                    webServLog("New connection accepted", INFO);
+                    std::string logMessage = "[NEW CONNECTION] [SOCKET_FD: " + intToString(new_fd) + "]";
+                    webServLog(logMessage, INFO);
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
@@ -206,7 +211,8 @@ void Config::creatPoll()
                         connections.erase(_fd);
                         // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                        webServLog("Connection closed", INFO);
+                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
                         continue;
                     }
                     if (connections[_fd]->readyToWrite())
@@ -233,8 +239,9 @@ void Config::creatPoll()
                     connections.erase(_fd);
                     // remove from epoll
                     epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                    webServLog("Connection closed", INFO);
-                        continue;
+                    std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                    webServLog(logMessage, INFO);
+                    continue;
                 }
             }
             if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
@@ -245,8 +252,9 @@ void Config::creatPoll()
                 connections.erase(_fd);
                 // remove from epoll
                 epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                webServLog("Connection closed", INFO);
-                        continue;
+                std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                webServLog(logMessage, INFO);
+                continue;
 
             }
         }
@@ -256,11 +264,11 @@ void Config::creatPoll()
 
 int Config::SetupServers()
 {
-    std::cout << " _nembre_of_server : ============"<< _nembre_of_server << std::endl; 
+    std::cout << " _number_of_servers : ============"<< _nembre_of_server << std::endl; 
     for (size_t i = 0; i < _nembre_of_server ; i++)
     {
-        std::cout << "i: ============"<< i << std::endl; 
-        std::cout << getpid() << std::endl;
+        /*std::cout << "i: ============"<< i << std::endl; */
+        /*std::cout << getpid() << std::endl;*/
 
         if (_server[i].run() == -1)
             exit(1);
