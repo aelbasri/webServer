@@ -86,6 +86,7 @@ class Request
         std::string fieldValue;
 
         //body
+
         long consumed;
         std::ofstream contentFile;
         std::string _contentFile;
@@ -96,11 +97,14 @@ class Request
         long chunkSizeL;
         long long maxBodySize;
 
+        bool writeInPipe;
+        int fd;
+
 
 
     public:
         //TODO: 9aad l constructure adak ras lbo9ala
-        Request() : mainState(REQUEST_LINE), subState(METHOD), bytesRec(0), offset(0), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0), _contentFile(""), contentBodySize(0) { memset(buffer, 0, BUFF_SIZE); }
+        Request() : mainState(REQUEST_LINE), subState(METHOD), bytesRec(0), offset(0), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0), _contentFile(""), contentBodySize(0), writeInPipe(false), fd(-1) { memset(buffer, 0, BUFF_SIZE); }
         
         void handle_request(char *buffer);
         

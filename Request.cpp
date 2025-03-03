@@ -387,21 +387,19 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         
         case CONTLEN :
             //check is open
-            if (!contentFile.is_open())
+            toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
+            if (writeInPipe == true)
+                write(fd ,buffer + i, toBeConsumed);
+            else if (!contentFile.is_open()) //check is open
             {
-                if (_contentFile.empty())
-                    _contentFile = "/tmp/.contentFile";
-
                 _contentFile = generateFilePath();
-                std::cout << "ghaanktbo f :" << _contentFile << std::endl;
-
-                // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     exit(22);
+                contentFile.write(buffer + i, toBeConsumed);
             }
-            toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
-            contentFile.write(buffer + i, toBeConsumed);
+            else
+                contentFile.write(buffer + i, toBeConsumed);
             // std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
             i += toBeConsumed;
             consumed += toBeConsumed;
@@ -414,15 +412,9 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             }
             break;
         case CHUNK_HEADER:
-            if (!contentFile.is_open())
+            if (writeInPipe == false && !contentFile.is_open())
             {
-                if (_contentFile.empty())
-                    _contentFile = "/tmp/.contentFile";
-
                 _contentFile = generateFilePath();
-                std::cout << "ghaanktbo fchunk:" << _contentFile << std::endl;
-
-                // exit (10); 
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     exit(22);
@@ -460,7 +452,10 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             break;
         case LOAD_CHUNK:
             toBeConsumed = std::min(bytesRec - i, chunkSizeL - consumed);      
-            contentFile.write(buffer + i, toBeConsumed);
+            if (writeInPipe == true)
+                write(fd ,buffer + i, toBeConsumed);
+            else
+                contentFile.write(buffer + i, toBeConsumed);
             i += toBeConsumed;
             consumed += toBeConsumed;
             contentBodySize += consumed;
