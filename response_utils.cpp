@@ -1,6 +1,7 @@
 #include "Response.hpp"
 #include "Connection.hpp"
 #include "configfile/location.hpp"
+#include "log.hpp"
 
 std::map<std::string, std::string> initializeMimeTypes() {
     std::map<std::string, std::string> mimeTypes;
@@ -294,7 +295,7 @@ void setHttpResponse(int status, std::string message, Response &response, server
     }
 
     std::string connection = "close";
-    std::string contentType = getMimeType(path);
+    std::string contentType = getMimeType("foo.html");
 
     response.setHttpVersion(HTTP_VERSION);
     response.setStatusCode(status);
@@ -318,7 +319,199 @@ std::string getFilenameFromPath(std::string path) {
     return (std::string("someRandomName"));
 }
 
+std::string set_cookie(const std::string& name, const std::string& value) {
+    std::string cookie =  name + "=" + value + "; Max-Age=3600" + "; Path=/\r\n";
+    return cookie;
+}
 
 
+void parseCredentials(const std::string& input, std::string& username, std::string& password, bool& rememberMe) {
+    size_t userPos = input.find("username=");
+    if (userPos != std::string::npos) {
+        size_t userStart = userPos + 9;
+        size_t userEnd = input.find('&', userStart);
+        username = input.substr(userStart, userEnd - userStart);
+    }
+
+    size_t passPos = input.find("password=");
+    if (passPos != std::string::npos) {
+        size_t passStart = passPos + 9;
+        size_t passEnd = input.find('&', passStart);
+        password = input.substr(passStart, passEnd - passStart);
+    }
+
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos != std::string::npos) {
+        size_t rememberStart = rememberPos + 12;
+        size_t rememberEnd = input.find('&', rememberStart);
+        std::string rememberValue = input.substr(rememberStart, rememberEnd - rememberStart);
+        rememberMe = (rememberValue == "on");
+    } else {
+        rememberMe = false;
+    }
+}
+bool isRememberMeOn(const std::string& input) {
+    size_t rememberPos = input.find("remember_me=");
+    if (rememberPos == std::string::npos) {
+        return false; 
+    }
+
+    size_t valueStart = rememberPos + 12;
+    size_t valueEnd = input.find('&', valueStart);
+
+    std::string rememberValue;
+    if (valueEnd == std::string::npos) {
+        rememberValue = input.substr(valueStart);
+    } else {
+        rememberValue = input.substr(valueStart, valueEnd - valueStart);
+    }
+    return (rememberValue == "on");
+}
+
+std::string generateSecureToken(size_t length = 32) {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1; 
+
+    std::string token;
+    token.reserve(length);
+
+    std::srand(static_cast<unsigned int>(std::time(0)));
+
+    for (size_t i = 0; i < length; ++i) {
+        token += charset[std::rand() % charsetSize];
+    }
+    return token;
+}
 
 
+void handleCGI(Response &response, Request &request)
+{
+    std::string username, password;
+    bool remember_me;
+    std::string s;
+    CGI _cgi("./cgi-bin/login.py");
+
+    std::ifstream myfile("/tmp/.contentData");
+    if (!myfile.is_open()) {
+        webServLog("Failed to open /tmp/.contentData", ERROR);
+        response.setStatusCode(500);
+        return;
+    }
+    std::string line;
+    while (getline(myfile, line)) {
+        s += line + "\n";
+    }
+    myfile.close();
+    std::string executable = _cgi.RunCgi(s);
+    std::string postData;
+    if (request.getMethod() == "POST") {
+        postData = s;
+    }
+
+    std::string cgiOutput = _cgi.RunCgi(postData);
+    parseCredentials(s, username, password, remember_me);
+    if (remember_me) {
+        std::string sessionToken = generateSecureToken();
+        std::string cookie = set_cookie("session_token", sessionToken);
+        response.addHeader("Set-Cookie", cookie);
+    }
+    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+    webServLog(logMessage, INFO);
+    return;
+}
+
+// void handleCGI(Response &response, Request &request) {
+//     // Get the path to the CGI script from the request
+//     std::string scriptPath = ".";
+//     scriptPath += request.getRequestTarget();
+//
+//     // Set up environment variables for the CGI script
+//     std::map<std::string, std::string> env;
+//     env["REQUEST_METHOD"] = request.getMethod();
+//     // env["QUERY_STRING"] = request.getQueryString();
+//     env["CONTENT_TYPE"] = request.getHeader("Content-Type");
+//     env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
+//     env["HTTP_COOKIE"] = request.getHeader("Cookie");
+//
+//     // Add other headers as environment variables
+//     for (const auto& header : request.getHeaders()) {
+//         std::string envVar = "HTTP_" + header.first;
+//         std::replace(envVar.begin(), envVar.end(), '-', '_');
+//         std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
+//         env[envVar] = header.second;
+//     }
+//
+//     // Create pipes for communication with the CGI script
+//     int pipefd[2];
+//     if (pipe(pipefd) == -1) {
+//         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
+//         webServLog(logMessage, ERROR);
+//         throw server::InternalServerError();
+//     }
+//
+//     // Fork to execute the CGI script
+//     pid_t pid = fork();
+//     if (pid == -1) {
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to fork]";
+//         webServLog(logMessage, ERROR);
+//         throw server::InternalServerError();
+//     }
+//
+//     if (pid == 0) { // Child process (CGI script)
+//         // Redirect stdout to the pipe
+//         dup2(pipefd[1], STDOUT_FILENO);
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//
+//         // Set environment variables
+//         for (const auto& var : env) {
+//             setenv(var.first.c_str(), var.second.c_str(), 1);
+//         }
+//
+//         // Execute the CGI script
+//         if (scriptPath.find(".py") != std::string::npos) {
+//             execl("/usr/bin/python3", "python3", scriptPath.c_str(), (char *)0);
+//         } else if (scriptPath.find(".php") != std::string::npos) {
+//             execl("/usr/bin/php", "php", scriptPath.c_str(), (char *)0);
+//         } else {
+//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unsupported script type]";
+//             webServLog(logMessage, ERROR);
+//             throw server::InternalServerError();
+//         }
+//     } else { // Parent process (server)
+//         close(pipefd[1]);
+//
+//         // Read the output from the CGI script
+//         std::ostringstream output;
+//         char buffer[1024];
+//         ssize_t bytesRead;
+//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+//             output.write(buffer, bytesRead);
+//         }
+//         close(pipefd[0]);
+//
+//         // Wait for the child process to finish
+//         int status;
+//         waitpid(pid, &status, 0);
+//
+//         // Check if the script executed successfully
+//         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+//             // Set the response body and headers
+//             response.setHttpVersion("HTTP/1.1");
+//             response.setStatusCode(200);
+//             response.setReasonPhrase("OK");
+//             response.addHeader("Content-Type", "text/html");
+//             response.setTextBody(output.str());
+//             int length = output.str().size();
+//             response.setContentLength(length);
+//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+//             webServLog(logMessage, INFO);
+//         } else {
+//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script failed]";
+//             webServLog(logMessage, ERROR);
+//             throw server::InternalServerError();
+//         }
+//     }
+// }

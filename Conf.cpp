@@ -8,6 +8,12 @@
 #include "colors.hpp"
 #include "log.hpp"
 
+std::string intToString(int num) {
+    std::ostringstream oss;
+    oss << num;
+    return oss.str();
+}
+
 Config::Config():_server(nullptr){}
 
 Config::~Config(){
@@ -160,8 +166,6 @@ void Config::creatPoll()
                         if (_fd == _server[j].getSock()[y].second)
                         {
                             server_fd = _server[j].getSock()[y].second;
-                            std::cout << "L9ina " << server_fd << std::endl;
-
                             tmp = &_server[j];
                             break;
                         }
@@ -176,9 +180,10 @@ void Config::creatPoll()
                     timeout.tv_sec = 10;
                     timeout.tv_usec = 0;
                     setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-                    std::cout << "new_fd: " << new_fd << std::endl;
+                    /*std::cout << "new_fd: " << new_fd << std::endl;*/
 
-                    webServLog("New connection accepted", INFO);
+                    std::string logMessage = "[NEW CONNECTION] [SOCKET_FD: " + intToString(new_fd) + "]";
+                    webServLog(logMessage, INFO);
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
@@ -206,9 +211,11 @@ void Config::creatPoll()
                         connections.erase(_fd);
                         // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                        webServLog("Connection closed", INFO);
+                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
+                        continue;
                     }
-                    else if (connections[_fd]->readyToWrite())
+                    if (connections[_fd]->readyToWrite())
                     {
                         std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
                         struct epoll_event ev;
@@ -217,25 +224,39 @@ void Config::creatPoll()
                         if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
                         {
                             // Throw exception
-                            return;
+                            return ;
                         }
                     }
                 }
             }
-            else if (evlist[i].events & EPOLLOUT)
+            if (evlist[i].events & EPOLLOUT)
             {
                 // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
-                    close(_fd);
+                    bool keepAlive = connections[_fd]->keepAlive();
+                    server *tmp = connections[_fd]->getServer();
                     delete connections[_fd];
                     connections.erase(_fd);
-                    // remove from epoll
-                    epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                    webServLog("Connection closed", INFO);
+
+                    if (!keepAlive) // if Connection: close
+                    {
+                        close(_fd);
+                        // remove from epoll
+                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
+                    }
+                    else
+                    {
+                        std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
+                        webServLog(logMessage, INFO);
+                        connections[_fd] = new Connection(_fd, tmp);
+                    }
+                    continue;
                 }
             }
-            else if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
+            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
                 std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
                 close(_fd);
@@ -243,24 +264,83 @@ void Config::creatPoll()
                 connections.erase(_fd);
                 // remove from epoll
                 epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                webServLog("Connection closed", INFO);
+                std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
+                webServLog(logMessage, INFO);
+                continue;
+
             }
         }
     }
 
 }
+// Function to recursively remove directory contents
+void removeDirectoryContents(const std::string& path) {
+    DIR* dir = opendir(path.c_str());
+    if (!dir) {
+        std::cerr << "Failed to open directory: " << path << " - " << strerror(errno) << std::endl;
+        exit(1);
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        // Skip "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        std::string filePath = path + "/" + entry->d_name;
+
+        // Check if it's a directory
+        struct stat info;
+        if (stat(filePath.c_str(), &info) == 0) {
+            if (S_ISDIR(info.st_mode)) {
+                // Recursively remove subdirectories
+                removeDirectoryContents(filePath);
+                rmdir(filePath.c_str());
+            } else {
+                // Remove files
+                unlink(filePath.c_str());
+            }
+        }
+    }
+    closedir(dir);
+}
+
+// Function to remove and recreate the directory
+void removeAndRecreateDirectory(const std::string& path) {
+    // Check if the directory exists
+    struct stat info;
+    if (stat(path.c_str(), &info) == 0 && S_ISDIR(info.st_mode)) {
+        // Remove directory contents
+        removeDirectoryContents(path);
+
+        // Remove the directory itself
+        if (rmdir(path.c_str()) != 0) {
+            std::cerr << "Failed to remove directory: " << path << " - " << strerror(errno) << std::endl;
+            exit(1);
+        }
+        std::cout << "Directory removed: " << path << std::endl;
+    }
+
+    // Create the directory
+    if (mkdir(path.c_str(), 0777) != 0) {
+        std::cerr << "Failed to create directory: " << path << " - " << strerror(errno) << std::endl;
+        exit(1);
+    }
+    std::cout << "Directory created: " << path << std::endl;
+}
 
 int Config::SetupServers()
 {
-    std::cout << " _nembre_of_server : ============"<< _nembre_of_server << std::endl; 
+    std::cout << " _number_of_servers : ============"<< _nembre_of_server << std::endl; 
     for (size_t i = 0; i < _nembre_of_server ; i++)
     {
-        std::cout << "i: ============"<< i << std::endl; 
-        std::cout << getpid() << std::endl;
-
+        /*std::cout << "i: ============"<< i << std::endl; */
+        /*std::cout << getpid() << std::endl;*/
         if (_server[i].run() == -1)
             exit(1);
     }
+    removeAndRecreateDirectory(UPLOAD_DIRECTORY);
     creatPoll();
     return (0);
 }

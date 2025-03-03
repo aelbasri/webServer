@@ -29,6 +29,7 @@ bool Connection::sendRawBody()
 {
     if (_response.getTextBody().empty()) {
         // Nothing to send
+        std::cout << "AYOUB KHAWI" << std::endl;
         return true;
     }
 
@@ -36,13 +37,14 @@ bool Connection::sendRawBody()
     ssize_t bytesSent = send(_socket, _response.getTextBody().data(), _response.getTextBody().size(), MSG_NOSIGNAL);
     if (bytesSent < 0) {
         // Error occurred while sending
+        // std::cout << "AYOUB INTERNAL IROR" << std::endl;
         throw server::InternalServerError();
     }
 
     // Update the httpBodyContent to remove the sent part
-    _response.getTextBody().erase(0, bytesSent);
-
+    _response.setTextBody(_response.getTextBody().erase(0, bytesSent));
     // Return true if all data was sent, false otherwise
+    std::cout  << bytesSent <<  _response.getTextBody() << std::endl;
     return _response.getTextBody().empty();
 }
 
@@ -52,8 +54,6 @@ int Connection::sendFile(bool sendInChunkFormat)
     responseBodyFile *rfs = _response.getFileBody();
     if (!rfs)
         throw server::InternalServerError();
-    
-
     
     // check wach baqi chi 7aja
     if (rfs->consumed < rfs->nBytes)
@@ -123,6 +123,7 @@ int Connection::sockRead()
             _request.setOffset(0);
             _request.setBytrec(bytesRec);
         }
+
         _request.handle_request(_request.getBuffer());
     }
     catch (const Request::badRequest &e)
@@ -130,7 +131,10 @@ int Connection::sockRead()
         // std::cerr << e.what() << std::endl;
         _request.setState(DONE);
         setHttpResponse(400, "Bad Request", _response, _server);
-        _response.createResponseStream();
+        std::string conn = "close";
+        _response.createResponseStream(conn);
+        std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [400] [Bad Request] [Request is invalid]";
+        webServLog(logMessage, WARNING);
     }
 
     //if the request is done or waiting
@@ -140,6 +144,7 @@ int Connection::sockRead()
     //after completing the request
     if(_request.getState() == DONE)
         _request.closeContentFile();
+
     return (0);
 }
 
@@ -153,9 +158,14 @@ int Connection::sockWrite()
             _response.buildResponse(_request, _server);
         } catch (const server::InternalServerError &e) {
             setHttpResponse(500, "Internal Server Error", _response, _server);
+        } catch(const Request::badRequest &e) {
+            setHttpResponse(400, "Bad Request", _response, _server);
         }
         if (_response.getProgress() != POST_HOLD)
-            _response.createResponseStream();
+        {
+            std::string conn = _request.getHeader("Connection");
+            _response.createResponseStream(conn);
+        }
     }
     if (_response.getProgress() == SEND_HEADERS)
     {
@@ -164,22 +174,27 @@ int Connection::sockWrite()
             return (-1);
         _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
         if (_response.getTotalBytesSent() == _response.getResponse().size())
-        {
-            //_response.setSent(true);
             _response.setProgress(SEND_BODY);
-            // std::cout << "Response Done" << std::endl;
-        }
     }
     else if (_response.getProgress() == SEND_BODY)
     {
         try {
-            if (_response.getTextBody().empty())
+            if (_response.getStatusCode() == 204)
             {
+                _response.setSent(true);
+                _response.setProgress(FINISHED);
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [NO BODY CONTENT SENT]";
+                webServLog(logMessage, INFO);
+                return (0);
+            }
+            else if (_response.getTextBody().empty())
+            {
+                //TODO: SEND IN CHUNKS ALSO
                 if (sendFile(false) != 0)
                     return (0);
                 _response.setSent(true);
                 _response.setProgress(FINISHED);
-                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [200] [OK] [FILE SENT SUCCESSFULLY]";
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [RESPONSE BODY FILE SENT SUCCESSFULLY]";
                 webServLog(logMessage, INFO);
                 return (0);
             }
@@ -187,7 +202,7 @@ int Connection::sockWrite()
             {
                  _response.setSent(true);
                 _response.setProgress(FINISHED);
-                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [200] [OK] [CUSTOMHTML SENT SUCCESSFULLY]";
+                std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [RESPONSE BODY CUSTOMHTML SENT SUCCESSFULLY]";
                 webServLog(logMessage, INFO);
                 return (0);
 

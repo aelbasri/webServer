@@ -39,6 +39,7 @@ class CGI;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
+#define UPLOAD_DIRECTORY "./uploads/"
 
 class server : public error_pages 
 {
