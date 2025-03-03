@@ -116,27 +116,27 @@ int getChunkSize(int &offset, char *buffer, int &nBytes, std::string &s_number)
 
 
 
-void loadChunk(parseBodyElement &body, int &chunkSize)
-{
-    int toBeConsumed = 0;
-
-    if (body.consumed < chunkSize)
-    {
-        toBeConsumed = chunkSize - body.consumed;
-        if (toBeConsumed > body.nBytes - body.offset)
-            toBeConsumed = body.nBytes - body.offset;
-        
-        body.file.write(body.buffer + body.offset, toBeConsumed);
-        body.consumed += toBeConsumed;
-        body.offset += toBeConsumed; 
-    }
-    if (body.consumed >= chunkSize)
-    {
-        body.offset += 2;
-        body.consumed = 0;
-        chunkSize = -1;
-    }
-}
+// void loadChunk(parseBodyElement &body, int &chunkSize)
+// {
+//     int toBeConsumed = 0;
+//
+//     if (body.consumed < chunkSize)
+//     {
+//         toBeConsumed = chunkSize - body.consumed;
+//         if (toBeConsumed > body.nBytes - body.offset)
+//             toBeConsumed = body.nBytes - body.offset;
+//
+//         body.file.write(body.buffer + body.offset, toBeConsumed);
+//         body.consumed += toBeConsumed;
+//         body.offset += toBeConsumed; 
+//     }
+//     if (body.consumed >= chunkSize)
+//     {
+//         body.offset += 2;
+//         body.consumed = 0;
+//         chunkSize = -1;
+//     }
+// }
 
 void Request::parseRequestLine(char *buffer, long i)
 {

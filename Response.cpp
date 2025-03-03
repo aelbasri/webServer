@@ -225,8 +225,20 @@ void Response::buildResponse(Request &request, server *serv)
         throw Request::badRequest();
     }
 
-    if (request.getRequestTarget() == "/cgi-bin/login.py")
-        handleCGI(*this, request);
+    // check if the path starts with /cgi-bin/
+    if (request.getRequestTarget().find("/cgi-bin/") == 0)
+    {
+        // check extension: .py .php ONLY
+        std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
+        if (extension == ".py" || extension == ".php")
+            return (handleCGI(*this, request));
+        else
+        {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";
+            webServLog(logMessage, WARNING);
+            return (setHttpResponse(403, "Forbidden", *this, serv));
+        }
+    }
 
     if (getProgress() == POST_HOLD)
     {

@@ -112,6 +112,9 @@ class Request
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
+        std::map<std::string, std::string> getHeaders(void) const { return (headers); }
+        std::map<std::string, std::string> getQuery(void) const { return (query); }
+        // std::string getQueryString (void) const { return (queryName + "=" + queryValue); }
         char *getBuffer() { return buffer; }
 
         void setContentFile(std::string contentFile) { _contentFile = contentFile; }
