@@ -28,6 +28,8 @@ int CGI::GetExitStatus() const{
     return _ExitStatus;
 }
 
+
+
 bool isFileValid(const std::string& filePath) {
     return (access(filePath.c_str(), F_OK) == 0);
 }
@@ -103,7 +105,7 @@ std::string CGI::RunCgi(const std::string &requestBody) {
         ssize_t bytes_read = read(stdout_pipe[0], buffer, sizeof(buffer));
         close(stdout_pipe[0]); 
 
-        int status;
+        int status;     
         waitpid(pid, &status, 0); 
 
         if (WIFEXITED(status)) {

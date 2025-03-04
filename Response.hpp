@@ -116,6 +116,6 @@ int parseCGI(std::string &CgiOutput, Response &response);
 FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
 std::string getFilenameFromPath(std::string path);
-void handleCGI(Response &response, Request &request);
+void handleCGI(server *serv, Response &response, Request &request);
 
 

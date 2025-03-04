@@ -231,7 +231,12 @@ void Response::buildResponse(Request &request, server *serv)
         // check extension: .py .php ONLY
         std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
         if (extension == ".py" || extension == ".php")
-            return (handleCGI(*this, request));
+        {
+            if (request.getRequestTarget() == "/cgi-bin/login.py")
+                return (handleCGI(serv, *this, request));
+            // else
+            //     return (handleCGI2(...));
+        }
         else
         {
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";

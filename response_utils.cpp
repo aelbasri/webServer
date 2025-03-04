@@ -384,12 +384,31 @@ std::string generateSecureToken(size_t length = 32) {
 }
 
 
-void handleCGI(Response &response, Request &request)
+bool isTokenExist(const std::vector<std::pair<std::string, std::string> >& userTokens, const std::string& token) {
+    for (std::vector<std::pair<std::string, std::string> >::const_iterator it = userTokens.begin(); it != userTokens.end(); ++it) {
+        if (it->second == token) { 
+            return true; 
+        }
+    }
+    return false; 
+}
+
+void handleCGI(server *server, Response &response, Request &request)
 {
+
     std::string username, password;
     bool remember_me;
     std::string s;
     CGI _cgi("./cgi-bin/login.py");
+
+    // response.
+    std::string _userToken = "";
+    if (isTokenExist(server->GetUserToken(), _userToken))
+    {
+        // std::
+        // TODO: send username related to the ID session "PAGE HTML"
+        return ;
+    }
 
     std::ifstream myfile("/tmp/.contentData");
     if (!myfile.is_open()) {
@@ -409,9 +428,13 @@ void handleCGI(Response &response, Request &request)
     }
 
     std::string cgiOutput = _cgi.RunCgi(postData);
+    std::cout << "the cgi autput is {" << cgiOutput << "}" <<  std::endl;
     parseCredentials(s, username, password, remember_me);
+
+    //create new session
     if (remember_me) {
         std::string sessionToken = generateSecureToken();
+        server->SetUserToken(make_pair(username, sessionToken));
         std::string cookie = set_cookie("session_token", sessionToken);
         response.addHeader("Set-Cookie", cookie);
     }

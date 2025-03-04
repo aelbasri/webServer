@@ -62,6 +62,9 @@ private:
     struct addrinfo *res ,*p;
     int addI;
 
+    //session managment
+    std::vector<std::pair<std::string, std::string> > _UserTokens;
+
 public:
     void new_location();
     void Set_number_of_location(int _number_of_location);
@@ -75,6 +78,9 @@ public:
     void setP(struct addrinfo* newP);
     void setAddI(int newAddI);\
     void SetCgi(std::vector<CGI> __cgi);
+    void SetUserToken(std::pair<std::string, std::string> __UserToken);
+    // void SetUserToken(std::string __UserToken);
+
 
     
     int Get_number_of_location();
@@ -91,6 +97,10 @@ public:
     struct addrinfo* &getRes();
     struct addrinfo* &getP();
     int getAddI();
+    std::vector<std::pair<std::string, std::string> > GetUserToken() const ;
+
+    // std::vector<std::string> GetUserToken() const;
+
 
     server();
     virtual ~server();

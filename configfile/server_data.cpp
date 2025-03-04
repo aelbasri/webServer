@@ -172,6 +172,15 @@ void  server::SetCgi(std::vector<CGI> __cgi){
 
 }
 
+
+std::vector<std::pair<std::string, std::string> > server::GetUserToken() const {
+    return _UserTokens;
+}
+
+void server::SetUserToken(std::pair<std::string, std::string> __UserToken){
+    _UserTokens.push_back(__UserToken);
+}
+
 int server::CheckNumberOfLocation(){
     std::string sentence = "location";
     int cont = 0;
