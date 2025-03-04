@@ -401,12 +401,19 @@ void handleCGI(server *server, Response &response, Request &request)
     std::string s;
     CGI _cgi("./cgi-bin/login.py");
 
-    // response.
+    // user token taking from request cookie
     std::string _userToken = "";
     if (isTokenExist(server->GetUserToken(), _userToken))
     {
         // std::
         // TODO: send username related to the ID session "PAGE HTML"
+        std::string contentType = getMimeType("./assets/authentification/ayoub.html"); // example
+        response.setHttpVersion(HTTP_VERSION);
+        response.setStatusCode(200);
+        response.setReasonPhrase("OK");
+        response.addHeader(std::string("Content-Type"), contentType);
+        int length = response.setFileBody("./assets/authentification/ayoub.html");
+        response.setContentLength(length);
         return ;
     }
 
