@@ -474,6 +474,34 @@ bool isTokenExist(const std::vector<std::pair<std::string, std::string> >& userT
 //     return;
 // }
 
+std::map<std::string, std::string> extractHeaders(const std::string& output) {
+    std::cout << "======================================" << std::endl;
+    std::map<std::string, std::string> headers;
+    std::istringstream stream(output);
+    std::string line;
+    while (std::getline(stream, line) && !line.empty()) {
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 1);
+            headers[key] = value;
+            std::cout << "HEADER: " << key << " = " << value << std::endl;
+        }
+    }
+    std::cout << "======================================" << std::endl;
+    return headers;
+}
+
+std::string extractBody(const std::string& output) {
+    // size_t pos = output.find("\r\n\r\n");
+    size_t pos = output.find("\n\n");
+    if (pos != std::string::npos) {
+        return output.substr(pos + 2);
+    }
+    return "";
+}
+
+
 void Response::handleCGI(Response &response, Request &request){
 // void handleCGI(Response &response, Request &request) {
     // Get the path to the CGI script from the request
@@ -568,14 +596,18 @@ void Response::handleCGI(Response &response, Request &request){
 
         // Check if the script executed successfully
         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-            // Set the response body and headers
+            std::map<std::string, std::string> headers = extractHeaders(output.str());
+            std::string responseBody = extractBody(output.str());
+            for (const auto& header : headers) {
+                response.addHeader(header.first, header.second);
+            }
             response.setHttpVersion("HTTP/1.1");
             response.setStatusCode(200);
             response.setReasonPhrase("OK");
-            response.addHeader("Content-Type", "text/html");
-            response.setTextBody(output.str());
-            int length = output.str().size();
+            response.setTextBody(responseBody);
+            int length = responseBody.size();
             response.setContentLength(length);
+            response.setProgress(BUILD_RESPONSE);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
             webServLog(logMessage, INFO);
         } else {
