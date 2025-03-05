@@ -120,6 +120,8 @@ class Request
         std::map<std::string, std::string> getQuery(void) const { return (query); }
         // std::string getQueryString (void) const { return (queryName + "=" + queryValue); }
         char *getBuffer() { return buffer; }
+        int getFd() { return fd; }
+        bool getWriteInPipe() { return writeInPipe; }
 
         void setContentFile(std::string contentFile) { _contentFile = contentFile; }
         void setMaxBodySize(long long size) { maxBodySize = size; }
@@ -127,6 +129,8 @@ class Request
         void setBytrec(long _bytesRec) { bytesRec = _bytesRec; }
         void setOffset(long _offset) { offset = _offset; }
         void setBuffer() {memset(buffer, 0, BUFF_SIZE);}
+        void setFd(int _fd) { fd = _fd; }
+        void setWriteInPipe(bool _writeInPipe) { writeInPipe = _writeInPipe; }
 
         std::string getHeader(std::string header) const
         {

@@ -453,7 +453,9 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         case LOAD_CHUNK:
             toBeConsumed = std::min(bytesRec - i, chunkSizeL - consumed);      
             if (writeInPipe == true)
+            {
                 write(fd ,buffer + i, toBeConsumed);
+            }
             else
                 contentFile.write(buffer + i, toBeConsumed);
             i += toBeConsumed;
@@ -479,6 +481,7 @@ void Request::closeContentFile()
 
 void Request::handle_request(char *buffer)
 {
+    // std::cout << "REQU: (" << buffer << ")" << std::endl;
     for(; offset < bytesRec; offset++)
     {
         switch (mainState)
@@ -490,7 +493,7 @@ void Request::handle_request(char *buffer)
                 parseHeader(buffer, offset);
                 break;
             case WAIT:
-                std::cout << "WAAAAAAIT:" << "offset: " << offset << ", bytesRec:" << bytesRec << std::endl;
+                // std::cout << "WAAAAAAIT:" << "offset: " << offset << ", bytesRec:" << bytesRec << std::endl;
                 goto exit_request_parsing;
                 break;
             case BODY:

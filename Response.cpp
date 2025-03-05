@@ -59,16 +59,32 @@ void Response::setContentLength(int length)
 
 void Response::processPOST(Request &request, location *locationMatch)
 {
+    (void)locationMatch;
+
     if (request.getState() == WAIT)
     {
-        // setting upload file path
-        std::string _contentFile = locationMatch->GetUpload_dir();
-        if ((!_contentFile.empty() && !request.getRequestTarget().empty()) && _contentFile[_contentFile.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
-            _contentFile += "/";
-        _contentFile += request.getRequestTarget();
-        request.setContentFile(_contentFile);
-
         // changing state for request to start reading body
+        request.setState(BODY);
+        setProgress(POST_HOLD);
+        // process remaining body in buffer
+        request.handle_request(request.getBuffer());
+        return ;
+    }
+    else
+    {
+        // Unexpected state error
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+        webServLog(logMessage, ERROR);
+        throw server::InternalServerError();
+    }
+}
+
+void Response::processCGIPOST(Request &request)
+{
+    if (request.getState() == WAIT)
+    {
+        // changing state for request to start reading body
+        request.setWriteInPipe(true);
         request.setState(BODY);
         setProgress(POST_HOLD);
         return ;
@@ -209,6 +225,19 @@ void Response::processDELETE(Request &request, server *serv, std::string &path)
     }
 }
 
+std::string readFromSocket(int sock)
+{
+    std::string body = "";
+    char buffer[BUFF_SIZE];
+    int bytesRec = 0;
+    while ((bytesRec = recv(sock, buffer, BUFF_SIZE, 0)) > 0)
+    {
+        buffer[bytesRec] = '\0';
+        body += buffer;
+    }
+    return (body);
+}
+
 void Response::buildResponse(Request &request, server *serv)
 {
     if (!serv)
@@ -228,15 +257,21 @@ void Response::buildResponse(Request &request, server *serv)
     // check if the path starts with /cgi-bin/
     if (request.getRequestTarget().find("/cgi-bin/") == 0)
     {
+        if (getProgress() == POST_HOLD) {
+            if (request.getMethod() != "POST")
+            {
+                // Unexpected state Error
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+                webServLog(logMessage, ERROR);
+                throw server::InternalServerError();
+            }
+            if (request.getState() != DONE) // Still reading body
+                return ;
+        }
         // check extension: .py .php ONLY
         std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
         if (extension == ".py" || extension == ".php")
-        {
-            if (request.getRequestTarget() == "/cgi-bin/login.py")
-                return (handleCGI(serv, *this, request));
-            // else
-            //     return (handleCGI2(...));
-        }
+            return (handleCGI2(serv, *this, request));
         else
         {
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";

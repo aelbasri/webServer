@@ -19,6 +19,7 @@ class Connection
             // std::cout << _server->Get_max_body_size() << std::endl;
             // exit(101);
             _request.setMaxBodySize(_server->Get_max_body_size());
+            _response.setSocket(sock);
         };
         int sockRead();
         int getSocket() const {return _socket;};

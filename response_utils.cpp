@@ -443,98 +443,194 @@ void handleCGI(server *server, Response &response, Request &request)
     return;
 }
 
-// void handleCGI(Response &response, Request &request) {
-//     // Get the path to the CGI script from the request
-//     std::string scriptPath = ".";
-//     scriptPath += request.getRequestTarget();
-//
-//     // Set up environment variables for the CGI script
-//     std::map<std::string, std::string> env;
-//     env["REQUEST_METHOD"] = request.getMethod();
-//     // env["QUERY_STRING"] = request.getQueryString();
-//     env["CONTENT_TYPE"] = request.getHeader("Content-Type");
-//     env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
-//     env["HTTP_COOKIE"] = request.getHeader("Cookie");
-//
-//     // Add other headers as environment variables
-//     for (const auto& header : request.getHeaders()) {
-//         std::string envVar = "HTTP_" + header.first;
-//         std::replace(envVar.begin(), envVar.end(), '-', '_');
-//         std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
-//         env[envVar] = header.second;
-//     }
-//
-//     // Create pipes for communication with the CGI script
-//     int pipefd[2];
-//     if (pipe(pipefd) == -1) {
-//         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
-//         webServLog(logMessage, ERROR);
-//         throw server::InternalServerError();
-//     }
-//
-//     // Fork to execute the CGI script
-//     pid_t pid = fork();
-//     if (pid == -1) {
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-//         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to fork]";
-//         webServLog(logMessage, ERROR);
-//         throw server::InternalServerError();
-//     }
-//
-//     if (pid == 0) { // Child process (CGI script)
-//         // Redirect stdout to the pipe
-//         dup2(pipefd[1], STDOUT_FILENO);
-//         close(pipefd[0]);
-//         close(pipefd[1]);
-//
-//         // Set environment variables
-//         for (const auto& var : env) {
-//             setenv(var.first.c_str(), var.second.c_str(), 1);
-//         }
-//
-//         // Execute the CGI script
-//         if (scriptPath.find(".py") != std::string::npos) {
-//             execl("/usr/bin/python3", "python3", scriptPath.c_str(), (char *)0);
-//         } else if (scriptPath.find(".php") != std::string::npos) {
-//             execl("/usr/bin/php", "php", scriptPath.c_str(), (char *)0);
-//         } else {
-//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unsupported script type]";
-//             webServLog(logMessage, ERROR);
-//             throw server::InternalServerError();
-//         }
-//     } else { // Parent process (server)
-//         close(pipefd[1]);
-//
-//         // Read the output from the CGI script
-//         std::ostringstream output;
-//         char buffer[1024];
-//         ssize_t bytesRead;
-//         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-//             output.write(buffer, bytesRead);
-//         }
-//         close(pipefd[0]);
-//
-//         // Wait for the child process to finish
-//         int status;
-//         waitpid(pid, &status, 0);
-//
-//         // Check if the script executed successfully
-//         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-//             // Set the response body and headers
-//             response.setHttpVersion("HTTP/1.1");
-//             response.setStatusCode(200);
-//             response.setReasonPhrase("OK");
-//             response.addHeader("Content-Type", "text/html");
-//             response.setTextBody(output.str());
-//             int length = output.str().size();
-//             response.setContentLength(length);
-//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
-//             webServLog(logMessage, INFO);
-//         } else {
-//             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script failed]";
-//             webServLog(logMessage, ERROR);
-//             throw server::InternalServerError();
-//         }
-//     }
-// }
+std::map<std::string, std::string> extractHeaders(const std::string& output) {
+    std::cout << "======================================" << std::endl;
+    std::map<std::string, std::string> headers;
+    std::istringstream stream(output);
+    std::string line;
+    while (std::getline(stream, line) && !line.empty()) {
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 1);
+            headers[key] = value;
+            std::cout << "HEADER: " << key << " = " << value << std::endl;
+        }
+    }
+    std::cout << "======================================" << std::endl;
+    return headers;
+}
+
+std::string extractBody(const std::string& output) {
+    // size_t pos = output.find("\r\n\r\n");
+    size_t pos = output.find("\n\n");
+    if (pos != std::string::npos) {
+        return output.substr(pos + 2);
+    }
+    return "";
+}
+
+std::string convertQueryMapToString(const std::map<std::string, std::string>& query) {
+    std::ostringstream stream;
+    for (std::map<std::string, std::string>::const_iterator it = query.begin(); it != query.end(); ++it) {
+        stream << it->first << "=" << it->second << "&";
+    }
+    std::string queryString = stream.str();
+    if (!queryString.empty()) {
+        queryString.pop_back(); // Remove the trailing '&'
+    }
+    return queryString;
+}
+
+void handleCGI2(server *serv, Response &response, Request &request) {
+    (void)serv;
+
+    int *stdin_pipe = response.getCGIPIPE();
+    if (stdin_pipe[0] == -1 && stdin_pipe[1] == -1)
+    {
+        if (pipe(stdin_pipe) == -1) {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+    }
+
+    if (request.getMethod() == "POST") {
+        if (request.getState() == WAIT)
+        {
+            request.setWriteInPipe(true);
+            request.setFd(stdin_pipe[1]);
+            request.setState(BODY);
+            response.setProgress(POST_HOLD);
+            // process remaining body in buffer
+            request.handle_request(request.getBuffer());
+            return ;
+        }
+    }
+
+    // Get the path to the CGI script from the request
+    std::string scriptPath = ".";
+    scriptPath += request.getRequestTarget();
+
+    // Set up environment variables for the CGI script
+    std::map<std::string, std::string> env;
+    env["REQUEST_METHOD"] = request.getMethod();
+    env["QUERY_STRING"] = convertQueryMapToString(request.getQuery());
+    env["CONTENT_TYPE"] = request.getHeader("Content-Type");
+    env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
+    env["HTTP_COOKIE"] = request.getHeader("Cookie");
+
+    // Add other headers as environment variables
+    for (const auto& header : request.getHeaders()) {
+        std::string envVar = "HTTP_" + header.first;
+        std::replace(envVar.begin(), envVar.end(), '-', '_');
+        std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
+        env[envVar] = header.second;
+        // std::cout << "ENV: " << envVar << " = " << header.second << std::endl;
+    }
+
+    int stdout_pipe[2];
+    if (pipe(stdout_pipe) == -1) {
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
+        webServLog(logMessage, ERROR);
+        throw server::InternalServerError();
+    }
+
+    // Fork to execute the CGI script
+    pid_t pid = fork();
+    if (pid == -1) {
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+
+        close(stdout_pipe[0]);
+        close(stdout_pipe[1]);
+
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to fork]";
+        webServLog(logMessage, ERROR);
+        throw server::InternalServerError();
+    }
+
+    if (pid == 0) { // Child process (CGI script)
+        // std::cout << "CHILD PROCESS" << std::endl;
+        // std::cout << "CHILD READING FROM: " << stdin_pipe[0] << std::endl;
+        // std::cout << "CHILD WRITING TO: " << stdout_pipe[1] << std::endl;
+
+        // Close the unused ends of the pipes
+        close(stdin_pipe[1]);
+        close(stdout_pipe[0]);
+
+        // Redirect stdin from the pipe
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        close(stdin_pipe[0]);
+
+        // Redirect stdout to the pipe
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        close(stdout_pipe[1]);
+
+        // Set environment variables
+        for (const auto& var : env) {
+            setenv(var.first.c_str(), var.second.c_str(), 1);
+        }
+
+        // Execute the CGI script
+        if (scriptPath.find(".py") != std::string::npos) {
+            execl("/usr/bin/python3", "python3", scriptPath.c_str(), (char *)0);
+        } else if (scriptPath.find(".php") != std::string::npos) {
+            execl("/usr/bin/php", "php", scriptPath.c_str(), (char *)0);
+        } else {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unsupported script type]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+    } else { // Parent process (server)
+        // std::cout << "PARENT PROCESS" << std::endl;
+        // std::cout << "PARENT READING FROM: " << stdout_pipe[0] << std::endl;
+
+        // close the unused ends of the pipes
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]); // body already written to pipe
+        close(stdout_pipe[1]);
+
+        // Read the output from the CGI script
+        std::ostringstream output;
+        char buffer[1024];
+        ssize_t bytesRead;
+        while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0) {
+            // std::cout << "Bytes read: " << bytesRead << std::endl;
+            // std::cout << "BUFFER: " << buffer << std::endl;
+            output.write(buffer, bytesRead);
+        }
+        close(stdout_pipe[0]);
+
+        // Wait for the child process to finish
+        int status;
+        waitpid(pid, &status, 0);
+
+        // std::cout << "SCRIPT OUTPUT: (" << output.str() << ")" << std::endl;
+
+        // Check if the script executed successfully
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            // extract headers and body from the output
+            std::map<std::string, std::string> headers = extractHeaders(output.str());
+            std::string responseBody = extractBody(output.str());
+            for (const auto& header : headers) {
+                response.addHeader(header.first, header.second);
+            }
+            response.setHttpVersion("HTTP/1.1");
+            response.setStatusCode(200);
+            response.setReasonPhrase("OK");
+            response.setTextBody(responseBody);
+            int length = responseBody.size();
+            response.setContentLength(length);
+            response.setProgress(BUILD_RESPONSE);
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+            webServLog(logMessage, INFO);
+        } else {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script failed]";
+            webServLog(logMessage, ERROR);
+            throw server::InternalServerError();
+        }
+    }
+}

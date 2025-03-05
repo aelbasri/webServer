@@ -73,8 +73,11 @@ class Response
         enum Progress _progress;
         responseBodyFile *_fileBody;
 
+        int _sock;
+        int _CGIPIPE[2];
+
     public:
-        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr) {};
+        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr), _CGIPIPE{-1, -1} {};
         ~Response() { if (_fileBody) { delete _fileBody; _fileBody = nullptr;} };
         enum Progress getProgress() const { return _progress; };
         std::string getResponse() const { return _response; };
@@ -82,10 +85,16 @@ class Response
         std::string getTextBody() const { return _textBody; };
         size_t getTotalBytesSent() const { return _totalBytesSent; };
         int getStatusCode() const { return _statusCode; };
+        int getSocket() const { return _sock; };
+        // get cgi pipe
+        int *getCGIPIPE() { return _CGIPIPE; };
+
         int setFileBody(std::string path);
         void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
         void setSent(bool sent) { _sent = sent; };
         void setProgress(enum Progress progress) { _progress = progress; };
+        void setSocket(int socket) { _sock = socket; };
+        void setCGIPIPE(int pipe[2]) { _CGIPIPE[0] = pipe[0]; _CGIPIPE[1] = pipe[1]; };
 
         void setHttpVersion(const std::string &version);
         void setStatusCode(int status);
@@ -106,6 +115,7 @@ class Response
         void processDELETE(Request &request, server *serv, std::string &path);
 
         void processDirectoryRequest(Request &request, location *locationMatch, server *serv, std::string &path);
+        void processCGIPOST(Request &request);
 };
 
 std::string getMimeType(const std::string& filename);
@@ -117,5 +127,6 @@ FileState getFileState(const char *path);
 std::string listDirectoryHTML(const char *path);
 std::string getFilenameFromPath(std::string path);
 void handleCGI(server *serv, Response &response, Request &request);
+void handleCGI2(server *serv, Response &response, Request &request);
 
 
