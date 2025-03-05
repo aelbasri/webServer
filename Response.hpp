@@ -69,12 +69,15 @@ class Response
         std::string _response;
         size_t _totalBytesSent;
         bool _sent;
+        bool cgiProg;
+        int pipefd[2];
+        pid_t pid;
 
         enum Progress _progress;
         responseBodyFile *_fileBody;
 
     public:
-        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr) {};
+        Response () : _response(""), _totalBytesSent(0), _sent(false), cgiProg(false), _progress(BUILD_RESPONSE), _fileBody(nullptr) {};
         ~Response() { if (_fileBody) { delete _fileBody; _fileBody = nullptr;} };
         enum Progress getProgress() const { return _progress; };
         std::string getResponse() const { return _response; };
@@ -82,10 +85,14 @@ class Response
         std::string getTextBody() const { return _textBody; };
         size_t getTotalBytesSent() const { return _totalBytesSent; };
         int getStatusCode() const { return _statusCode; };
+        bool getCgiProg() const { return cgiProg; }
+
+
         int setFileBody(std::string path);
         void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
         void setSent(bool sent) { _sent = sent; };
         void setProgress(enum Progress progress) { _progress = progress; };
+        void setCgiProg(bool flag) { cgiProg = flag; };
 
         void setHttpVersion(const std::string &version);
         void setStatusCode(int status);
@@ -106,6 +113,7 @@ class Response
         void processDELETE(Request &request, server *serv, std::string &path);
 
         void processDirectoryRequest(Request &request, location *locationMatch, server *serv, std::string &path);
+        void handleCGI(Response &response, Request &request);
 };
 
 std::string getMimeType(const std::string& filename);

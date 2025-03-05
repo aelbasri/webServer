@@ -154,8 +154,10 @@ int Connection::sockWrite()
         return (0);
     if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD)
     {
+            // std::cout << "gfgfhnfhnghnngghh" << std::endl;
         try {
             _response.buildResponse(_request, _server);
+            std::cout << "HELLOOOOOOOOOOOOOOOOO" << std::endl;
         } catch (const server::InternalServerError &e) {
             setHttpResponse(500, "Internal Server Error", _response, _server);
         } catch(const Request::badRequest &e) {
@@ -163,12 +165,15 @@ int Connection::sockWrite()
         }
         if (_response.getProgress() != POST_HOLD)
         {
+            std::cout << "ACH BAN LK A W9" << std::endl;
             std::string conn = _request.getHeader("Connection");
             _response.createResponseStream(conn);
         }
     }
+
     if (_response.getProgress() == SEND_HEADERS)
     {
+        std::cout << "???HELLOOOOOOOOOOOOOOOOO" << std::endl;
         ssize_t bytesSent = send(_socket, _response.getResponse().c_str() + _response.getTotalBytesSent(), _response.getResponse().size() - _response.getTotalBytesSent(), MSG_NOSIGNAL);
         if (bytesSent == -1)
             return (-1);

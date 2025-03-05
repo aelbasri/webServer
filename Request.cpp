@@ -355,9 +355,9 @@ void Request::parseHeader(char *buffer, long i)
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
-                    std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
                     // exit(10);
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
+                    std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
                     if (contentLength > maxBodySize)
                         throw badRequest();
                 }
@@ -494,6 +494,7 @@ void Request::handle_request(char *buffer)
                 goto exit_request_parsing;
                 break;
             case BODY:
+                // std::cout << "\n\nhere\n\n";
                 parseBody(buffer, offset, bytesRec);
                 break;
             default:

@@ -71,6 +71,7 @@ void Response::processPOST(Request &request, location *locationMatch)
         // changing state for request to start reading body
         request.setState(BODY);
         setProgress(POST_HOLD);
+        // std::cout << "\n\nhere\n\n";
         return ;
     }
     else
@@ -226,16 +227,22 @@ void Response::buildResponse(Request &request, server *serv)
     }
 
     // check if the path starts with /cgi-bin/
+    if (request.getState() == WAIT)
+        std::cout << "WAIT" << std::endl;
+    // if (request.getRequestTarget().find("/cgi-bin/") == 0 && request.getState() == DONE)
     if (request.getRequestTarget().find("/cgi-bin/") == 0)
     {
         // check extension: .py .php ONLY
         std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
         if (extension == ".py" || extension == ".php")
         {
-            if (request.getRequestTarget() == "/cgi-bin/login.py")
-                return (handleCGI(serv, *this, request));
+            // if (request.getRequestTarget() == "/cgi-bin/login.py")
+            //      handleCGI(serv, *this, request);
             // else
-            //     return (handleCGI2(...));
+                // std::cout << "START" << std::endl;
+                handleCGI(*this, request);
+                // std::cout << "endl" << std::endl;
+                return ;
         }
         else
         {
@@ -244,7 +251,13 @@ void Response::buildResponse(Request &request, server *serv)
             return (setHttpResponse(403, "Forbidden", *this, serv));
         }
     }
-
+    // handle also CGI
+    // if (getProgress() == SESSION_MANAGMENT)
+    // {
+        // std::cout << "********** " << std::endl;
+        // request.setState(BODY);
+        // setProgress(BUILD_RESPONSE);
+    // }
     if (getProgress() == POST_HOLD)
     {
         if (request.getMethod() != "POST")
@@ -296,6 +309,7 @@ void Response::buildResponse(Request &request, server *serv)
 
     if (request.getMethod() == "POST")
         return (processPOST(request, locationMatch));
+    std::cout << "HELLOOOOOOOOOOOOOOOOO" << std::endl;
 
     // Construct full requested path
     std::string path = locationMatch->GetRoot_directory();
