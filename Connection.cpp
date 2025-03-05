@@ -10,19 +10,23 @@ std::string getSizeInHex(size_t size)
     stream << std::hex << size;
     return stream.str();
 }
-
 ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkFormat)
 {
     if (sendInChunkFormat)
     {
-        std::string sizeInHex = getSizeInHex(size);
-        std::stringstream response;
-        response << sizeInHex << "\r\n";
-        response << buffer << "\r\n";
-        size += sizeInHex.size() + 4;
-        return (send(socket, response.str().c_str(), size, MSG_NOSIGNAL));
+        std::stringstream hexStream;
+        hexStream << std::hex << size;
+        std::string sizeInHex = hexStream.str();
+
+        std::string chunk = sizeInHex + "\r\n";
+        chunk.append(buffer, size);
+        chunk.append("\r\n");
+        // std::cout << "Sending chunk: size=" << sizeInHex 
+        //           << ", actual size=" << size 
+        //           << ", total chunk size=" << chunk.size() << std::endl;
+        return send(socket, chunk.c_str(), chunk.size(), MSG_NOSIGNAL);
     }
-    return (send(socket, buffer, size, MSG_NOSIGNAL));
+    return send(socket, buffer, size, MSG_NOSIGNAL);
 }
 
 bool Connection::sendRawBody()
@@ -67,7 +71,17 @@ int Connection::sendFile(bool sendInChunkFormat)
     }
 
     if (rfs->file.eof())
+    {
+        // send last chunk
+        if (sendInChunkFormat)
+        {
+            ssize_t nBytesSent = sendChunk("", 0, _socket, sendInChunkFormat);
+            if (nBytesSent == -1)
+                throw server::InternalServerError();
+        }
+
         return (0);
+    }
     rfs->file.read(rfs->buffer, BUFFER_SIZE);
     int bytesRead = rfs->file.gcount();
     // std::cout << "9RINA " << bytesRead << std::endl;
@@ -84,7 +98,6 @@ int Connection::sendFile(bool sendInChunkFormat)
         }
         rfs->consumed += bytesSent;
         rfs->offset += bytesSent;
-        // std::cout << "wgfnannnn" << std::endl;
         return (bytesSent);
     }
     return (0);
@@ -93,7 +106,6 @@ int Connection::sendFile(bool sendInChunkFormat)
 int Connection::sockRead()
 {
     long bytesRec = 0;
-    // std::cout << "BODY:" << "offset: " << _request.getOffset() << ", bytesRec:" <<  _request.getBytesRec() << std::endl;
     if (_request.getState() ==  WAIT)
         return (0);
     if((_request.getOffset() >= _request.getBytesRec()))
@@ -189,8 +201,7 @@ int Connection::sockWrite()
             }
             else if (_response.getTextBody().empty())
             {
-                //TODO: SEND IN CHUNKS ALSO
-                if (sendFile(false) != 0)
+                if (sendFile(_response.getFileBody()->fileSize > 1024) != 0)
                     return (0);
                 _response.setSent(true);
                 _response.setProgress(FINISHED);

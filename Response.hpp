@@ -23,6 +23,7 @@
 #define HTTP_VERSION "HTTP/1.1"
 #define RESPONSE_CHUNCK_SIZE 1024
 #define BUFFER_SIZE 100
+#define SERVER_NAME "WebServ-1337/1.0"
 
 enum Progress
 {
@@ -47,6 +48,7 @@ struct responseBodyFile
     size_t nBytes;
     size_t consumed;
     char buffer[BUFFER_SIZE];
+    size_t fileSize;
     std::ifstream file;
 };
 
@@ -128,5 +130,6 @@ std::string listDirectoryHTML(const char *path);
 std::string getFilenameFromPath(std::string path);
 void handleCGI(server *serv, Response &response, Request &request);
 void handleCGI2(server *serv, Response &response, Request &request);
+std::string getDate();
 
 

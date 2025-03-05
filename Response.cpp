@@ -42,6 +42,7 @@ int Response::setFileBody(std::string path) {
         throw server::InternalServerError();
     _fileBody->file.seekg (0, _fileBody->file.end);
     int length = _fileBody->file.tellg();
+    _fileBody->fileSize = length;
     _fileBody->file.seekg (0, _fileBody->file.beg);
     _fileBody->offset = 0;
     _fileBody->consumed = 0;
@@ -51,6 +52,8 @@ int Response::setFileBody(std::string path) {
 
 void Response::setContentLength(int length)
 {
+    if (length > 1024 && getTextBody().empty())
+        return (addHeader(std::string("Transfer-Encoding"), std::string("chunked")));
     std::stringstream ss;
     ss << length;
     std::string len = ss.str();
@@ -373,6 +376,8 @@ void Response::createResponseStream(std::string &connectionHeader)
         responseStream << _httpVersion << " " << _statusCode << " " << _reasonPhrase << "\r\n";
 
         // Add headers
+        responseStream << "Server: " << SERVER_NAME << "\r\n";
+        responseStream << "Date: " << getDate() << "\r\n";
         std::map<std::string, std::string>::const_iterator it;
         for (it = _headers.begin(); it != _headers.end(); it++)
             responseStream << it->first << ": " << it->second << "\r\n";

@@ -3,6 +3,18 @@
 #include "configfile/location.hpp"
 #include "log.hpp"
 
+std::string getDate() {
+    time_t rawtime;
+    struct tm *timeinfo;
+    char buffer[80];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", timeinfo);
+    return std::string(buffer);
+}
+
 std::map<std::string, std::string> initializeMimeTypes() {
     std::map<std::string, std::string> mimeTypes;
     mimeTypes[".html"] = "text/html; charset=UTF-8";
