@@ -92,6 +92,35 @@ std::string convertQueryMapToString(const std::map<std::string, std::string>& qu
     return queryString;
 }
 
+std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requestTarget) {
+    
+    size_t pyPos = requestTarget.find(".py");
+    size_t phpPos = requestTarget.find(".php");
+    
+    size_t scriptEnd = std::string::npos;
+
+    if (pyPos != std::string::npos)
+        scriptEnd = pyPos + 3;
+    else if (phpPos != std::string::npos) 
+        scriptEnd = phpPos + 4;
+    
+    if (scriptEnd == std::string::npos) {
+        scriptPath += requestTarget;
+        return "";
+    }
+    std::string Info = requestTarget.substr(1, scriptEnd - 1);
+    scriptPath += "/" + Info;
+    
+    std::string pathInfo = "";
+    if (scriptEnd < requestTarget.length()) {
+        pathInfo = requestTarget.substr(scriptEnd);
+    }
+    
+    std::cout << "PATH_INFO: " << pathInfo << std::endl;
+    std::cout << "PATH: " << scriptPath << std::endl;
+    return pathInfo;
+}
+
 void CGI::RunCgi(server *serv, Response &response, Request &request) {
 
     int *stdin_pipe = response.getCGIPIPE();
@@ -117,8 +146,11 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         }
     }
 
+
     std::string scriptPath = ".";
-    scriptPath += request.getRequestTarget();
+    std::string pathInfo = ScriptPath_PathInfo(scriptPath, request.getRequestTarget());
+
+    // scriptPath += request.getRequestTarget();
     if (scriptPath == "./cgi-bin/home.py")
     {
         if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))){
@@ -128,6 +160,12 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             return (setHttpResponse(403, "Forbidden", response, serv));
         }
     }
+    // size_t scriptNameEnd = request.getRequestTarget().find(".py");
+    // if (scriptNameEnd != std::string::npos) {
+    //     scriptNameEnd += 3; // Include the ".py"
+    //     std::string pathInfo = request.getRequestTarget().substr(scriptNameEnd);
+    //     env["PATH_INFO"] = pathInfo;
+    // }
         
     std::string interpreter = getInterpreter(scriptPath);
     std::cout << "INTER: " << interpreter << std::endl;
@@ -145,6 +183,9 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
     env["CONTENT_TYPE"] = request.getHeader("Content-Type");
     env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
     env["HTTP_COOKIE"] = request.getHeader("Cookie");
+    if (!pathInfo.empty())
+        env["PATH_INFO"] = pathInfo;
+
 
     for (const auto& header : request.getHeaders()) {
         std::string envVar = "HTTP_" + header.first;
