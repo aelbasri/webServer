@@ -271,16 +271,18 @@ void Response::buildResponse(Request &request, server *serv)
             if (request.getState() != DONE) // Still reading body
                 return ;
         }
+        return (handleCGI2(serv, *this, request));
         // check extension: .py .php ONLY
-        std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
-        if (extension == ".py" || extension == ".php")
-            return (handleCGI2(serv, *this, request));
-        else
-        {
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";
-            webServLog(logMessage, WARNING);
-            return (setHttpResponse(403, "Forbidden", *this, serv));
-        }
+        // std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
+        // // "hello.py/user/12" = .py/user/12
+        // if (extension == ".py" || extension == ".php")
+        //     return (handleCGI2(serv, *this, request));
+        // else
+        // {
+        //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";
+        //     webServLog(logMessage, WARNING);
+        //     return (setHttpResponse(403, "Forbidden", *this, serv));
+        // }
     }
 
     if (getProgress() == POST_HOLD)

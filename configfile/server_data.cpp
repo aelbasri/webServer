@@ -173,11 +173,11 @@ void  server::SetCgi(std::vector<CGI> __cgi){
 }
 
 
-std::vector<std::pair<std::string, std::string> > server::GetUserToken() const {
+std::vector<std::string> server::GetUserToken() const {
     return _UserTokens;
 }
 
-void server::SetUserToken(std::pair<std::string, std::string> __UserToken){
+void server::SetUserToken(std::string __UserToken){
     _UserTokens.push_back(__UserToken);
 }
 

@@ -57,66 +57,206 @@ std::string getInterpreter(const std::string& filePath) {
     return "";
 }
 
-std::string CGI::RunCgi(const std::string &requestBody) {
-    if (!isFileValid(_path)) {
-        std::cout << "File '" << _path << "' is invalid/missing" << std::endl;
-        return "";
+std::map<std::string, std::string> extractHeaders(const std::string& output) {
+    std::map<std::string, std::string> headers;
+    std::istringstream stream(output);
+    std::string line;
+    while (std::getline(stream, line) && !line.empty()) {
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 1);
+            headers[key] = value;
+            std::cout << "HEADER: " << key << " = " << value << std::endl;
+        }
+    }
+    return headers;
+}
+std::string extractBody(const std::string& output) {
+    // size_t pos = output.find("\r\n\r\n");
+    size_t pos = output.find("\n\n");
+    if (pos != std::string::npos) {
+        return output.substr(pos + 2);
+    }
+    return "";
+}
+std::string convertQueryMapToString(const std::map<std::string, std::string>& query) {
+    std::ostringstream stream;
+    for (std::map<std::string, std::string>::const_iterator it = query.begin(); it != query.end(); ++it) {
+        stream << it->first << "=" << it->second << "&";
+    }
+    std::string queryString = stream.str();
+    if (!queryString.empty()) {
+        queryString.pop_back(); // Remove the trailing '&'
+    }
+    return queryString;
+}
+
+void CGI::RunCgi(server *serv, Response &response, Request &request) {
+
+    int *stdin_pipe = response.getCGIPIPE();
+    if (stdin_pipe[0] == -1 && stdin_pipe[1] == -1)
+    {
+        if (pipe(stdin_pipe) == -1) {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
+            webServLog(logMessage, ERROR);
+            response.setProgress(BUILD_RESPONSE);
+            throw server::InternalServerError();
+        }
     }
 
-    int stdin_pipe[2], stdout_pipe[2];
-    if (pipe(stdin_pipe) || pipe(stdout_pipe)) {
-        perror("pipe failed");
-        return "";
+    if (request.getMethod() == "POST") {
+        if (request.getState() == WAIT)
+        {
+            request.setWriteInPipe(true);
+            request.setFd(stdin_pipe[1]);
+            request.setState(BODY);
+            response.setProgress(POST_HOLD);
+            request.handle_request(request.getBuffer());
+            return ;
+        }
+    }
+
+    std::string scriptPath = ".";
+    scriptPath += request.getRequestTarget();
+    if (scriptPath == "./cgi-bin/home.py")
+    {
+        if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))){
+            close(stdin_pipe[0]);
+            close(stdin_pipe[1]);
+            response.setProgress(BUILD_RESPONSE);
+            return (setHttpResponse(403, "Forbidden", response, serv));
+        }
+    }
+        
+    std::string interpreter = getInterpreter(scriptPath);
+    std::cout << "INTER: " << interpreter << std::endl;
+    if (interpreter.empty())
+    {
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+        response.setProgress(BUILD_RESPONSE);
+        return (setHttpResponse(404, "Not Found", response, serv));
+    }
+
+    std::map<std::string, std::string> env;
+    env["REQUEST_METHOD"] = request.getMethod();
+    env["QUERY_STRING"] = convertQueryMapToString(request.getQuery());
+    env["CONTENT_TYPE"] = request.getHeader("Content-Type");
+    env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
+    env["HTTP_COOKIE"] = request.getHeader("Cookie");
+
+    for (const auto& header : request.getHeaders()) {
+        std::string envVar = "HTTP_" + header.first;
+        std::replace(envVar.begin(), envVar.end(), '-', '_');
+        std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
+        env[envVar] = header.second;
+    }
+
+    int stdout_pipe[2];
+    if (pipe(stdout_pipe) == -1) {
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to create pipe]";
+        webServLog(logMessage, ERROR);
+        response.setProgress(BUILD_RESPONSE);
+        throw server::InternalServerError();
     }
 
     pid_t pid = fork();
     if (pid == -1) {
-        perror("fork failed");
-        return "";
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+
+        close(stdout_pipe[0]);
+        close(stdout_pipe[1]);
+
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to fork]";
+        webServLog(logMessage, ERROR);
+        response.setProgress(BUILD_RESPONSE);
+        throw server::InternalServerError();
     }
 
-    if (pid == 0) { 
-        dup2(stdin_pipe[0], STDIN_FILENO); 
+    if (pid == 0) {
+
+        close(stdin_pipe[1]);
+        close(stdout_pipe[0]);
+
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        close(stdin_pipe[0]);
+
         dup2(stdout_pipe[1], STDOUT_FILENO);
+        close(stdout_pipe[1]);
 
-        close(stdin_pipe[0]); close(stdin_pipe[1]);
-        close(stdout_pipe[0]); close(stdout_pipe[1]);
+        for (const auto& var : env) {
+            setenv(var.first.c_str(), var.second.c_str(), 1);
+        }
 
-        std::string interpreter = getInterpreter(_path);
+
         std::vector<const char*> args;
         
         if (!interpreter.empty()) {
             args.push_back(interpreter.c_str());
         }
-        args.push_back(_path.c_str());
+        args.push_back(scriptPath.c_str());
         args.push_back(NULL);
 
-        execv(args[0], const_cast<char* const*>(&args[0])); 
-        perror("execv failed");
-        _exit(EXIT_FAILURE); 
-    }
-    else {
-        close(stdin_pipe[0]); close(stdout_pipe[1]);
 
-        write(stdin_pipe[1], requestBody.c_str(), requestBody.size()); 
+
+        execv(args[0], const_cast<char* const*>(&args[0]));
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unsupported script type]";
+        webServLog(logMessage, ERROR);
+        response.setProgress(BUILD_RESPONSE);
+        throw server::InternalServerError();
+       } else {
+ 
+        close(stdin_pipe[0]);
         close(stdin_pipe[1]);
+        close(stdout_pipe[1]);
 
-        char buffer[4096];
-        ssize_t bytes_read = read(stdout_pipe[0], buffer, sizeof(buffer));
-        close(stdout_pipe[0]); 
+        std::ostringstream output;
+        char buffer[1024];
+        ssize_t bytesRead;
+        while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0) {
+            output.write(buffer, bytesRead);
+        }
+        close(stdout_pipe[0]);
 
-        int status;     
-        waitpid(pid, &status, 0); 
+        int status;
+        waitpid(pid, &status, 0);
 
         if (WIFEXITED(status)) {
-            _ExitStatus = WEXITSTATUS(status);
+            if (WEXITSTATUS(status) == 0 || WEXITSTATUS(status) == 1)
+            {
+                // extract headers and body from the output
+                std::map<std::string, std::string> headers = extractHeaders(output.str());
+                std::string responseBody = extractBody(output.str());
+                for (const auto& header : headers) {
+                    response.addHeader(header.first, header.second);
+                    if (header.first == "Set-Cookie")
+                    {
+                        // std::cout << 
+                        std::string cookie = header.second.substr(strlen("session_id= "));
+                        std::cout << "COOOOKKKKKIE: " << cookie << std::endl;
+                        serv->SetUserToken(cookie);
+                    }
+                }
+                response.setHttpVersion(HTTP_VERSION);
+                response.setStatusCode(200);
+                response.setReasonPhrase("OK");
+                response.setTextBody(responseBody);
+                int length = responseBody.size();
+                response.setContentLength(length);
+                response.setProgress(BUILD_RESPONSE);
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [CGI executed]";
+                webServLog(logMessage, INFO);
+                return ;
+            }
         }
-        else if (WIFSIGNALED(status)) {
-            _ExitStatus = WTERMSIG(status); 
-        }
-        else {
-            _ExitStatus = -1;
-        }
-        return bytes_read > 0 ? std::string(buffer, bytes_read) : "";
-    }
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script failed]";
+        webServLog(logMessage, ERROR);
+        response.setProgress(BUILD_RESPONSE);
+        throw server::InternalServerError();
+    } 
+    return ;
 }

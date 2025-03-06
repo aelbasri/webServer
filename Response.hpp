@@ -131,5 +131,6 @@ std::string getFilenameFromPath(std::string path);
 void handleCGI(server *serv, Response &response, Request &request);
 void handleCGI2(server *serv, Response &response, Request &request);
 std::string getDate();
+bool isTokenExist(const std::vector< std::string>& userTokens, const std::string& token);
 
 

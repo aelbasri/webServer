@@ -51,6 +51,7 @@ def main():
         print("Content-Type: text/html\n")  # Switch back to HTML for the response
         print("<h1>Login Successful</h1>")
         print(f"<p>Welcome, {username}!</p>")
+        exit(0)
 
         # Set a cookie if "Remember Me" is checked
         if remember_me == "on":
@@ -61,6 +62,8 @@ def main():
         print("<h1>Login Failed</h1>")
         print("<p>Invalid username or password.</p>")
         print('<p><a href="/login.html">Try again</a></p>')
+        exit(1)
+
 
 if __name__ == "__main__":
     main()

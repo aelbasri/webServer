@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <sstream>
 #include "../Response.hpp"
+#include "../log.hpp"
+
 
 
 class Response;
@@ -38,6 +40,6 @@ public:
 
 
 
-    std::string RunCgi(const std::string& requestBody);
+    void RunCgi(server *serv, Response &response, Request &request);
 };
 
