@@ -220,7 +220,7 @@ void Config::creatPoll()
                         std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
                         struct epoll_event ev;
                         ev.data.fd = _fd;
-                        ev.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLERR;
+                        ev.events = EPOLLOUT |  EPOLLIN  | EPOLLHUP | EPOLLERR;
                         if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
                         {
                             // Throw exception
@@ -232,8 +232,15 @@ void Config::creatPoll()
             if (evlist[i].events & EPOLLOUT)
             {
                 // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
+                // if (connections[_fd]->_response.getProgress() == FINISHED)
+                // {
+                //         close(_fd);
+                //     std::cout << "khas dkhol hna" << std::endl;
+                // }
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
+                    // std::cout << "kaan hna" << std::endl;
+                    // exit(10);
                     bool keepAlive = connections[_fd]->keepAlive();
                     server *tmp = connections[_fd]->getServer();
                     delete connections[_fd];
@@ -241,11 +248,11 @@ void Config::creatPoll()
 
                     if (!keepAlive) // if Connection: close
                     {
-                        close(_fd);
                         // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                         std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
                         webServLog(logMessage, INFO);
+                        close(_fd);
                     }
                     else
                     {
