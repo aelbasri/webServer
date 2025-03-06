@@ -250,9 +250,13 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
         value = trim(lines[i].substr(found_at + 1));
 
         if (key == "type") {
+            if (hasSpace(value) || !startsWithSlash(value))
+                throw std::runtime_error("Invalid type: " + value);
             _location[_indixL].SetType_of_location(value);
         }
         else if (key == "root_directory") {
+            if (hasSpace(value))
+                throw std::runtime_error("Invalid type: " + value);
             _location[_indixL].SetRoot_directory(value);
         }
         else if (key == "index") {

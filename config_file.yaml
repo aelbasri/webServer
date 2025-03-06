@@ -47,7 +47,7 @@ server:
       
 
     location :
-      type : uploadafvc a gv
+      type : /uploadafvcv
       allowed_methods:
         - POST
         - DELETE
