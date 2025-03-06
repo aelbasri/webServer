@@ -14,7 +14,11 @@
 
 #include "error_pages.hpp"
 #include "location.hpp"
+#include "../Request.hpp"
+#include "../Response.hpp"
+#include "cgi_data.hpp"
 
+#include <clocale>
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
@@ -31,63 +35,86 @@
 #include <vector>
 #include <sys/epoll.h>
 
-
-#include "../Request.hpp"
-#include "../Response.hpp"
+class CGI;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
+#define UPLOAD_DIRECTORY "./uploads/"
 
-class server : public error_pages
+class server : public error_pages 
 {
 private:
-    size_t _indixL;
-    int     _nembre_of_location;
-    location *_location;
+    int     _number_of_location;
     std::string _content;
     std::string _name;
     std::string _host;
-    std::string _port;
     long long _max_body_size;
 
-    int         _sock;
+    size_t _indixL;
+    int     _NPort;
+
+    // std::vector<std::string> _port;
+    std::vector<CGI> _CGI;
+    location *_location;
+
+    std::vector<std::pair<std::string, int> >  _sock;
     struct addrinfo hints;
     struct addrinfo *res ,*p;
     int addI;
 
+    //session managment
+    std::vector<std::string> _UserTokens;
+
 public:
     void new_location();
-    void Set_nembre_of_location(int _nembre_of_location);
+    void Set_number_of_location(int _number_of_location);
     void Set_content(std::string __content);
     void Set_name(std::string __name);   
     void Set_host(std::string __host); 
-    void Set_port(std::string __port);
+    // void Set_port(std::vector<std::string> __port);
     void Set_max_body_size(long long __max_body_size);
-    void setSock(int sock);
+    void setSock(std::string port,int sock);
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
-    void setAddI(int newAddI);
-    // void Set
+    void setAddI(int newAddI);\
+    void SetCgi(std::vector<CGI> __cgi);
+    void SetUserToken(std::string __UserToken);
+    // void SetUserToken(std::string __UserToken);
+
 
     
-    int Get_nembre_of_location();
+    int Get_number_of_location();
     std::string Get_content();
     std::string Get_name();   
     std::string Get_host(); 
-    std::string Get_port();
+    //  std::vector<std::string> Get_port() { retru};
     long long Get_max_body_size();
+    std::vector<CGI> GetCgi();
 
-    int getSock() ;
+    std::vector<std::pair<std::string, int> >  getSock() ;
     struct addrinfo &getHints() ;
     void setHints( struct addrinfo& newHints);
     struct addrinfo* &getRes();
     struct addrinfo* &getP();
     int getAddI();
+    std::vector<std::string> GetUserToken() const ;
+
+    // std::vector<std::string> GetUserToken() const;
+
 
     server();
     virtual ~server();
+    server(const server &server)
+    {
+        *this = server;
+    }
 
+    server& operator=(const server &server);
 
+    location* GetLocations() const
+    {
+        return (_location);
+    }
 
     void Getlocation();
     void LoidingAllowedMethods(std::vector<std::string> lines,size_t &i);
@@ -95,15 +122,15 @@ public:
     void loadingDataserver();
     int CheckNumberOfLocation();
     void loadingErrorIndex(std::vector<std::string> lines, size_t &i);
+    void loadingCgiContent(std::vector<std::string> lines,size_t &i);
     int run();
-    void creatPoll() const;
 
     public:
         class InternalServerError : public std::exception
         {
-            public:
-                const char* what() const throw(); 
+            public :
+                const char *what() const throw();
         };
 };
 
-
+void handle_request(int fd);

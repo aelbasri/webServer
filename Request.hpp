@@ -18,12 +18,32 @@
 
 
 #define BUFF_SIZE 1024
+#define CR '\r'
+#define LF '\n'
 
-enum state
+enum State
 {
+    METHOD,
     REQUEST_LINE,
+    REQUEST_TARGET,
+    QUERY_KEY,
+    QUERY_VALUE,
+    HTTP_VERSION_,
+    FORWARD_SKASH,
+    DIGIT,
+    DOT,
+    CR_STATE,
+    LF_STATE,
     HEADER,
+    FIELD_NAME,
+    OWS,
+    FIELD_VALUE,
     BODY,
+    CONTLEN,
+    CHUNKS,
+    CHUNK_HEADER,
+    LOAD_CHUNK,
+    WAIT,
     DONE
 };
 
@@ -39,21 +59,100 @@ struct parseBodyElement
 class Request
 {
     private:
+        State mainState;
+        State subState;
+
         char buffer[BUFF_SIZE];
+        long bytesRec;
+        long offset;
+
+        int indexMethod;
+        int indexHttp;
+        // char buffer[BUFF_SIZE];
 
         //request line
         std::string method;
         std::string requestTarget;
         std::string httpVersion;
 
+        //query
+        std::map<std::string, std::string> query;
+        std::string queryName;
+        std::string queryValue;
+
         //header
-        /*std::map<std::string, std::string> header;*/
-        std::map<std::string, std::string> header;
+        std::map<std::string, std::string> headers;
+        std::string fieldName;
+        std::string fieldValue;
+
+        //body
+
+        long consumed;
+        std::ofstream contentFile;
+        std::string _contentFile;
+        long long contentBodySize;
+        long contentLength;
+
+        std::string chunkSizeS;
+        long chunkSizeL;
+        long long maxBodySize;
+
+        bool writeInPipe;
+        int fd;
+
+
+
     public:
+        //TODO: 9aad l constructure adak ras lbo9ala
+        Request() : mainState(REQUEST_LINE), subState(METHOD), bytesRec(0), offset(0), indexMethod(0),indexHttp(0), fieldName(""), fieldValue(""), consumed(0), _contentFile(""), contentBodySize(0), writeInPipe(false), fd(-1) { memset(buffer, 0, BUFF_SIZE); }
+        
+        void handle_request(char *buffer);
+        
+        State getState(void) const { return (mainState);}
+        std::string getMethod(void) { return (method); }
+        std::string getContentFile(void) { return (_contentFile); }
+        long getOffset(void) const { return (offset); }
+        long getBytesRec(void) const { return (bytesRec); }
         std::string getRequestTarget(void) const;
         std::string getMethod(void) const;
         std::string getHttpVersion(void) const;
-        int parseRequestLine(int socket, int &offset, int &nBytes);
-        int parseHeader(int socket, int &offset, int &nBytes);
-        int parseBody(int socket, int &offset, int &nBytes);
+        std::map<std::string, std::string> getHeaders(void) const { return (headers); }
+        std::map<std::string, std::string> getQuery(void) const { return (query); }
+        // std::string getQueryString (void) const { return (queryName + "=" + queryValue); }
+        char *getBuffer() { return buffer; }
+        int getFd() { return fd; }
+        bool getWriteInPipe() { return writeInPipe; }
+
+        void setContentFile(std::string contentFile) { _contentFile = contentFile; }
+        void setMaxBodySize(long long size) { maxBodySize = size; }
+        void setState(State state) { mainState = state; }
+        void setBytrec(long _bytesRec) { bytesRec = _bytesRec; }
+        void setOffset(long _offset) { offset = _offset; }
+        void setBuffer() {memset(buffer, 0, BUFF_SIZE);}
+        void setFd(int _fd) { fd = _fd; }
+        void setWriteInPipe(bool _writeInPipe) { writeInPipe = _writeInPipe; }
+
+        std::string getHeader(std::string header) const
+        {
+            std::map<std::string, std::string>::const_iterator it = headers.find(header);
+            if (it != headers.end())
+                return it->second;
+            return ""; // should never happen
+        }
+
+        void parseRequestLine(char *buffer, long i);
+        void parseHeader(char *buffer, long i);
+        void parseBody(char *buffer, long &i, long bytesRec);
+
+        void closeContentFile();
+
+
+        class badRequest : public std::exception 
+        {
+            public :
+                const char *what() const throw()
+                {
+                    return ("Bad request");
+                }
+        };
 };

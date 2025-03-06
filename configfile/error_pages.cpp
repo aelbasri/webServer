@@ -42,7 +42,7 @@ void error_pages::SetDefault(std::string __default){
     _default = __default;
 }
 
-std::string error_pages::GetDefault(){
+std::string error_pages::GetDefault() const{
     return _default;
 }
 
@@ -50,6 +50,6 @@ void error_pages::SetErr(std::map<std::string , std::string> __err){
     _err = __err;
 }
 
-std::map<std::string , std::string> error_pages::GetErr(){
+std::map<std::string , std::string> error_pages::GetErr() const{
     return(_err);
 }
