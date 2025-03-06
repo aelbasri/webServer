@@ -37,7 +37,7 @@ server:
     location :
       type : /upload
       directoryListing : on
-      root_directory:  hala kkkkk              
+      root_directory:  halakkkkk              
       allowed_methods:
         - POST
         - DELETE
