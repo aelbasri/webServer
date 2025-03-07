@@ -245,7 +245,6 @@ bool isTokenExist(const std::vector< std::string>& userTokens, const std::string
         return (false);
     std::string  session_id = token.substr(strlen("session_id="));
     for (std::vector<std::string>::const_iterator it = userTokens.begin(); it != userTokens.end(); ++it) {
-        // std::cout << "it: [" << *it << "] t: [" << session_id <<"]" << std::endl;
         if (*it == session_id) { 
             return true; 
         }

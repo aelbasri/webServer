@@ -285,26 +285,6 @@ void server::loadingLocationContent(std::vector<std::string> lines, size_t &i){
     }
 }
 
-void server::Getlocation(){
-    for (int i = 0; i < _number_of_location; i++)
-    {
-        std::cout << "---------------------location  n "<< i <<" -----------------------" << std::endl;
-        std::cout <<  "_type_of_location  : " <<_location[i].GetType_of_location() << std::endl;
-        std::cout <<  " directoryListing  : " <<_location[i].GetDirectoryListing() << std::endl;
-        std::cout <<  "_root_directory    : " <<_location[i].GetRoot_directory() << std::endl;
-        std::cout <<  "uploiad_dir    : " <<_location[i].GetUpload_dir() << std::endl;
-
-        std::cout <<  "rewrite  : " <<_location[i].GetRewrite() << std::endl;
-        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetIndex().size(); y++) {
-            std::cout << " indix :  "<<_location[i].GetIndex()[y] << std::endl;
-        }
-        for (std::vector<std::string>::size_type y = 0; y < _location[i].GetAllowed_methods().size(); y++) {
-            std::cout << " method :  "<<_location[i].GetAllowed_methods()[y] << std::endl;
-        }
-
-    }
-}
-
 void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
     size_t found_at;
     std::string key;
@@ -393,12 +373,7 @@ void server::loadingDataserver(){
             i--;
         }
     }
-    Getlocation();
 }
-
-
-
-//=================================
 
 
 const char* server::InternalServerError::what() const throw()
@@ -413,18 +388,6 @@ int server::run()
     int yes = 1;
     int addI;
 
-
-    std::cout << "---------- CGI ---------------------------------------" << std::endl;
-    for (std::vector<CGI>::size_type i = 0; i < _CGI.size(); i++)
-    {
-        std::cout << "the type is : " << _CGI[i].GetType() << std::endl;
-        std::cout << "the indix is : " << _CGI[i].GetPath() << std::endl;
-
-    }
-    
-    std::cout << "------------------------------------------------" << std::endl;
-
-
     for (std::vector<std::string>::size_type y = 0; y < _sock.size();  y++)
     {
         
@@ -432,7 +395,6 @@ int server::run()
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
 
-        std::cout << "aaa chabab" << _sock[y].first.c_str() << std::endl;
         if ((addI = getaddrinfo(_host.c_str(), _sock[y].first.c_str(), &hints, &res)) != 0)
         {
             std::cerr << gai_strerror(addI) << std::endl;
@@ -447,9 +409,7 @@ int server::run()
             {
                 perror("setsockopt");
                 return (-1);
-                /*exit(1);*/
             }
-            //bind
             if (bind(_sock[y].second, res->ai_addr, res->ai_addrlen) == -1)
                 continue;
             break;
@@ -460,20 +420,17 @@ int server::run()
         {
             perror("bind failed");
             return (-1);
-            /*exit(1);*/
         }
 
         if (listen(_sock[y].second, 10) == -1)
         {
             perror("listen() failed");
             return (-1);
-            /*exit(1);*/
         }
-        /* code */
-        std::cout << "Server is listening on " << _host << ":" << _sock[y].first << std::endl; 
+        std::string logMessage = "[SERVER LISTENING ON: " + _host + ":" + _sock[y].first + "]";
+        webServLog(logMessage, INFO);
     }
     
-
     return (0);
 }
 

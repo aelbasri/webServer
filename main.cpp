@@ -10,7 +10,7 @@ int main()
     {
         Config _Server("config_file.yaml");
 
-        webServLog("Server is starting...", INFO);
+        webServLog("[WEBSERV IS STARTING ...]", INFO);
         _Server.loadContentServer();
         _Server.SetupServers();
      }

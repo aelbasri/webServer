@@ -3,6 +3,71 @@ server:
     name           :           "zaki el khadir"     
     host: 127.0.0.1
     port:   3000
+    port:   4000
+    port:   5000
+    port:   6000
+
+
+    max_body_size :       1456
+
+    error_pages:
+      404: ./assets/errors/404.html
+      500: ./assets/errors/50x.html
+      302:  ./assets/errors/302.html
+    location :
+      type : /
+      directoryListing : on
+      # root_directory: /root2
+      root_directory: ./assets
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
+      index  : index.html
+      index  : index2.html
+
+      # upload_dir :  hala madrid
+    location :
+      type : /zara
+      root_directory: ./assets
+      allowed_methods:
+        - GET
+        - POST
+        - DELETE
+
+        #index  : index1.htm index1.html
+      #index  : page.html
+    
+    location :
+      type : /upload
+      directoryListing : on
+      root_directory:  halakkkkk              
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
+      index  : index.html
+      index  : index1.html
+      
+
+    location :
+      type : /uploadafvcv
+      allowed_methods:
+        - POST
+        - DELETE
+        - GET
+      root_directory: /root              
+      index  : index.htm 
+
+
+server:
+    name           :           "zaki el khadir"     
+    host: 127.0.0.5
+    port:   3000
+    port:   4000
+    port:   5000
+    port:   6000
+
 
     max_body_size :       1456
 

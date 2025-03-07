@@ -118,7 +118,6 @@ void Config::creatPoll()
     if (ep == -1)
     {
         // Throw exception
-        std::cout << "epoll" << std::endl;
         return;
     }
 
@@ -148,13 +147,11 @@ void Config::creatPoll()
             // Throw exception
             return;
         }
-        // std::cout << "nbrReady: " << nbrReady << std::endl;
         for(int i = 0; i < nbrReady; i++)
         {
             int _fd = evlist[i].data.fd;
             if(evlist[i].events & EPOLLIN)
             {
-                std::cout << "EPOLLIN ON SOCKET: " << _fd << std::endl;
                 int server_fd = -1;
                 server *tmp;
             
@@ -169,7 +166,6 @@ void Config::creatPoll()
                         }
                     }
 
-                // std::cout << "aji nakhdo siservi" << std::endl;
                 }
                 if (server_fd != -1)
                 {
@@ -178,17 +174,13 @@ void Config::creatPoll()
                     timeout.tv_sec = 10;
                     timeout.tv_usec = 0;
                     setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-                    /*std::cout << "new_fd: " << new_fd << std::endl;*/
 
                     std::string logMessage = "[NEW CONNECTION] [SOCKET_FD: " + intToString(new_fd) + "]";
                     webServLog(logMessage, INFO);
 
                     struct epoll_event ev;
                     ev.data.fd = new_fd;
-                    // ev.events = EPOLLIN | EPOLLOUT;
                     ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-                    // evlist[i].data.fd = new_fd;
-                    // evlist[i].events = EPOLLIN;
 
                     if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
                     {
@@ -203,11 +195,9 @@ void Config::creatPoll()
                 {
                     if (connections[_fd]->sockRead() == -1)
                     {
-                        std::cout << "thanina mn 3adow lah" << std::endl;
                         close(_fd);
                         delete connections[_fd];
                         connections.erase(_fd);
-                        // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                         std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
                         webServLog(logMessage, INFO);
@@ -215,7 +205,6 @@ void Config::creatPoll()
                     }
                     if (connections[_fd]->readyToWrite())
                     {
-                        std::cout << "Changing to EPOLLOUT ON SOCKET: " << _fd << std::endl;
                         struct epoll_event ev;
                         ev.data.fd = _fd;
                         ev.events = EPOLLOUT |  EPOLLIN  | EPOLLHUP | EPOLLERR;
@@ -251,7 +240,6 @@ void Config::creatPoll()
                     }
                     else
                     {
-                        // remove from epoll
                         epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                         close(_fd);
                         std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
@@ -332,11 +320,8 @@ void removeAndRecreateDirectory(const std::string& path) {
 
 int Config::SetupServers()
 {
-    std::cout << " _number_of_servers : ============"<< _nembre_of_server << std::endl; 
     for (size_t i = 0; i < _nembre_of_server ; i++)
     {
-        /*std::cout << "i: ============"<< i << std::endl; */
-        /*std::cout << getpid() << std::endl;*/
         if (_server[i].run() == -1)
             exit(1);
     }
