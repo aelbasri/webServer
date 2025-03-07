@@ -21,13 +21,6 @@ std::string generateFilePath() {
     return oss.str();
 }
 
-int temporaryPrintError()
-{
-    //throw BadRequestExeption
-    perror("Bad request");
-    return (-1);
-}
-
 bool isWhiteSpace(char c)
 {
     if ((c >= 9 && c <= 13) || c == 32)
@@ -114,30 +107,6 @@ int getChunkSize(int &offset, char *buffer, int &nBytes, std::string &s_number)
     return (length);
 }
 
-
-
-// void loadChunk(parseBodyElement &body, int &chunkSize)
-// {
-//     int toBeConsumed = 0;
-//
-//     if (body.consumed < chunkSize)
-//     {
-//         toBeConsumed = chunkSize - body.consumed;
-//         if (toBeConsumed > body.nBytes - body.offset)
-//             toBeConsumed = body.nBytes - body.offset;
-//
-//         body.file.write(body.buffer + body.offset, toBeConsumed);
-//         body.consumed += toBeConsumed;
-//         body.offset += toBeConsumed; 
-//     }
-//     if (body.consumed >= chunkSize)
-//     {
-//         body.offset += 2;
-//         body.consumed = 0;
-//         chunkSize = -1;
-//     }
-// }
-
 void Request::parseRequestLine(char *buffer, long i)
 {
     switch (subState)
@@ -185,7 +154,6 @@ void Request::parseRequestLine(char *buffer, long i)
             }
             break;
         case REQUEST_TARGET :
-            // origin-form = absolute-path [ "?" query ]
             if (requestTarget.empty() && buffer[i] != '/')
                 throw badRequest();
             if (buffer[i] != ' ' && buffer[i] != '?')
@@ -378,9 +346,7 @@ void Request::parseHeader(char *buffer, long i)
 
 void Request::parseBody(char *buffer, long &i, long bytesRec)
 {
-    // (void)i;
-    // (void)bytesRec;
-    // (void)buffer;
+
     int toBeConsumed = 0;
     switch (subState)
     {
@@ -400,10 +366,8 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             }
             else
                 contentFile.write(buffer + i, toBeConsumed);
-            // std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
             i += toBeConsumed;
             consumed += toBeConsumed;
-            // std::cout << "consumed:" << consumed << "== content length:" << contentLength << std::endl;
             if (consumed == contentLength)
             {
                 mainState = DONE;
@@ -469,8 +433,6 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         default :
             break;
     }
-    // std::cout << "DONE" << std::endl;
-    // mainState = DONE;
 
 }
 
@@ -481,7 +443,8 @@ void Request::closeContentFile()
 
 void Request::handle_request(char *buffer)
 {
-    // std::cout << "REQU: (" << buffer << ")" << std::endl;
+    int flag = 0;
+
     for(; offset < bytesRec; offset++)
     {
         switch (mainState)
@@ -493,8 +456,8 @@ void Request::handle_request(char *buffer)
                 parseHeader(buffer, offset);
                 break;
             case WAIT:
-                // std::cout << "WAAAAAAIT:" << "offset: " << offset << ", bytesRec:" << bytesRec << std::endl;
-                goto exit_request_parsing;
+                flag = 1;
+                // goto exit_request_parsing;
                 break;
             case BODY:
                 parseBody(buffer, offset, bytesRec);
@@ -502,8 +465,10 @@ void Request::handle_request(char *buffer)
             default:
                 break;
         }
+        if (flag == 1)
+            break;
     }
-    exit_request_parsing :       
-        return ;
+    // exit_request_parsing :       
+        // return ;
 }
 
