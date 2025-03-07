@@ -12,6 +12,8 @@
 #include "../log.hpp"
 
 
+#define CGI_PATH "/cgi-bin/"
+
 
 class Response;
 

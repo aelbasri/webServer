@@ -355,7 +355,6 @@ void Request::parseHeader(char *buffer, long i)
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
-                    std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
                     // exit(10);
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
                     if (contentLength > maxBodySize)
@@ -400,10 +399,8 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             }
             else
                 contentFile.write(buffer + i, toBeConsumed);
-            // std::cout << "offset:" << i << "== content length:" << toBeConsumed << std::endl;
             i += toBeConsumed;
             consumed += toBeConsumed;
-            // std::cout << "consumed:" << consumed << "== content length:" << contentLength << std::endl;
             if (consumed == contentLength)
             {
                 mainState = DONE;
@@ -469,9 +466,6 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         default :
             break;
     }
-    // std::cout << "DONE" << std::endl;
-    // mainState = DONE;
-
 }
 
 void Request::closeContentFile()
@@ -481,7 +475,6 @@ void Request::closeContentFile()
 
 void Request::handle_request(char *buffer)
 {
-    // std::cout << "REQU: (" << buffer << ")" << std::endl;
     for(; offset < bytesRec; offset++)
     {
         switch (mainState)
@@ -493,7 +486,6 @@ void Request::handle_request(char *buffer)
                 parseHeader(buffer, offset);
                 break;
             case WAIT:
-                // std::cout << "WAAAAAAIT:" << "offset: " << offset << ", bytesRec:" << bytesRec << std::endl;
                 goto exit_request_parsing;
                 break;
             case BODY:

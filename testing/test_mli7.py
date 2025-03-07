@@ -21,8 +21,8 @@ except ImportError:
     import psutil
 
 # Configuration
-TARGET_URL = "http://127.0.0.1:3000"
-NUM_REQUESTS = 50
+TARGET_URL = "http://127.0.0.1:3000/saad.txt"
+NUM_REQUESTS = 1000
 CONCURRENT_WORKERS = 100
 POST_DATA = {"username": "testuser", "password": "testpass"}
 HEADERS = {"Content-Type": "application/json"}
