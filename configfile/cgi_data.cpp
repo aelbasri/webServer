@@ -80,6 +80,7 @@ std::string extractBody(const std::string& output) {
     }
     return "";
 }
+
 std::string convertQueryMapToString(const std::map<std::string, std::string>& query) {
     std::ostringstream stream;
     for (std::map<std::string, std::string>::const_iterator it = query.begin(); it != query.end(); ++it) {
@@ -87,7 +88,7 @@ std::string convertQueryMapToString(const std::map<std::string, std::string>& qu
     }
     std::string queryString = stream.str();
     if (!queryString.empty()) {
-        queryString.pop_back(); // Remove the trailing '&'
+        queryString = queryString.substr(0, queryString.length() - 1); // Remove the trailing '&'
     }
     return queryString;
 }
@@ -109,7 +110,9 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
         return "";
     }
     std::string Info = requestTarget.substr(1, scriptEnd - 1);
-    scriptPath += "/" + Info;
+    if (scriptPath[scriptPath.length() - 1] != '/')
+        scriptPath += "/";
+    scriptPath += Info;
     
     std::string pathInfo = "";
     if (scriptEnd < requestTarget.length()) {
@@ -148,9 +151,9 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
 
 
     std::string scriptPath = ".";
+    // scriptPath += CGI_PATH;
     std::string pathInfo = ScriptPath_PathInfo(scriptPath, request.getRequestTarget());
 
-    // scriptPath += request.getRequestTarget();
     if (scriptPath == "./cgi-bin/home.py")
     {
         if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))){
@@ -160,12 +163,6 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             return (setHttpResponse(403, "Forbidden", response, serv));
         }
     }
-    // size_t scriptNameEnd = request.getRequestTarget().find(".py");
-    // if (scriptNameEnd != std::string::npos) {
-    //     scriptNameEnd += 3; // Include the ".py"
-    //     std::string pathInfo = request.getRequestTarget().substr(scriptNameEnd);
-    //     env["PATH_INFO"] = pathInfo;
-    // }
         
     std::string interpreter = getInterpreter(scriptPath);
     std::cout << "INTER: " << interpreter << std::endl;
@@ -187,11 +184,23 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         env["PATH_INFO"] = pathInfo;
 
 
-    for (const auto& header : request.getHeaders()) {
-        std::string envVar = "HTTP_" + header.first;
-        std::replace(envVar.begin(), envVar.end(), '-', '_');
-        std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
-        env[envVar] = header.second;
+    const std::map<std::string, std::string>& headers = request.getHeaders();
+    std::map<std::string, std::string>::const_iterator it;
+    for (it = headers.begin(); it != headers.end(); ++it) {
+        std::string envVar = "HTTP_" + it->first;
+        // Replace dashes with underscores
+        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
+            if (*charIt == '-') {
+                *charIt = '_';
+            }
+        }
+        // Convert to uppercase
+        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
+            if (*charIt >= 'a' && *charIt <= 'z') {
+                *charIt = *charIt - 32;
+            }
+        }
+        env[envVar] = it->second;
     }
 
     int stdout_pipe[2];
@@ -229,8 +238,9 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         dup2(stdout_pipe[1], STDOUT_FILENO);
         close(stdout_pipe[1]);
 
-        for (const auto& var : env) {
-            setenv(var.first.c_str(), var.second.c_str(), 1);
+        std::map<std::string, std::string>::const_iterator it;
+        for (it = env.begin(); it != env.end(); ++it) {
+            setenv(it->first.c_str(), it->second.c_str(), 1);
         }
 
 
@@ -271,12 +281,13 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
                 // extract headers and body from the output
                 std::map<std::string, std::string> headers = extractHeaders(output.str());
                 std::string responseBody = extractBody(output.str());
-                for (const auto& header : headers) {
-                    response.addHeader(header.first, header.second);
-                    if (header.first == "Set-Cookie")
+                std::map<std::string, std::string>::const_iterator it;
+                for (it = headers.begin(); it != headers.end(); ++it) {
+                    response.addHeader(it->first, it->second);
+                    if (it->first == "Set-Cookie")
                     {
                         // std::cout << 
-                        std::string cookie = header.second.substr(strlen("session_id= "));
+                        std::string cookie = it->second.substr(strlen("session_id= "));
                         std::cout << "COOOOKKKKKIE: " << cookie << std::endl;
                         serv->SetUserToken(cookie);
                     }

@@ -4,6 +4,8 @@
 #include "Response.hpp"
 #include "Conf.hpp"
 
+#define CONTENT_LENGTH_LIMIT 1000000
+
 class Connection
 {
     private:

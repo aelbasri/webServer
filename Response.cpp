@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "Connection.hpp"
 #include "configfile/location.hpp"
 #include <clocale>
 #include <cmath>
@@ -8,34 +9,49 @@
 #include <unistd.h>
 #include "log.hpp"
 
-
-void Response::setHttpVersion(const std::string &version)
+Response::Response()
 {
-    _httpVersion = version;
+    _headerStream = "";
+    _totalBytesSent = 0;
+    _sent = false;
+    _progress = BUILD_RESPONSE;
+    _fileBody = nullptr;
+    _isFile = true;
+    _CGIPIPE[0] = -1;
+    _CGIPIPE[1] = -1;
 }
 
-void Response::setStatusCode(int status)
+Response::~Response()
 {
-    _statusCode = status;
+    if (_fileBody)
+    {
+        delete _fileBody;
+        _fileBody = nullptr;
+    }
 }
 
-void Response::setReasonPhrase(const std::string &phrase)
-{
-    _reasonPhrase = phrase;
-}
+// Getters
+enum Progress Response::getProgress() const { return _progress; };
+std::string Response::getHeaderStream() const { return _headerStream; };
+responseBodyFile *Response::getFileBody() { return _fileBody; };
+std::string Response::getTextBody() const { return _textBody; };
+size_t Response::getTotalBytesSent() const { return _totalBytesSent; };
+int Response::getStatusCode() const { return _statusCode; };
+int Response::getSocket() const { return _sock; };
+int *Response::getCGIPIPE() { return _CGIPIPE; };
+bool Response::getIsFile() const {return _isFile ;};
 
-void Response::addHeader(const std::string &key, const std::string &value)
-{
-    _headers[key] = value;
-}
-
-void Response::setTextBody(const std::string &body)
-{
-    _file = "";
-    _textBody = body;
-    _isFile = false;
-}
-
+// Setters
+void Response::setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
+void Response::setSent(bool sent) { _sent = sent; };
+void Response::setProgress(enum Progress progress) { _progress = progress; };
+void Response::setSocket(int socket) { _sock = socket; };
+void Response::setCGIPIPE(int pipe[2]) { _CGIPIPE[0] = pipe[0]; _CGIPIPE[1] = pipe[1]; };
+void Response::setHttpVersion(const std::string &version) { _httpVersion = version; }
+void Response::setStatusCode(int status) {_statusCode = status;}
+void Response::setReasonPhrase(const std::string &phrase) {_reasonPhrase = phrase;}
+void Response::addHeader(const std::string &key, const std::string &value) {_headers[key] = value;}
+void Response::setTextBody(const std::string &body) { _textBody = body; _isFile = false; }
 int Response::setFileBody(std::string path) {
     _fileBody = new responseBodyFile();
     _fileBody->file.open(path.c_str());
@@ -51,10 +67,9 @@ int Response::setFileBody(std::string path) {
     _isFile  = true;
     return (length);
 } 
-
 void Response::setContentLength(int length)
 {
-    if (length > 1024 && getTextBody().empty())
+    if (length > CONTENT_LENGTH_LIMIT && getTextBody().empty())
         return (addHeader(std::string("Transfer-Encoding"), std::string("chunked")));
     std::stringstream ss;
     ss << length;
@@ -65,7 +80,6 @@ void Response::setContentLength(int length)
 void Response::processPOST(Request &request, location *locationMatch)
 {
     (void)locationMatch;
-
     if (request.getState() == WAIT)
     {
         // changing state for request to start reading body
@@ -107,8 +121,6 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
 {
     if (!path.empty() && path[path.size() - 1] != '/')
     {
-        //TODO: choose host and port of request !!!!
-        /*std::string redirectURL = "http://" + serv->Get_host() + ":" + serv->getSock()[0].first + request.getRequestTarget() + "/";*/
         std::string redirectURL = "http://" + request.getHeader("Host") + request.getRequestTarget() + "/";
         addHeader(std::string("Location"), redirectURL);
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [301] [Moved Permanently] [Redirecting to: " + redirectURL + "]";
@@ -129,13 +141,11 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
         FileState indexState = getFileState(dirIndexPath.c_str());
         if (indexState == FILE_IS_REGULAR)
         {
-            // std::string connection = "close";
             std::string contentType = getMimeType(dirIndexPath);
             setHttpVersion(HTTP_VERSION);
             setStatusCode(200);
             setReasonPhrase("OK");
             addHeader(std::string("Content-Type"), contentType);
-            // addHeader(std::string("Connection"), connection);
             int length = setFileBody(dirIndexPath);
             setContentLength(length);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
@@ -154,13 +164,11 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
             webServLog(logMessage, ERROR);
             throw server::InternalServerError();
         }
-        // std::string connection = "close";
         std::string contentType = getMimeType("foo.html");
         setHttpVersion(HTTP_VERSION);
         setStatusCode(200);
         setReasonPhrase("OK");
         addHeader(std::string("Content-Type"), contentType);
-        // addHeader(std::string("Connection"), connection);
         setTextBody(htmlDirectoryListing);
         setContentLength(htmlDirectoryListing.size());
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
@@ -177,17 +185,13 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
 
 void Response::processGET(Request &request, std::string &path)
 {
-    // std::string connection = "close";
     std::string contentType = getMimeType(path);
-
     setHttpVersion(HTTP_VERSION);
     setStatusCode(200);
     addHeader(std::string("Content-Type"), contentType);
-    // addHeader(std::string("Connection"), connection);
     setReasonPhrase("OK");
     int length = setFileBody(path);
     setContentLength(length);
-
     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
     webServLog(logMessage, INFO);
     return ;
@@ -197,18 +201,13 @@ void Response::processDELETE(Request &request, server *serv, std::string &path)
 {
     if (unlink(path.c_str()) == 0)
     {
-        // std::string connection = "close";
         std::string contentLength = "0";
-
-        // addHeader(std::string("Connection"), connection);
         addHeader(std::string("Content-Length"), contentLength);
         setHttpVersion(HTTP_VERSION);
         setStatusCode(204);
         setReasonPhrase("No Content");
-
         setTextBody("");
         setContentLength(0);
-        
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [204] [No Content] [File deleted]";
         webServLog(logMessage, INFO);
         return ;
@@ -230,23 +229,8 @@ void Response::processDELETE(Request &request, server *serv, std::string &path)
     }
 }
 
-std::string readFromSocket(int sock)
-{
-    std::string body = "";
-    char buffer[BUFF_SIZE];
-    int bytesRec = 0;
-    while ((bytesRec = recv(sock, buffer, BUFF_SIZE, 0)) > 0)
-    {
-        buffer[bytesRec] = '\0';
-        body += buffer;
-    }
-    return (body);
-}
-
 void Response::buildResponse(Request &request, server *serv)
 {
-    std::cout << "TABONMOHOWA : " << request.getHeader("Transfer-Encoding") << std::endl;
-    std::cout << "TABONMOHOWA : " << request.getHeader("Content-Length") << std::endl;
     if (!serv)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Server not found]";
@@ -261,8 +245,7 @@ void Response::buildResponse(Request &request, server *serv)
         throw Request::badRequest();
     }
 
-    // check if the path starts with /cgi-bin/
-    if (request.getRequestTarget().find("/cgi-bin/") == 0)
+    if (isCgiPath(request.getRequestTarget()))
     {
         if (getProgress() == POST_HOLD) {
             if (request.getMethod() != "POST")
@@ -276,17 +259,6 @@ void Response::buildResponse(Request &request, server *serv)
                 return ;
         }
         return (handleCGI2(serv, *this, request));
-        // check extension: .py .php ONLY
-        // std::string extension = request.getRequestTarget().substr(request.getRequestTarget().find_last_of('.'));
-        // // "hello.py/user/12" = .py/user/12
-        // if (extension == ".py" || extension == ".php")
-        //     return (handleCGI2(serv, *this, request));
-        // else
-        // {
-        //     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [403] [Forbidden] [CGI not allowed]";
-        //     webServLog(logMessage, WARNING);
-        //     return (setHttpResponse(403, "Forbidden", *this, serv));
-        // }
     }
 
     if (getProgress() == POST_HOLD)
@@ -317,18 +289,14 @@ void Response::buildResponse(Request &request, server *serv)
         webServLog(logMessage, WARNING);
         return (setHttpResponse(404, "Not Found", *this, serv));
     }
-    // std::cout << "Matched location: " << locationMatch->GetType_of_location() << std::endl;
 
-    // check if the method is allowed
     if (methodAllowed(request.getMethod(), locationMatch->GetAllowed_methods()) == false)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [405] [Method Not Allowed] [Unsupported method]";
         webServLog(logMessage, WARNING);
         return (setHttpResponse(405, "Method Not Allowed", *this, serv));
     }
-    // std::cout << "Method allowed: " << request.getMethod() << std::endl;
 
-    // check for redirection 
     if (!locationMatch->GetRewrite().empty())
     {
         std::string redirectURL = locationMatch->GetRewrite();
@@ -346,7 +314,6 @@ void Response::buildResponse(Request &request, server *serv)
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
-    // std::cout << "FULL PATH IS: " << path << std::endl;
 
     FileState fileState = getFileState(path.c_str());
     if (fileState == FILE_DOES_NOT_EXIST)
@@ -375,7 +342,7 @@ void Response::buildResponse(Request &request, server *serv)
 
 void Response::createResponseStream(std::string &connectionHeader)
 {
-    if (_response.empty())
+    if (_headerStream.empty())
     {
         // Build the response line
         std::ostringstream responseStream;
@@ -393,7 +360,7 @@ void Response::createResponseStream(std::string &connectionHeader)
             responseStream << "Connection: keep-alive" << "\r\n"; 
         responseStream << "\r\n";
 
-        _response = responseStream.str();
+        _headerStream = responseStream.str();
     }
     _progress = SEND_HEADERS;
 }

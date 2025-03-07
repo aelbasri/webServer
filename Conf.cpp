@@ -1,7 +1,5 @@
 
 #include "Conf.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
 #include "Connection.hpp"
 #include "configfile/server_data.hpp"
 #include <stdlib.h>
@@ -231,45 +229,42 @@ void Config::creatPoll()
             }
             if (evlist[i].events & EPOLLOUT)
             {
-                // std::cout << "EPOLLOUT ON SOCKET: " << _fd << std::endl;
-                // if (connections[_fd]->_response.getProgress() == FINISHED)
-                // {
-                //         close(_fd);
-                //     std::cout << "khas dkhol hna" << std::endl;
-                // }
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
-                    // std::cout << "kaan hna" << std::endl;
-                    // exit(10);
                     bool keepAlive = connections[_fd]->keepAlive();
                     server *tmp = connections[_fd]->getServer();
                     delete connections[_fd];
                     connections.erase(_fd);
 
-                    if (!keepAlive) // if Connection: close
+                    if (keepAlive)
                     {
-                        // remove from epoll
-                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
-                        webServLog(logMessage, INFO);
-                        close(_fd);
+                        try {
+                            connections[_fd] = new Connection(_fd, tmp);
+                            std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
+                            webServLog(logMessage, INFO);
+                        } catch (const std::bad_alloc &e) {
+                            epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                            close(_fd);
+                            std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]" + " [Memory allocation failed]";
+                            webServLog(logMessage, ERROR);
+                        }
                     }
                     else
                     {
-                        std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
+                        // remove from epoll
+                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
+                        close(_fd);
+                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
                         webServLog(logMessage, INFO);
-                        connections[_fd] = new Connection(_fd, tmp);
                     }
                     continue;
                 }
             }
             if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
-                std::cout << "EPOLLHUP OR EPOLLERR ON SOCKET: " << _fd << std::endl;
                 close(_fd);
                 delete connections[_fd];
                 connections.erase(_fd);
-                // remove from epoll
                 epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
                 std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
                 webServLog(logMessage, INFO);
@@ -326,7 +321,6 @@ void removeAndRecreateDirectory(const std::string& path) {
             std::cerr << "Failed to remove directory: " << path << " - " << strerror(errno) << std::endl;
             exit(1);
         }
-        std::cout << "Directory removed: " << path << std::endl;
     }
 
     // Create the directory
@@ -334,7 +328,6 @@ void removeAndRecreateDirectory(const std::string& path) {
         std::cerr << "Failed to create directory: " << path << " - " << strerror(errno) << std::endl;
         exit(1);
     }
-    std::cout << "Directory created: " << path << std::endl;
 }
 
 int Config::SetupServers()
