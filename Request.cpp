@@ -324,7 +324,6 @@ void Request::parseHeader(char *buffer, long i)
                 {
                     subState = CONTLEN;
                     std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
-                    // exit(10);
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
                     if (contentLength > maxBodySize)
                         throw badRequest();
@@ -361,7 +360,7 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
                 _contentFile = generateFilePath();
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
-                    exit(22);
+                    throw server::InternalServerError();
                 contentFile.write(buffer + i, toBeConsumed);
             }
             else
@@ -381,7 +380,7 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
                 _contentFile = generateFilePath();
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
-                    exit(22);
+                    throw server::InternalServerError();
             }
             if (buffer[i] == CR)
                 subState = LF_STATE;
@@ -457,7 +456,6 @@ void Request::handle_request(char *buffer)
                 break;
             case WAIT:
                 flag = 1;
-                // goto exit_request_parsing;
                 break;
             case BODY:
                 parseBody(buffer, offset, bytesRec);
@@ -468,7 +466,5 @@ void Request::handle_request(char *buffer)
         if (flag == 1)
             break;
     }
-    // exit_request_parsing :       
-        // return ;
 }
 

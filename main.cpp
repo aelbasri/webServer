@@ -4,11 +4,13 @@
 #include <iostream>
 #include "log.hpp"
 
-int main()
+int main(int ac, char **av)
 {
     try
     {
-        Config _Server("config_file.yaml");
+        if (ac != 2)
+            throw std::runtime_error("Invalid argument size");
+        Config _Server(av[1]);
 
         webServLog("Server is starting...", INFO);
         _Server.loadContentServer();

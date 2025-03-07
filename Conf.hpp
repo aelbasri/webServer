@@ -45,7 +45,7 @@ public:
     Config();
     ~Config();
 
-    void loidingFile(std::string file);
+    int loidingFile(std::string file);
     void loadContentServer();
     int CheckNumberOfServer();
     void creatPoll();

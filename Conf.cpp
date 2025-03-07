@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "colors.hpp"
 #include "log.hpp"
+#include <exception>
+
 
 std::string intToString(int num) {
     std::ostringstream oss;
@@ -24,7 +26,8 @@ Config::~Config(){
 }
 
 Config::Config(std::string file): _server(nullptr){
-    loidingFile(file);
+    if (loidingFile(file))
+        throw std::runtime_error("failed to load config file!");
     _nembre_of_server = CheckNumberOfServer();
     _server =  new server[_nembre_of_server];
     
@@ -32,7 +35,6 @@ Config::Config(std::string file): _server(nullptr){
 
 void err(){
     std::cerr << "error of open" << std::endl;
-    exit(1);
 }
 
 server *Config::getServer() const{
@@ -64,7 +66,7 @@ void Config::loadContentServer() {
     }
 }
 
-void Config::loidingFile(std::string file){
+int Config::loidingFile(std::string file){
     std::string s;
     std::string strCRLF = "\r\n";
 
@@ -72,6 +74,7 @@ void Config::loidingFile(std::string file){
 
     if (!f.is_open()) {
         err();
+        return -1;
     }
     while (getline(f, s)){
 
@@ -80,6 +83,7 @@ void Config::loidingFile(std::string file){
             setFileContent().push_back('\n');
     }
     f.close();
+    return 0;
 }
 
 int Config::get_nembre_of_server() const{
@@ -285,7 +289,7 @@ void removeDirectoryContents(const std::string& path) {
     DIR* dir = opendir(path.c_str());
     if (!dir) {
         std::cerr << "Failed to open directory: " << path << " - " << strerror(errno) << std::endl;
-        exit(1);
+        throw std::runtime_error("Failed to open directory");
     }
 
     struct dirent* entry;
@@ -324,7 +328,7 @@ void removeAndRecreateDirectory(const std::string& path) {
         // Remove the directory itself
         if (rmdir(path.c_str()) != 0) {
             std::cerr << "Failed to remove directory: " << path << " - " << strerror(errno) << std::endl;
-            exit(1);
+            throw std::runtime_error("Failed to open directory");
         }
         std::cout << "Directory removed: " << path << std::endl;
     }
@@ -332,7 +336,7 @@ void removeAndRecreateDirectory(const std::string& path) {
     // Create the directory
     if (mkdir(path.c_str(), 0777) != 0) {
         std::cerr << "Failed to create directory: " << path << " - " << strerror(errno) << std::endl;
-        exit(1);
+        throw std::runtime_error("Failed to open directory");
     }
     std::cout << "Directory created: " << path << std::endl;
 }
@@ -345,7 +349,7 @@ int Config::SetupServers()
         /*std::cout << "i: ============"<< i << std::endl; */
         /*std::cout << getpid() << std::endl;*/
         if (_server[i].run() == -1)
-            exit(1);
+            throw std::runtime_error("Failed to open directory");
     }
     removeAndRecreateDirectory(UPLOAD_DIRECTORY);
     creatPoll();

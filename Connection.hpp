@@ -18,8 +18,6 @@ class Connection
         Response _response;
         Connection() : _server(nullptr), _readyToWrite(false) {};
         Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {
-            // std::cout << _server->Get_max_body_size() << std::endl;
-            // exit(101);
             _request.setMaxBodySize(_server->Get_max_body_size());
             _response.setSocket(sock);
         };

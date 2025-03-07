@@ -119,7 +119,6 @@ int Connection::sockRead()
             }
             else
                 std::cout << "irororor" << std::endl;
-            //exit(102);
             // throw bad request if error
             _request.setOffset(0);
             _request.setBytrec(0);
@@ -147,6 +146,15 @@ int Connection::sockRead()
         _response.createResponseStream(conn);
         std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [400] [Bad Request] [Request is invalid]";
         webServLog(logMessage, WARNING);
+    }
+    catch (const server::InternalServerError &e)
+    {
+        _request.setState(DONE);
+        setHttpResponse(500, "Internal Server Error", _response, _server);
+        std::string conn = "close";
+        _response.createResponseStream(conn);
+        std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [500] [Internal Server Error] [Open content file failed]";
+        webServLog(logMessage, ERROR);
     }
 
     //if the request is done or waiting
