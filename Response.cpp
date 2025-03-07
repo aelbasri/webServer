@@ -195,7 +195,7 @@ void Response::processGET(Request &request, std::string &path)
 
 void Response::processDELETE(Request &request, server *serv, std::string &path)
 {
-    if (unlink(path.c_str()) == 0)
+    if (std::remove(path.c_str()) == 0)
     {
         // std::string connection = "close";
         std::string contentLength = "0";

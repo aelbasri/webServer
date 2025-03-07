@@ -306,7 +306,7 @@ void removeDirectoryContents(const std::string& path) {
                 rmdir(filePath.c_str());
             } else {
                 // Remove files
-                unlink(filePath.c_str());
+                std::remove(filePath.c_str());
             }
         }
     }
