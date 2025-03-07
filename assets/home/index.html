@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebServ42 - Home</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>WebServ<span class="highlight">42</span></h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/home/" class="active">Home</a></li>
+                    <li><a href="/welcome/">Welcome</a></li>
+                    <li><a href="/info/">Info</a></li>
+                    <li><a href="/admin/">Admin</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <main>
+            <section class="hero">
+                <h2>Welcome to WebServ42</h2>
+                <p>A lightweight C++ HTTP 1.1 compliant web server</p>
+                <div class="cta-buttons">
+                    <a href="/info/" class="btn primary">Learn More</a>
+                    <a href="/welcome/" class="btn secondary">Get Started</a>
+                </div>
+            </section>
+            
+            <section class="features">
+                <h3>Key Features</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h4>Fast & Efficient</h4>
+                        <p>Built with C++ for maximum performance</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h4>Secure</h4>
+                        <p>Implements security best practices</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚙️</div>
+                        <h4>Configurable</h4>
+                        <p>Easy to customize for your needs</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h4>Responsive</h4>
+                        <p>Works on all device sizes</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="demo">
+                <h3>Test HTTP Methods</h3>
+                <div class="method-test">
+                    <div class="method-card">
+                        <h4>GET Request</h4>
+                        <button class="btn method get" onclick="testGet()">Test GET</button>
+                        <div class="result" id="get-result"></div>
+                    </div>
+                    <div class="method-card">
+                        <h4>POST Request</h4>
+                        <form id="post-form">
+                            <input type="text" name="data" placeholder="Enter data to post">
+                            <button type="submit" class="btn method post">Test POST</button>
+                        </form>
+                        <div class="result" id="post-result"></div>
+                    </div>
+                    <div class="method-card">
+                        <h4>DELETE Request</h4>
+                        <input type="text" id="delete-path" placeholder="Resource path">
+                        <button class="btn method delete" onclick="testDelete()">Test DELETE</button>
+                        <div class="result" id="delete-result"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 WebServ42 - HTTP 1.1 School Project</p>
+            <p>Made with ❤️ by a 42 Student</p>
+        </footer>
+    </div>
+    
+    <script src="scripts/main.js"></script>
+</body>
+</html>

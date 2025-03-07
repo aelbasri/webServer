@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebServ42 - Welcome</title>
+    <link rel="stylesheet" href="styles/welcome.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>WebServ<span class="highlight">42</span></h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/home/">Home</a></li>
+                    <li><a href="/welcome/" class="active">Welcome</a></li>
+                    <li><a href="/info/">Info</a></li>
+                    <li><a href="/admin/">Admin</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <main>
+            <section class="welcome-hero">
+                <div class="welcome-content">
+                    <h2>Welcome to <span class="gradient-text">WebServ42</span></h2>
+                    <p>Your lightweight HTTP 1.1 compliant web server built with C++</p>
+                    <div class="server-status">
+                        <div class="status-indicator online"></div>
+                        <span>Server Status: <strong>Online</strong></span>
+                    </div>
+                </div>
+                <div class="welcome-image">
+                    <div class="server-animation">
+                        <div class="server-rack">
+                            <div class="server-unit blink"></div>
+                            <div class="server-unit"></div>
+                            <div class="server-unit blink"></div>
+                            <div class="server-unit"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="quick-start">
+                <h3>Quick Start Guide</h3>
+                <div class="steps-container">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>Configure</h4>
+                        <p>Set up your server configuration file</p>
+                        <div class="code-snippet">
+                            <pre><code>server {
+  listen 8080;
+  root /var/www/html;
+  index index.html;
+  
+  location / {
+    methods GET POST;
+    autoindex on;
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>Compile</h4>
+                        <p>Build the server using make</p>
+                        <div class="code-snippet">
+                            <pre><code>$ make
+$ ./webserv42 config.conf</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>Test</h4>
+                        <p>Verify your server is working</p>
+                        <div class="code-snippet">
+                            <pre><code>$ curl -X GET http://localhost:8080
+$ curl -X POST -d "data=test" http://localhost:8080
+$ curl -X DELETE http://localhost:8080/file.txt</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="supported-features">
+                <h3>Supported Features</h3>
+                <div class="features-grid">
+                    <div class="feature-pill">
+                        <span>HTTP/1.1</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>GET</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>POST</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>DELETE</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>Multiple Servers</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>Virtual Hosts</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>Error Pages</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>Directory Listing</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>File Upload</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span>Client Body Size Limit</span>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="cta-section">
+                <div class="cta-content">
+                    <h3>Ready to dive deeper?</h3>
+                    <p>Check out our documentation for detailed information</p>
+                    <a href="/info/" class="btn primary">View Documentation</a>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 WebServ42 - HTTP 1.1 School Project</p>
+            <p>Made with ❤️ by a 42 Student</p>
+        </footer>
+    </div>
+    
+    <script src="scripts/welcome.js"></script>
+</body>
+</html>
