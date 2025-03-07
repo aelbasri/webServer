@@ -199,9 +199,11 @@ int Connection::sockWrite()
                 webServLog(logMessage, INFO);
                 return (0);
             }
-            else if (_response.getTextBody().empty())
+            else if (_response.getIsFile())
             {
-                if (sendFile(_response.getFileBody()->fileSize > 1024) != 0)
+                std::cout << "TABON MO HOWA" << std::endl;
+
+                if (_response.getFileBody() == nullptr || sendFile(_response.getFileBody()->fileSize > 1024) != 0)
                     return (0);
                 _response.setSent(true);
                 _response.setProgress(FINISHED);

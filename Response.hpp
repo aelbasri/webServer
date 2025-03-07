@@ -74,12 +74,13 @@ class Response
 
         enum Progress _progress;
         responseBodyFile *_fileBody;
+        bool _isFile;
 
         int _sock;
         int _CGIPIPE[2];
 
     public:
-        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr), _CGIPIPE{-1, -1} {};
+        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr),_isFile(true), _CGIPIPE{-1, -1} {};
         ~Response() { if (_fileBody) { delete _fileBody; _fileBody = nullptr;} };
         enum Progress getProgress() const { return _progress; };
         std::string getResponse() const { return _response; };
@@ -90,6 +91,7 @@ class Response
         int getSocket() const { return _sock; };
         // get cgi pipe
         int *getCGIPIPE() { return _CGIPIPE; };
+        bool getIsFile() const {return _isFile ;};
 
         int setFileBody(std::string path);
         void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };

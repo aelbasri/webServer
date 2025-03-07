@@ -1,9 +1,4 @@
 *.o
-*test*
-*.txt
 webserv
 a.out
-*.png
-*.jpg
-*.jpeg
 *.vscode

@@ -33,6 +33,7 @@ void Response::setTextBody(const std::string &body)
 {
     _file = "";
     _textBody = body;
+    _isFile = false;
 }
 
 int Response::setFileBody(std::string path) {
@@ -47,6 +48,7 @@ int Response::setFileBody(std::string path) {
     _fileBody->offset = 0;
     _fileBody->consumed = 0;
     _fileBody->nBytes = 0;
+    _isFile  = true;
     return (length);
 } 
 
@@ -243,6 +245,8 @@ std::string readFromSocket(int sock)
 
 void Response::buildResponse(Request &request, server *serv)
 {
+    std::cout << "TABONMOHOWA : " << request.getHeader("Transfer-Encoding") << std::endl;
+    std::cout << "TABONMOHOWA : " << request.getHeader("Content-Length") << std::endl;
     if (!serv)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Server not found]";
