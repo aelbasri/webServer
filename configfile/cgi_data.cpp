@@ -262,7 +262,6 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             output.write(buffer, bytesRead);
         }
         close(stdout_pipe[0]);
-
         int status;
         waitpid(pid, &status, 0);
 

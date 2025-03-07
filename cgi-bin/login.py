@@ -1,69 +1,62 @@
-#!/usr/bin/env python3
-
-import sys
+#!/usr/bin/python3
+import os
+import cgi
 import http.cookies
+import uuid
 
-# Hardcoded username and password for demonstration purposes
-VALID_USERNAME = "user"
-VALID_PASSWORD = "pass"
+# Parse query string or form data
+form = cgi.FieldStorage()
 
-# Function to set a cookie
-def set_cookie(username):
-    cookie = http.cookies.SimpleCookie()
-    cookie["username"] = username
-    cookie["username"]["max-age"] = 3600  # Cookie expires in 1 hour
-    print(cookie.output())
+# Check for existing session cookie
+cookies = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE", ""))
+session_cookie = cookies.get("session_id")
 
-# Function to parse the request body
-def parse_body(body):
-    data = {}
-    for pair in body.split("&"):
-        if "=" in pair:
-            key, value = pair.split("=", 1)  # Split on the first '=' only
-            # Strip whitespace (including newlines) from key and value
-            key = key.strip()
-            value = value.strip()
-            data[key] = value
-        else:
-            # Handle malformed pairs (e.g., missing '=')
-            data[pair.strip()] = ""  # Assign an empty value
-    return data
+if session_cookie:
+    # Redirect to home.html if session exists
+    print("Content-Type: text/html")
+    print("Location: home.html\n")
 
-# Main function
-def main():
-    # Read the request body from stdin
-    body = sys.stdin.read()
+# Handle POST login
+if os.environ["REQUEST_METHOD"] == "POST":
+    username = form.getvalue("username")
+    password = form.getvalue("password")
 
-    # Parse the request body
-    form_data = parse_body(body)
-    # print(f"Parsed Form Data: {form_data}")  # Debug: Print the parsed form data
-
-    # Extract form fields
-    username = form_data.get("username", "")
-    password = form_data.get("password", "")
-    remember_me = form_data.get("remember_me", "")
-
-    # Debug: Print the parsed data
-
-
-    # Validate the username and password
-    if username == VALID_USERNAME and password == VALID_PASSWORD:
-        print("Content-Type: text/html\n")  # Switch back to HTML for the response
-        print("<h1>Login Successful</h1>")
-        print(f"<p>Welcome, {username}!</p>")
-        exit(0)
-
-        # Set a cookie if "Remember Me" is checked
-        if remember_me == "on":
-            set_cookie(username)
-            print("<p>A cookie has been set to remember you.</p>")
+    # Simple authentication (replace with secure validation)
+    if username == "zaki" and password == "123":
+        # Create session ID and set cookie
+        session_id = str(uuid.uuid4())
+        print("Set-Cookie: session_id={}; Path=/".format(session_id))
+        
+        # Redirect to home.html after login
+        print("Content-Type: text/html")
+        print("Location: home.html\n")
     else:
-        print("Content-Type: text/html\n")
+        # Show login error
+        # print("Content-Type: text/html\n")
         print("<h1>Login Failed</h1>")
-        print("<p>Invalid username or password.</p>")
-        print('<p><a href="/login.html">Try again</a></p>')
-        exit(1)
+        print("<p>Invalid credentials. <a href='/authentification/login.html'>Try again</a></p>")
 
-
-if __name__ == "__main__":
-    main()
+# Show login form for GET requests
+# else:
+#     print("Content-Type: text/html\n")
+#     print("""
+#     <!DOCTYPE html>
+#     <html>
+#     <head>
+#         <title>Login</title>
+#         <style>
+#             body { font-family: Arial, sans-serif; margin: 2rem; }
+#             form { max-width: 300px; margin: 0 auto; }
+#             input { margin-bottom: 1rem; padding: 5px; width: 100%; }
+#         </style>
+#     </head>
+#     <body>
+#         <h1>Login</h1>
+#         <form method="POST">
+#             <input type="text" name="username" placeholder="Username" required><br>
+#             <input type="password" name="password" placeholder="Password" required><br>
+#             <button type="submit">Sign in</button>
+#         </form>
+#     </body>
+#     </html>
+#     """)

@@ -1,48 +1,57 @@
+
+
+
 #!/usr/bin/python3
 import os
 import cgi
 import http.cookies
 import uuid
 
-# Parse query string or form data
+# Configuration
+LOGIN_PAGE = "/authentification/login.html"
+HOME_PAGE = "/cgi-bin/home.py"
+COOKIE_EXPIRE = 3600  # 1 hour in seconds
+
 form = cgi.FieldStorage()
 
-# Check if the user is submitting a login form
+# Check for existing session cookie
+cookie = http.cookies.SimpleCookie()
+if 'HTTP_COOKIE' in os.environ:
+    cookie.load(os.environ['HTTP_COOKIE'])
+
+# Handle logout action
+if form.getvalue('action') == 'logout':
+    # print("Set-Cookie: session_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/")
+    print("Content-Type: text/html\n")
+    print(f"<script>window.location.href = '{LOGIN_PAGE}';</script>")
+    exit()
+
+# Process POST request
 if os.environ["REQUEST_METHOD"] == "POST":
     username = form.getvalue("username")
     password = form.getvalue("password")
 
-    # Dummy authentication (replace with a real authentication mechanism)
+    # Dummy authentication
     if username == "zaki" and password == "123":
-        # Create a session ID
         session_id = str(uuid.uuid4())
-
-        # Set a cookie with the session ID
         print("Set-Cookie: session_id=" + session_id)
         print("Content-Type: text/html\n")
-        print("<h1>Login Successful</h1>")
-        print("<p>Welcome, " + username + "!</p>")
+        print(f"""<h1>Login Successful</h1>
+               <p>Welcome {username}!</p>
+               <script>setTimeout(() => window.location = '{HOME_PAGE}', 2000);</script>""")
     else:
         print("Content-Type: text/html\n")
-        print("<h1>Login Failed</h1>")
-        print("<p>Invalid username or password.</p>")
+        print(f"""<h1>Login Failed</h1>
+               <p>Invalid credentials. Please try again at <a href="{LOGIN_PAGE}">Login Page</a></p>""")
 else:
-    # Check for an existing session cookie
-    # cookies = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE", ""))
-    # session_id = cookies.get("session_id")
-
-    # if session_id:
-    #     print("Content-Type: text/html\n")
-    #     print("<h1>Welcome Back</h1>")
-    #     print("<p>Your session ID is: " + session_id.value + "</p>")
-    # else:
-        # Display the login form
+    # Show login form if not POST
     print("Content-Type: text/html\n")
-    print("<h1>Login</h1>")
-    print('<form method="POST">')
-    print('<label for="username">Username:</label>')
-    print('<input type="text" id="username" name="username"><br>')
-    print('<label for="password">Password:</label>')
-    print('<input type="password" id="password" name="password"><br>')
-    print('<input type="submit" value="Login">')
-    print('</form>')
+    print(f"""<h1>Login</h1>
+           <form method="POST">
+               <label for="username">Username:</label>
+               <input type="text" id="username" name="username"><br>
+               <label for="password">Password:</label>
+               <input type="password" id="password" name="password"><br>
+               <input type="submit" value="Login">
+           </form>
+           <p>Or access the <a href="{LOGIN_PAGE}">Login Page</a></p>""")
