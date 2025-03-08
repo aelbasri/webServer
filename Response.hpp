@@ -66,40 +66,37 @@ class Response
 
         // body
         std::string _textBody;
-        std::string _file;
-
-        std::string _response;
-        size_t _totalBytesSent;
-        bool _sent;
-
-        enum Progress _progress;
         responseBodyFile *_fileBody;
         bool _isFile;
 
-        int _sock;
+        std::string _headerStream;
+        size_t _totalBytesSent;
+        bool _sent;
+
         int _CGIPIPE[2];
 
+        int _sock;
+        enum Progress _progress;
+
     public:
-        Response () : _response(""), _totalBytesSent(0), _sent(false), _progress(BUILD_RESPONSE), _fileBody(nullptr),_isFile(true), _CGIPIPE{-1, -1} {};
-        ~Response() { if (_fileBody) { delete _fileBody; _fileBody = nullptr;} };
-        enum Progress getProgress() const { return _progress; };
-        std::string getResponse() const { return _response; };
-        responseBodyFile *getFileBody() { return _fileBody; };
-        std::string getTextBody() const { return _textBody; };
-        size_t getTotalBytesSent() const { return _totalBytesSent; };
-        int getStatusCode() const { return _statusCode; };
-        int getSocket() const { return _sock; };
-        // get cgi pipe
-        int *getCGIPIPE() { return _CGIPIPE; };
-        bool getIsFile() const {return _isFile ;};
+        Response ();
+        ~Response();
+        enum Progress getProgress() const;
+        std::string getHeaderStream() const;
+        responseBodyFile *getFileBody();
+        std::string getTextBody() const;
+        size_t getTotalBytesSent() const;
+        int getStatusCode() const;
+        int getSocket() const;
+        int *getCGIPIPE();
+        bool getIsFile() const;
 
         int setFileBody(std::string path);
-        void setTotalBytesSent(size_t bytes) { _totalBytesSent = bytes; };
-        void setSent(bool sent) { _sent = sent; };
-        void setProgress(enum Progress progress) { _progress = progress; };
-        void setSocket(int socket) { _sock = socket; };
-        void setCGIPIPE(int pipe[2]) { _CGIPIPE[0] = pipe[0]; _CGIPIPE[1] = pipe[1]; };
-
+        void setTotalBytesSent(size_t bytes);
+        void setSent(bool sent);
+        void setProgress(enum Progress progress);
+        void setSocket(int socket);
+        void setCGIPIPE(int pipe[2]);
         void setHttpVersion(const std::string &version);
         void setStatusCode(int status);
         void setReasonPhrase(const std::string &phrase);
@@ -134,5 +131,6 @@ void handleCGI(server *serv, Response &response, Request &request);
 void handleCGI2(server *serv, Response &response, Request &request);
 std::string getDate();
 bool isTokenExist(const std::vector< std::string>& userTokens, const std::string& token);
+bool isCgiPath(const std::string& requestTarget);
 
 

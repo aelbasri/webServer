@@ -4,27 +4,27 @@
 #include "Response.hpp"
 #include "Conf.hpp"
 
+#define CONTENT_LENGTH_LIMIT 1000000
+
 class Connection
 {
     private:
         int _socket;
-        // Request _request;
-        // Response _response;
+        Request _request;
+        Response _response;
         server *_server;
         bool _readyToWrite;
     
     public:
-        Request _request;
-        Response _response;
         Connection() : _server(nullptr), _readyToWrite(false) {};
         Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {
+            // exit(101);
             _request.setMaxBodySize(_server->Get_max_body_size());
             _response.setSocket(sock);
         };
         int sockRead();
         int getSocket() const {return _socket;};
         server *getServer() { return _server; };
-        // bool toBeClosed()  const {return (_request.getState() == DONE && _response.getProgress() == FINISHED);};
         bool toBeClosed()  const {
             if (_request.getMethod() == "DELETE")
                 return (_response.getProgress() == FINISHED);
@@ -42,4 +42,3 @@ class Connection
         }
 };
 
-// int sendFile(Connection cnx, Response response, bool sendInChunkFormat);

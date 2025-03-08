@@ -9,16 +9,20 @@ int main(int ac, char **av)
     try
     {
         if (ac != 2)
-            throw std::runtime_error("Invalid argument size");
+        {
+            std::cerr << "USAGE: ./webserv CONFIG_FILE" << std::endl;
+            return (1);
+        }
         Config _Server(av[1]);
 
-        webServLog("Server is starting...", INFO);
+        webServLog("[WEBSERV IS STARTING ...]", INFO);
         _Server.loadContentServer();
         _Server.SetupServers();
      }
      catch (std::runtime_error &e)
      {
-         std::cout << "L***A JAAAY!: " << e.what() << std::endl;
+         std::cerr << "L***A JAAAY! KHSER " << e.what() << std::endl;
+        return (1);
      }
     return (0);
 }

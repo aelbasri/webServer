@@ -20,6 +20,7 @@ headers = {
 
 # Function to send GET requests
 def test_get():
+    
     for _ in range(num_requests):
         response = requests.get(url)
         print(f"GET Request - Status Code: {response.status_code}")

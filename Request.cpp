@@ -290,7 +290,6 @@ void Request::parseHeader(char *buffer, long i)
             else
                 fieldName += buffer[i];
             break;
-        //we will discuss about OWS
         case OWS:
             if (!isWhiteSpace(buffer[i]))
                 fieldValue += buffer[i];
@@ -300,7 +299,6 @@ void Request::parseHeader(char *buffer, long i)
             if (buffer[i] == CR)
             {
                 subState = LF_STATE;
-                //trim
                 ft_trim(fieldValue);
                 headers[fieldName] = fieldValue;
             }
@@ -323,7 +321,6 @@ void Request::parseHeader(char *buffer, long i)
                 if (headers.find("Content-Length") != headers.end())
                 {
                     subState = CONTLEN;
-                    std::cout << "saad mrtah " << contentLength << "==" << maxBodySize << std::endl;
                     contentLength = strtol(headers["Content-Length"].c_str(), NULL, 10);
                     if (contentLength > maxBodySize)
                         throw badRequest();
@@ -351,11 +348,10 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
     {
         
         case CONTLEN :
-            //check is open
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             if (writeInPipe == true)
                 write(fd ,buffer + i, toBeConsumed);
-            else if (!contentFile.is_open()) //check is open
+            else if (!contentFile.is_open()) 
             {
                 _contentFile = generateFilePath();
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
@@ -432,7 +428,6 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         default :
             break;
     }
-
 }
 
 void Request::closeContentFile()

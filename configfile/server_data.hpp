@@ -54,7 +54,7 @@ private:
     int     _NPort;
 
     // std::vector<std::string> _port;
-    std::vector<CGI> _CGI;
+    std::string _cgiPath;
     location *_location;
 
     std::vector<std::pair<std::string, int> >  _sock;
@@ -77,7 +77,7 @@ public:
     void setRes(struct addrinfo* newRes);
     void setP(struct addrinfo* newP);
     void setAddI(int newAddI);\
-    void SetCgi(std::vector<CGI> __cgi);
+    void SetCgi(std::string __cgi);
     void SetUserToken(std::string __UserToken);
     // void SetUserToken(std::string __UserToken);
 
@@ -89,7 +89,7 @@ public:
     std::string Get_host(); 
     //  std::vector<std::string> Get_port() { retru};
     long long Get_max_body_size();
-    std::vector<CGI> GetCgi();
+    std::string GetCgi();
 
     std::vector<std::pair<std::string, int> >  getSock() ;
     struct addrinfo &getHints() ;
