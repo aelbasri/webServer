@@ -112,6 +112,9 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
 
 #define CGI_TIMEMOUT_SECONDS 2
 
+
+
+
 void CGI::RunCgi(server *serv, Response &response, Request &request) {
 
 
@@ -134,11 +137,11 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             request.setState(BODY);
             response.setProgress(POST_HOLD);
             request.handle_request(request.getBuffer());
-            return;
+            return ;
         }
     }
 
-    std::string scriptPath = ".";
+    std::string scriptPath = serv->GetCgi();
     std::string pathInfo = ScriptPath_PathInfo(scriptPath, request.getRequestTarget());
     
     if (!isFileValid(scriptPath.c_str()))
@@ -149,7 +152,7 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         return (setHttpResponse(404, "Not Found", response, serv));
     }
 
-    if (scriptPath == "./cgi-bin/home.py")
+    if (request.getRequestTarget() == "/home.py")
     {
         if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))){
             close(stdin_pipe[0]);
@@ -177,11 +180,21 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
     if (!pathInfo.empty())
         env["PATH_INFO"] = pathInfo;
 
-    for (const auto& header : request.getHeaders()) {
-        std::string envVar = "HTTP_" + header.first;
-        std::replace(envVar.begin(), envVar.end(), '-', '_');
-        std::transform(envVar.begin(), envVar.end(), envVar.begin(), ::toupper);
-        env[envVar] = header.second;
+    const std::map<std::string, std::string>& headers = request.getHeaders();
+    std::map<std::string, std::string>::const_iterator it;
+    for (it = headers.begin(); it != headers.end(); ++it) {
+        std::string envVar = "HTTP_" + it->first;
+        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
+            if (*charIt == '-') {
+                *charIt = '_';
+            }
+        }
+        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
+            if (*charIt >= 'a' && *charIt <= 'z') {
+                *charIt = *charIt - 32;
+            }
+        }
+        env[envVar] = it->second;
     }
 
     int stdout_pipe[2];
@@ -198,6 +211,7 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
     if (pid == -1) {
         close(stdin_pipe[0]);
         close(stdin_pipe[1]);
+
         close(stdout_pipe[0]);
         close(stdout_pipe[1]);
 
@@ -208,7 +222,7 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
     }
 
     if (pid == 0) {
-        // Child process
+
         close(stdin_pipe[1]);
         close(stdout_pipe[0]);
 
@@ -226,6 +240,11 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             std::string envString = envIt->first + "=" + envIt->second;
             envStrings.push_back(envString);
         }
+        
+        for (std::vector<std::string>::iterator strIt = envStrings.begin(); strIt != envStrings.end(); ++strIt) {
+            envp.push_back(const_cast<char*>(strIt->c_str()));
+        }
+        envp.push_back(NULL);
 
         std::vector<const char*> args;
         
@@ -235,36 +254,31 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         args.push_back(scriptPath.c_str());
         args.push_back(NULL);
 
-        execv(args[0], const_cast<char* const*>(&args[0]));
+        execve(args[0], const_cast<char* const*>(&args[0]), &envp[0]);
         
-        exit(1);
-    } 
-    else {
-        // Parent process
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unsupported script type]";
+        webServLog(logMessage, ERROR);
+        response.setProgress(BUILD_RESPONSE);
+        throw server::InternalServerError();
+    }  else {
         close(stdin_pipe[0]);
         close(stdin_pipe[1]);
         close(stdout_pipe[1]);
 
-        // Set up the timeout using select
         fd_set read_fds;
         struct timeval tv;
         
-        // Initialize file descriptor sets
         FD_ZERO(&read_fds);
         FD_SET(stdout_pipe[0], &read_fds);
         
-        // Set timeout value
         tv.tv_sec = CGI_TIMEMOUT_SECONDS;
         tv.tv_usec = 0;
         
-        // Find the highest file descriptor
         int max_fd = stdout_pipe[0];
         
-        // Wait for output from CGI script or timeout
         int select_result = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
         
         if (select_result == -1) {
-            // Select error
             close(stdout_pipe[0]);
             kill(pid, SIGKILL);
             waitpid(pid, NULL, 0);
@@ -275,19 +289,15 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             throw server::InternalServerError();
         } 
         else if (select_result == 0) {
-            // Timeout occurred
             close(stdout_pipe[0]);
             
-            // First try SIGTERM for graceful termination
             kill(pid, SIGTERM);
             
-            // Give the process a chance to terminate gracefully
             struct timeval grace_period;
             grace_period.tv_sec = 1;
             grace_period.tv_usec = 0;
             select(0, NULL, NULL, NULL, &grace_period);
             
-            // Check if process is still running, if so, use SIGKILL
             int status;
             if (waitpid(pid, &status, WNOHANG) == 0) {
                 kill(pid, SIGKILL);
@@ -305,12 +315,10 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             return;
         } 
         else {
-            // Read stdout from the CGI script
             std::ostringstream output;
             char buffer[1024];
             ssize_t bytesRead;
             
-            // Only read if stdout pipe is ready
             if (FD_ISSET(stdout_pipe[0], &read_fds)) {
                 while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0) {
                     output.write(buffer, bytesRead);
@@ -325,7 +333,6 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
             if (WIFEXITED(status)) {
                 if (WEXITSTATUS(status) == 0 || WEXITSTATUS(status) == 1)
                 {
-                    // Extract headers and body from the output
                     std::map<std::string, std::string> headers = extractHeaders(output.str());
                     std::string responseBody = extractBody(output.str());
                     for (const auto& header : headers) {
