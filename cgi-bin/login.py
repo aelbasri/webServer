@@ -5,8 +5,8 @@ import http.cookies
 import uuid
 
 # Configuration
-LOGIN_PAGE = "/authentification/login.html"
-HOME_PAGE = "/cgi-bin/home.py"
+LOGIN_PAGE = "/auth/login.html"
+HOME_PAGE = "/home.py"
 COOKIE_EXPIRE = 3600  # 1 hour in seconds
 
 form = cgi.FieldStorage()

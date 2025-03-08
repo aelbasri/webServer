@@ -314,6 +314,7 @@ void Response::buildResponse(Request &request, server *serv)
     if ((!path.empty() && !request.getRequestTarget().empty()) && path[path.size() - 1] != '/' && request.getRequestTarget()[0] != '/')
         path += "/";
     path += request.getRequestTarget();
+    std::cout << "LOOGING FOR: " << path << std::endl;
 
     FileState fileState = getFileState(path.c_str());
     if (fileState == FILE_DOES_NOT_EXIST)

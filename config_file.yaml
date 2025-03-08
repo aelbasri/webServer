@@ -89,23 +89,27 @@ server:
 
       # upload_dir :  hala madrid
     location :
-      type : /zara
-      root_directory: ./assets
+     directoryListing: on
+      type : /welcome
+      root_directory: /home/zel-khad/welcome-folder
       allowed_methods:
         - GET
         - POST
-        - DELETE
+        # - DELETE
 
-        #index  : index1.htm index1.html
+        # index  : index.html
       #index  : page.html
     
+    CGI:
+      path :  ./cgi-bin/
+
     location :
-      type : /upload
+      type : /home
       directoryListing : on
-      root_directory:  halakkkkk              
+      root_directory:  ./home-folder/              
       allowed_methods:
         - POST
-        - DELETE
+        # - DELETE
         - GET
       index  : index.html
       index  : index1.html

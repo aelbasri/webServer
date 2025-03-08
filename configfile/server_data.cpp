@@ -163,12 +163,12 @@ void server::setAddI(int newAddI) {
     addI = newAddI;
 }
 
-std::vector<CGI> server::GetCgi(){
-    return _CGI;
+std::string server::GetCgi(){
+    return _cgiPath;
 }
 
-void  server::SetCgi(std::vector<CGI> __cgi){
-    _CGI = __cgi;
+void  server::SetCgi(std::string __cgi){
+    _cgiPath = __cgi;
 
 }
 
@@ -289,7 +289,6 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
     size_t found_at;
     std::string key;
     std::string value;
-    CGI tmp;
 
     while (i++ < lines.size() -1) {
         if (lines[i].find("#") != std::string::npos || removeWhitespace(lines[i]).empty()) continue;
@@ -298,21 +297,15 @@ void server::loadingCgiContent(std::vector<std::string> lines,size_t &i){
         value = trim(lines[i].substr(found_at + 1));
         if (found_at == std::string::npos) 
             continue;
-        if (key == "types"){
-            if (value == "bash" || value == "PhP" || value == "python")
-                 tmp.SetType(value);
-            else
-                throw std::runtime_error("Invalid script: " + trim(lines[i]));  
-        }
-        else if (key == "indix"){
+        if (key == "path"){
+                std::cout << "lhwaaaaaaaaaaaaaaaaaaaaaa : " << value << std::endl;
             if (removeWhitespace(value).empty())
-                throw std::runtime_error("enter indix for CGI : " + trim(lines[i]));  
-            tmp.SetPath(value);
+                throw std::runtime_error("enter index for CGI : " + trim(lines[i]));  
+            SetCgi(value);
         }
         else
             break;
     }
-    _CGI.push_back(tmp);
 }    
 
 void server::loadingDataserver(){

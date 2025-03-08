@@ -12,23 +12,13 @@ void CGI::SetPath(std::string __path){
 	_path = __path;
 }
 
-void CGI::SetType(std::string __type){
-	_type = __type;
-}
-
 std::string CGI::GetPath() const{
 	return (_path);
-}
-
-std::string CGI::GetType() const{
-	return (_type);
 }
 
 int CGI::GetExitStatus() const{
     return _ExitStatus;
 }
-
-
 
 bool isFileValid(const std::string& filePath) {
     return (access(filePath.c_str(), F_OK) == 0);
@@ -121,6 +111,7 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
 
 void CGI::RunCgi(server *serv, Response &response, Request &request) {
 
+
     int *stdin_pipe = response.getCGIPIPE();
     if (stdin_pipe[0] == -1 && stdin_pipe[1] == -1)
     {
@@ -144,10 +135,22 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
         }
     }
 
-    std::string scriptPath = ".";
+    std::string scriptPath = serv->GetCgi();
     std::string pathInfo = ScriptPath_PathInfo(scriptPath, request.getRequestTarget());
+    
+    if (!isFileValid(scriptPath.c_str()))
+    {
+        std::cout << "SCRIPT NAME: " << scriptPath << std::endl;
+        std::cout << "GETPATH: " << serv->GetCgi() << std::endl;
 
-    if (scriptPath == "./cgi-bin/home.py")
+        std::cout << "FILE NOT FOUND: " << std::endl;
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
+        response.setProgress(BUILD_RESPONSE);
+        return (setHttpResponse(404, "Not Found", response, serv));
+    }
+
+    if (request.getRequestTarget() == "/home.py")
     {
         if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))){
             close(stdin_pipe[0]);
@@ -174,6 +177,9 @@ void CGI::RunCgi(server *serv, Response &response, Request &request) {
     env["HTTP_COOKIE"] = request.getHeader("Cookie");
     if (!pathInfo.empty())
         env["PATH_INFO"] = pathInfo;
+
+    std::cout << "SCRIPT NAME: " << scriptPath << std::endl;
+    std::cout << "PATH INFO: " << pathInfo << std::endl;
 
     const std::map<std::string, std::string>& headers = request.getHeaders();
     std::map<std::string, std::string>::const_iterator it;
