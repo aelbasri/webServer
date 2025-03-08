@@ -379,6 +379,7 @@ int server::run()
     struct addrinfo *res ,*p;
     int yes = 1;
     int addI;
+    
 
     for (std::vector<std::string>::size_type y = 0; y < _sock.size();  y++)
     {

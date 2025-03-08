@@ -22,6 +22,7 @@
 #include <map>
 
 #define nullptr  0
+#define SOCKET_TIMOUT 10
 
 class error_pages;
 class config_file;
@@ -32,6 +33,7 @@ class server;
 #include "configfile/location.hpp"
 #include "configfile/server_data.hpp"
 #include "configfile/error_pages.hpp"
+// #include "Connection.hpp"
 
 
 class Config
@@ -70,3 +72,4 @@ std::string escapeSpaces(const std::string input);
 void CheckKey(const std::string& key);
 bool hasSpace(const std::string& str);
 bool startsWithSlash(const std::string& str);
+std::string intToString(int num);

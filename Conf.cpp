@@ -145,6 +145,7 @@ void Config::creatPoll()
 
     while(1)
     {
+        deleteTimedoutSockets(connections, ep);
         int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
         if(nbrReady < 0)
         {
@@ -194,6 +195,7 @@ void Config::creatPoll()
                     }
                     fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
                     connections[new_fd] = new Connection(new_fd, tmp);
+                    connections[new_fd]->setStartTime(time(NULL));
                 }
                 else
                 {

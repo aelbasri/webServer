@@ -9,6 +9,7 @@
 class Connection
 {
     private:
+        time_t start_time;
         int _socket;
         Request _request;
         Response _response;
@@ -36,9 +37,16 @@ class Connection
         int sendFile(bool sendInChunkFormat);
         bool sendRawBody();
 
+        time_t getStartTime() { return start_time; };
+        void setStartTime(time_t _start_time) {
+            start_time = _start_time;
+        }
+
         bool keepAlive() const {
             std::string conn = "Connection";
              return _request.getHeader(conn) != "close";
         }
 };
 
+
+void deleteTimedoutSockets(std::map<int, Connection* > &connections, int ep);
