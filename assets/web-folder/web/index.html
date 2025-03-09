@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webserv - HTTP Server Project</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Adding GitHub icon font -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="main-title">WEBSERV</h1>
+      <p class="subtitle">Create your own HTTP server from scratch</p>
+      
+      <div class="rotating-cube">
+        <div class="cube-face front">HTTP</div>
+        <div class="cube-face back">SERVER</div>
+        <div class="cube-face right">C++</div>
+        <div class="cube-face left">TCP/IP</div>
+        <div class="cube-face top">REQUEST</div>
+        <div class="cube-face bottom">RESPONSE</div>
+      </div>
+    </header>
+    
+    <section class="card">
+      <h2>Project Overview</h2>
+      <p>Webserv is an advanced C++ project that challenges you to build your own HTTP server from scratch. This project helps you understand the inner workings of web servers and the HTTP protocol that powers the internet.</p>
+      <p>You'll implement a fully functional web server that can serve static content, handle various HTTP methods, process form submissions, execute CGI scripts, and much more - all while ensuring high performance and reliability.</p>
+    </section>
+    
+    <!-- Fixed section for testing HTTP methods -->
+    <section class="card method-testing">
+      <h2>Test HTTP Methods</h2>
+      <p>Test your server's implementation of the core HTTP methods with these interactive examples:</p>
+      
+      <div class="methods-container">
+        <div class="method-card">
+          <h3>GET Method</h3>
+          <p>Retrieve resources from the server</p>
+          <div class="test-form">
+            <input type="text" id="get-url" placeholder="Resource path (e.g., /index.html)" value="/index.html">
+            <button id="test-get" class="method-btn get-btn">
+              <i class="fas fa-download"></i> Test GET
+            </button>
+          </div>
+          <div id="get-result" class="result-box"></div>
+        </div>
+        
+        <div class="method-card">
+          <h3>POST Method</h3>
+          <p>Submit data to the server</p>
+          <div class="test-form">
+            <input type="text" id="post-url" placeholder="Resource path (e.g., /upload)" value="/upload">
+            <textarea id="post-data" placeholder="{'key': 'value'}"></textarea>
+            <button id="test-post" class="method-btn post-btn">
+              <i class="fas fa-upload"></i> Test POST
+            </button>
+          </div>
+          <div id="post-result" class="result-box"></div>
+        </div>
+        
+        <div class="method-card">
+          <h3>DELETE Method</h3>
+          <p>Remove resources from the server</p>
+          <div class="test-form">
+            <input type="text" id="delete-url" placeholder="Resource path (e.g., /file.txt)" value="/temp/file.txt">
+            <button id="test-delete" class="method-btn delete-btn">
+              <i class="fas fa-trash"></i> Test DELETE
+            </button>
+          </div>
+          <div id="delete-result" class="result-box"></div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="requirements">
+      <div class="card">
+        <h2>Core Features</h2>
+        <ul>
+          <li>Custom configuration file parsing</li>
+          <li>Non-blocking I/O operations</li>
+          <li>HTTP request parsing and validation</li>
+          <li>Proper HTTP response generation</li>
+          <li>Multiple virtual servers on different ports</li>
+          <li>File serving with proper MIME types</li>
+          <li>Directory listing functionality</li>
+          <li>Error page customization</li>
+        </ul>
+      </div>
+      
+      <div class="card">
+        <h2>HTTP Methods</h2>
+        <ul>
+          <li>GET - Retrieve resources</li>
+          <li>POST - Submit data and upload files</li>
+          <li>DELETE - Remove resources</li>
+          <li>Custom route configuration</li>
+          <li>HTTP redirections</li>
+        </ul>
+      </div>
+      
+      <div class="card">
+        <h2>Technical Requirements</h2>
+        <ul>
+          <li>Written in C++ 98</li>
+          <li>Non-blocking I/O with poll() or equivalent</li>
+          <li>Single process architecture</li>
+          <li>Resilient error handling</li>
+          <li>Compatible with web browsers</li>
+          <li>CGI script execution</li>
+          <li>File upload handling</li>
+        </ul>
+      </div>
+    </section>
+    
+    <section class="team">
+      <h2>Our Team</h2>
+      <div class="team-members">
+        <div class="member">
+          <img src="https://avatars.githubusercontent.com/u/138695272?v=4" alt="khdzakariae" class="github-avatar">
+          <h3>khdzakariae</h3>
+          <p class="role">1337 student</p>
+          <div class="social-buttons">
+            <a href="https://linkedin.com/in/zakariae-el-khadir-533aa6273" class="social-btn linkedin-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+            <a href="https://github.com/Khdzakariae" class="social-btn github-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-github"></i> GitHub
+            </a>
+          </div>
+        </div>
+        
+        <div class="member">
+          <img src="https://avatars.githubusercontent.com/u/106746209?v=4" alt="saad-out" class="github-avatar">
+          <h3>saad-out</h3>
+          <p class="role">1337 student</p>
+          <div class="social-buttons">
+            <a href="https://www.linkedin.com/in/saad-out/" class="social-btn linkedin-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+            <a href="https://github.com/saad-out" class="social-btn github-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-github"></i> GitHub
+            </a>
+          </div>
+        </div>
+        
+        <div class="member">
+          <img src="https://cdn.intra.42.fr/users/2fd1543add4083e531dee4b5767a3582/aelbasri.jpeg" alt="aelbasri" class="github-avatar">
+          <h3>aelbasri</h3>
+          <p class="role">1337 student</p>
+          <div class="social-buttons">
+            <a href="https://www.linkedin.com/in/ayoub-elbasri/" class="social-btn linkedin-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+            <a href="https://github.com/aelbasri" class="social-btn github-btn" target="_blank" rel="noopener noreferrer">
+              <i class="fab fa-github"></i> GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <footer>
+      <p>© 2025 Webserv Project Team. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="https://github.com/aelbasri/webServer" class="repo-link" target="_blank" rel="noopener noreferrer">
+          <i class="fab fa-github"></i> View Project on GitHub
+        </a>
+      </div>
+    </footer>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>

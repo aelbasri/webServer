@@ -17,8 +17,7 @@ server:
     location :
       type : /
       directoryListing : on
-      # root_directory: /root2
-      root_directory: ./assets
+      root_directory: ./assets/web-folder/web
       allowed_methods:
         - POST
         - DELETE
@@ -28,27 +27,7 @@ server:
 
     CGI:
       path :  ./cgi-bin/
-    
-    # location :
-    #   type : /upload
-    #   directoryListing : on
-    #   root_directory:  halakkkkk              
-    #   allowed_methods:
-    #     - POST
-    #     - DELETE
-    #     - GET
-    #   index  : index.html
-    #   index  : index1.html
-      
 
-    location :
-      type : /uploadafvcv
-      allowed_methods:
-        - POST
-        - DELETE
-        - GET
-      root_directory: /root              
-      index  : index.htm 
 
 
 server:
@@ -66,38 +45,24 @@ server:
       404: ./assets/errors/404.html
       500: ./assets/errors/50x.html
       302:  ./assets/errors/302.html
-    location :
+  location :
       type : /
       directoryListing : on
-      # root_directory: /root2
-      root_directory: ./assets
+      root_directory: ./assets/web-folder/web
       allowed_methods:
         - POST
         - DELETE
         - GET
       index  : index.html
       index  : index2.html
-      upload_dir :  hala madrid
-  
-    location :
-     directoryListing: on
-      type : /welcome
-      root_directory: /home/zel-khad/welcome-folder
-      allowed_methods:
-        - GET
-        - POST
-        # - DELETE
 
-        # index  : index.html
-      #index  : page.html
-    
     CGI:
       path :  ./cgi-bin/
-
+    
     location :
       type : /home
       directoryListing : on
-      root_directory:  ./home-folder/              
+      root_directory:  ./assets/home-folder/             
       allowed_methods:
         - POST
         # - DELETE
@@ -107,10 +72,10 @@ server:
       
 
     location :
-      type : /uploadafvcv
+      type : /welcome
       allowed_methods:
         - POST
         - DELETE
         - GET
-      root_directory: /root              
-      index  : index.htm 
+      root_directory: ./assets/welcome-folder/              
+      index  : index.html

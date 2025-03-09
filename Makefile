@@ -1,5 +1,5 @@
 CXX = c++
-CFLAGS = -g3 -Wall -Wextra -Werror -fsanitize=address 
+CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
 
 SRC_DIR := srcs
 SUBDIRS := CGI Config Connection Errors Location Log Request Response Server
