@@ -18,7 +18,6 @@ server& server::operator=(const server &server)
         return *this;
 
     _number_of_location = server._number_of_location;
-    // location is pointer, so we need to copy the content of the pointer
     if (_location)
         delete[] _location;
     _location = new location[_number_of_location];
@@ -28,7 +27,6 @@ server& server::operator=(const server &server)
     _content = server._content;
     _name = server._name;
     _host = server._host;
-    // _port = server._port;
     _max_body_size = server._max_body_size;
     _sock = server._sock;
     hints = server.hints;
@@ -67,10 +65,6 @@ void server::Set_host(std::string __host){
     _host = __host;
 }
 
-// void server::Set_port(std::vector<std::string> __port){
-//     _port = __port;
-// }
-
 void server::Set_max_body_size(long long __max_body_size){
     _max_body_size = __max_body_size;
 }
@@ -86,12 +80,6 @@ std::string server::Get_name(){
 std::string server::Get_host(){
     return(_host) ;
 }
-
-
-
-// std::vector<std::string> server::Get_port(){
-//     return(_port);
-// }
 
 long long server::Get_max_body_size(){
     return(_max_body_size);
@@ -114,7 +102,6 @@ std::vector<std::pair<std::string, int> > server::getSock()  {
     return _sock;
 }
 
-    // Setter for _sock
 void server::setSock(std::string port,int sock) {
 	for (size_t i = 0; i < _sock.size(); i++)
 	{
@@ -127,10 +114,6 @@ void server::setSock(std::string port,int sock) {
 	}
 }
 
-
-
-
-    // Getter for hints
 struct addrinfo &server::getHints()  {
     return hints;
 }
@@ -171,7 +154,6 @@ void  server::SetCgi(std::string __cgi){
     _cgiPath = __cgi;
 
 }
-
 
 std::vector<std::string> server::GetUserToken() const {
     return _UserTokens;
