@@ -79,7 +79,6 @@ void Response::setContentLength(int length)
 
 void Response::processPOST(Request &request, location *locationMatch)
 {
-    std::cout << "=======================================TYPE: " << request.getHeader("Content-Type") << std::endl;
     (void)locationMatch;
     if (request.getState() == WAIT)
     {
