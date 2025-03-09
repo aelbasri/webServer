@@ -4,6 +4,32 @@
 #include "colors.hpp"
 #include "log.hpp"
 
+Connection::Connection(int sock, server *serv) : _socket(sock), _server(serv), _readyToWrite(false) {
+    _request.setMaxBodySize(_server->Get_max_body_size());
+    _response.setSocket(sock);
+};
+
+int Connection::getSocket() const {return _socket;}
+server *Connection::getServer() { return _server; }
+bool Connection::readyToWrite() const {return _readyToWrite;}
+time_t Connection::getStartTime() { return start_time; }
+
+bool Connection::toBeClosed()  const {
+    if (_request.getMethod() == "DELETE")
+        return (_response.getProgress() == FINISHED);
+    else
+        return (_request.getState() == DONE && _response.getProgress() == FINISHED);
+}
+
+void Connection::setStartTime(time_t _start_time) {
+    start_time = _start_time;
+}
+
+bool Connection::keepAlive() const {
+    std::string conn = "Connection";
+        return _request.getHeader(conn) != "close";
+}
+
 ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkFormat)
 {
     if (sendInChunkFormat)

@@ -1,5 +1,3 @@
-
-
 #include "cgi_data.hpp"
 
 CGI::CGI(){}

@@ -1,6 +1,6 @@
 #include "Response.hpp"
 #include "Connection.hpp"
-#include "configfile/location.hpp"
+#include "location.hpp"
 #include "log.hpp"
 
 std::string getDate() {

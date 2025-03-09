@@ -1,6 +1,6 @@
 #pragma once
 
-#include "server_data.hpp"
+// #include "server_data.hpp"
 #include <fstream>
 #include <iostream>
 #include <cstdio>
@@ -8,12 +8,13 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sstream>
-#include "../Response.hpp"
-#include "../log.hpp"
+#include "Response.hpp"
+#include "log.hpp"
 
 
 #define CGI_PATH "/cgi-bin/"
 
+class server;
 
 class Response;
 

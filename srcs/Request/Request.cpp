@@ -1,6 +1,31 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+std::map<std::string, std::string> initializeReverseMimeTypes() {
+    std::map<std::string, std::string> reverseMimeTypes;
+    std::map<std::string, std::string> mimeTypes = initializeMimeTypes();
+
+    std::map<std::string, std::string>::iterator it;
+    for (it = mimeTypes.begin(); it != mimeTypes.end(); ++it) {
+        if (reverseMimeTypes.find(it->second) == reverseMimeTypes.end()) {
+            reverseMimeTypes[it->second] = it->first;
+        }
+    }
+
+    return reverseMimeTypes;
+}
+
+std::string getExtension(const std::string& contentType) {
+    static const std::map<std::string, std::string> reverseMimeTypes = initializeReverseMimeTypes();
+
+    std::map<std::string, std::string>::const_iterator it = reverseMimeTypes.find(contentType);
+    if (it != reverseMimeTypes.end()) {
+        return it->second;
+    }
+    return "";
+}
+
+
 std::string Request::getRequestTarget(void) const
 {
     return(requestTarget);
@@ -354,6 +379,7 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             else if (!contentFile.is_open()) 
             {
                 _contentFile = generateFilePath();
+                _contentFile += getExtension(getHeader("Content-Type"));
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     throw server::InternalServerError();
@@ -374,6 +400,7 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
             if (writeInPipe == false && !contentFile.is_open())
             {
                 _contentFile = generateFilePath();
+                _contentFile += getExtension(getHeader("Content-Type"));
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     throw server::InternalServerError();

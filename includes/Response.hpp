@@ -1,6 +1,7 @@
 #pragma once
 
-#include "configfile/server_data.hpp"
+#include "server_data.hpp"
+#include "Conf.hpp"
 #include "Request.hpp"
 #include <numeric>
 #include <string>
@@ -24,6 +25,10 @@
 #define RESPONSE_CHUNCK_SIZE 1024
 #define BUFFER_SIZE 100
 #define SERVER_NAME "WebServ-1337/1.0"
+
+// class server;
+class location;
+
 
 enum Progress
 {
@@ -132,5 +137,7 @@ void handleCGI2(server *serv, Response &response, Request &request);
 std::string getDate();
 bool isTokenExist(const std::vector< std::string>& userTokens, const std::string& token);
 bool isCgiPath(const std::string& requestTarget);
+std::map<std::string, std::string> initializeMimeTypes();
+
 
 

@@ -29,16 +29,16 @@ server:
     CGI:
       path :  ./cgi-bin/
     
-    location :
-      type : /upload
-      directoryListing : on
-      root_directory:  halakkkkk              
-      allowed_methods:
-        - POST
-        - DELETE
-        - GET
-      index  : index.html
-      index  : index1.html
+    # location :
+    #   type : /upload
+    #   directoryListing : on
+    #   root_directory:  halakkkkk              
+    #   allowed_methods:
+    #     - POST
+    #     - DELETE
+    #     - GET
+    #   index  : index.html
+    #   index  : index1.html
       
 
     location :
@@ -77,8 +77,8 @@ server:
         - GET
       index  : index.html
       index  : index2.html
-
-      # upload_dir :  hala madrid
+      upload_dir :  hala madrid
+  
     location :
      directoryListing: on
       type : /welcome

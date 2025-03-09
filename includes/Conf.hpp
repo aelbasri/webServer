@@ -30,9 +30,9 @@ class location;
 class server;
 
 
-#include "configfile/location.hpp"
-#include "configfile/server_data.hpp"
-#include "configfile/error_pages.hpp"
+#include "location.hpp"
+#include "server_data.hpp"
+#include "error_pages.hpp"
 // #include "Connection.hpp"
 
 

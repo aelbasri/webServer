@@ -1,6 +1,6 @@
 #include "Response.hpp"
 #include "Connection.hpp"
-#include "configfile/location.hpp"
+#include "location.hpp"
 #include <clocale>
 #include <cmath>
 #include <string>
@@ -79,6 +79,7 @@ void Response::setContentLength(int length)
 
 void Response::processPOST(Request &request, location *locationMatch)
 {
+    std::cout << "=======================================TYPE: " << request.getHeader("Content-Type") << std::endl;
     (void)locationMatch;
     if (request.getState() == WAIT)
     {

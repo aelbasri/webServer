@@ -12,7 +12,8 @@
 
 #pragma once
 
-#include "../Conf.hpp"
+#include <vector>
+#include <iostream>
 
 class location
 {

@@ -14,8 +14,8 @@
 
 #include "error_pages.hpp"
 #include "location.hpp"
-#include "../Request.hpp"
-#include "../Response.hpp"
+#include "Request.hpp"
+// #include "Response.hpp"
 #include "cgi_data.hpp"
 
 #include <clocale>
@@ -39,7 +39,7 @@ class CGI;
 
 #define MAX_EVENT 5
 #define FILE_PATH "./assets/page.html"
-#define UPLOAD_DIRECTORY "./uploads/"
+#define UPLOAD_DIRECTORY "./assets/uploads/"
 
 class server : public error_pages 
 {

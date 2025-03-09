@@ -1,12 +1,38 @@
 CXX = c++
-# CFLAGS = -g3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
-CFLAGS = -g3 #-Wall -Wextra -Werror -std=c++98
-# CFLAGS = -g3 #-Wall -Wextra -Werror 
-SRCS = main.cpp Connection.cpp Request.cpp Conf.cpp Conf_utils.cpp Response.cpp response_utils.cpp log.cpp \
-		$(addprefix configfile/,  error_pages.cpp server_data.cpp location.cpp utils.cpp cgi_data.cpp)
+CFLAGS = -g3 -Wall -Wextra -Werror -fsanitize=address 
+
+SRC_DIR := srcs
+SUBDIRS := CGI Config Connection Errors Location Log Request Response Server
+INC_DIR := includes
+
+INCLUDES = -I "includes/"
+
+SRCS := $(addprefix $(SRC_DIR)/, main.cpp \
+	$(addprefix CGI/, cgi_data.cpp) \
+	$(addprefix Config/, Conf.cpp utils.cpp) \
+	$(addprefix Connection/, Connection.cpp) \
+	$(addprefix Errors/, error_pages.cpp) \
+	$(addprefix Location/, location.cpp) \
+	$(addprefix Log/, log.cpp) \
+	$(addprefix Request/, Request.cpp) \
+	$(addprefix Response/, Response.cpp response_utils.cpp) \
+	$(addprefix Server/, server_data.cpp))
+
 OBJS = $(SRCS:.cpp=.o)
-HEDERS =  Connection.hpp Request.hpp Response.hpp Conf.hpp Response.hpp colors.hpp log.hpp \
-		$(addprefix configfile/,  error_pages.hpp server_data.hpp location.hpp cgi_data.hpp)
+
+
+HEADERS := $(addprefix $(INC_DIR)/, \
+	cgi_data.hpp \
+	Conf.hpp \
+	error_pages.hpp \
+	log.hpp \
+	Response.hpp \
+	colors.hpp \
+	Connection.hpp \
+	location.hpp \
+	Request.hpp \
+	server_data.hpp)
+
 NAME = webserv
 
 all : $(NAME)
@@ -24,10 +50,10 @@ run: all
 	./$(NAME)
 
 %.o : %.cpp 
-	$(CXX) -c $(CFLAGS)  -o $@ $^
+	$(CXX) -c $(INCLUDES) $(CFLAGS)  -o $@ $^
 
-$(NAME) : $(OBJS) $(HEDERS)
-	$(CXX) $(CFLAGS) $(OBJS) -o $(NAME)
+$(NAME) : $(OBJS) $(HEADERS)
+	$(CXX)   $(CFLAGS) $(OBJS) -o $(NAME)
 
 clean : 
 	rm -f $(OBJS)
