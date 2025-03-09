@@ -174,7 +174,8 @@ void Config::creatPoll()
         if(nbrReady < 0)
         {
             // Throw exception
-            return;
+            throw std::runtime_error("epoll_wait failed");
+            // return;
         }
         for(int i = 0; i < nbrReady; i++)
         {
@@ -215,7 +216,8 @@ void Config::creatPoll()
                     {
 
                         // Throw exception
-                        return;
+                        throw std::runtime_error("epoll_ctl failed");
+                        // return;
                     }
                     fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
                     connections[new_fd] = new Connection(new_fd, tmp);
@@ -241,7 +243,8 @@ void Config::creatPoll()
                         if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
                         {
                             // Throw exception
-                            return ;
+                            throw std::runtime_error("epoll_ctl failed");
+                            // return ;
                         }
                     }
                 }
