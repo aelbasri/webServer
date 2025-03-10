@@ -117,25 +117,25 @@ bool keyExist(std::map<int, Connection*> connections, int key)
 void deleteTimedoutSockets(std::map<int, Connection* > &connections, int ep)
  {
      std::vector<Connection*> toDelete;
-         time_t current_time = time(NULL);
-         for(std::map<int, Connection *>::iterator it = connections.begin(); it != connections.end(); it++)
-         {
-             int fd = it->first;
-             if (current_time - it->second->getStartTime() > SOCKET_TIMOUT)
-             {
-                 toDelete.push_back(it->second);
-                 close(fd);
-                 epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL);
-                 std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + " AFTER TIMEOUT]";
-                 webServLog(logMessage, INFO);
-             }
-         }
-         for (size_t i = 0; i < toDelete.size(); i++)
-         {
-             int _fd = toDelete[i]->getSocket();
-             delete toDelete[i];
-             connections.erase(_fd);
-         }
+     time_t current_time = time(NULL);
+        for(std::map<int, Connection *>::iterator it = connections.begin(); it != connections.end(); it++)
+        {
+            int fd = it->first;
+            if (current_time - it->second->getStartTime() > SOCKET_TIMOUT)
+            {
+                toDelete.push_back(it->second);
+                close(fd);
+                epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL);
+                std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + " AFTER TIMEOUT]";
+                webServLog(logMessage, INFO);
+            }
+        }
+        for (size_t i = 0; i < toDelete.size(); i++)
+        {
+            int _fd = toDelete[i]->getSocket();
+            delete toDelete[i];
+            connections.erase(_fd);
+        }
  }
 
 void Config::creatPoll()
@@ -262,6 +262,7 @@ void Config::creatPoll()
                     {
                         try {
                             connections[_fd] = new Connection(_fd, tmp);
+                            connections[_fd]->setStartTime(time(NULL));
                             std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
                             webServLog(logMessage, INFO);
                         } catch (const std::bad_alloc &e) {
