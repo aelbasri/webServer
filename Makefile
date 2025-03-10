@@ -7,7 +7,7 @@ INC_DIR := includes
 
 INCLUDES = -I "includes/"
 
-CONFIGFOLE = ./conf/config_file.yaml
+CONFIGFILE = ./conf/config_file.yaml
 
 SRCS := $(addprefix $(SRC_DIR)/, main.cpp \
 	$(addprefix CGI/, cgi_data.cpp) \
@@ -45,14 +45,14 @@ debug: re
 
 hrun: re
 	clear
-	./$(NAME) $(CONFIGFOLE)
+	./$(NAME) $(CONFIGFILE)
 
 run: all
 	clear
-	./$(NAME) $(CONFIGFOLE)
+	./$(NAME) $(CONFIGFILE)
 
-%.o : %.cpp 
-	$(CXX) -c $(INCLUDES) $(CFLAGS)  -o $@ $^
+%.o : %.cpp $(HEADERS)
+	$(CXX) -c $(INCLUDES) $(CFLAGS)  -o $@ $<
 
 $(NAME) : $(OBJS) $(HEADERS)
 	$(CXX)   $(CFLAGS) $(OBJS) -o $(NAME)
