@@ -1,19 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Error</title>
-<style>
-html { color-scheme: light dark; }
-body { width: 35em; margin: 0 auto;
-font-family: Tahoma, Verdana, Arial, sans-serif; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Error</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ff5555;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            padding: 50px;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 5rem;
+            animation: glitch 1s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px 0 #ff0000, -2px -2px 0 #00ffff; }
+            50% { text-shadow: -2px -2px 0 #ff0000, 2px 2px 0 #00ffff; }
+            100% { text-shadow: 2px 2px 0 #ff0000, -2px -2px 0 #00ffff; }
+        }
+        p {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            animation: bounce 1s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0px); }
+            to { transform: translateY(10px); }
+        }
+    </style>
 </head>
 <body>
-<h1>An error occurred.</h1>
-<p>Sorry, the page you are looking for is currently unavailable.<br/>
-Please try again later.</p>
-<p>If you are the system administrator of this resource then you should check
-the error log for details.</p>
-<p><em>Faithfully yours, nginx.</em></p>
+    <h1>50X ERROR</h1>
+    <p>Something went wrong on our end. Please try again later.</p>
 </body>
 </html>
+

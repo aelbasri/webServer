@@ -1,7 +1,50 @@
-<html>
-<head><title>302 Found</title></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>302 Found</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #00ff99;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 4rem;
+            animation: fade-in 1.5s ease-in-out;
+        }
+        p {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            opacity: 0;
+            animation: fade-in 2s ease-in-out 1s forwards;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .redirecting {
+            margin-top: 30px;
+            font-size: 1.2rem;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+    </style>
+    <script>
+        setTimeout(function() {
+            window.location.href = '/';
+        }, 5000);
+    </script>
+</head>
 <body>
-<center><h1>302 Found</h1></center>
-<hr><center>nginx/1.27.3</center>
+    <h1>302 Found</h1>
+    <p>The resource has been temporarily moved.</p>
+    <p class="redirecting">Redirecting in 5 seconds...</p>
 </body>
 </html>
+
