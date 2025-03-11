@@ -161,9 +161,11 @@ int Connection::sockRead()
 
 int Connection::sockWrite()
 {
+    if (_response.getProgress() == FINISHED)
+        return (-1);
     if ((_request.getState() != DONE && _request.getState() != WAIT) || _response.getProgress() == FINISHED)
         return (0);
-    if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD)
+    if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD || _response.getProgress() == CGI_HOLD)
     {
         try {
             _response.buildResponse(_request, _server);
@@ -172,11 +174,11 @@ int Connection::sockWrite()
         } catch(const Request::badRequest &e) {
             setHttpResponse(400, "Bad Request", _response, _server);
         }
-        if (_response.getProgress() != POST_HOLD)
-        {
-            std::string conn = _request.getHeader("Connection");
-            _response.createResponseStream(conn);
-        }
+    }
+    if (_response.getProgress() == CREATE_HEADERS_STREAM)
+    {
+        std::string conn = _request.getHeader("Connection");
+        _response.createResponseStream(conn);
     }
     if (_response.getProgress() == SEND_HEADERS)
     {
@@ -222,6 +224,8 @@ int Connection::sockWrite()
         } catch (const server::InternalServerError &e) {
             std::string logMessage = "[" + _request.getMethod() + "] [" + _request.getRequestTarget() + "] [500] [Internal Server Error] [Error sending request body]";
             webServLog(logMessage, ERROR);
+            _response.setSent(true);
+            _response.setProgress(FINISHED);
             return (-1);
         }
     }

@@ -28,13 +28,15 @@
 
 // class server;
 class location;
+class CGI;
 
 
 enum Progress
 {
     BUILD_RESPONSE,
     POST_HOLD,
-    SEND_RESPONSE,
+    CGI_HOLD,
+    CREATE_HEADERS_STREAM,
     SEND_HEADERS,
     SEND_BODY,
     FINISHED,
@@ -80,6 +82,8 @@ class Response
 
         int _CGIPIPE[2];
 
+        CGI *_cgi;
+
         int _sock;
         enum Progress _progress;
 
@@ -95,6 +99,9 @@ class Response
         int getSocket() const;
         int *getCGIPIPE();
         bool getIsFile() const;
+
+        CGI *getCGI() { return _cgi; };
+        void setCGI(CGI *cgi) { _cgi = cgi; };
 
         int setFileBody(std::string path);
         void setTotalBytesSent(size_t bytes);

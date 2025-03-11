@@ -237,6 +237,7 @@ void setHttpResponse(int status, std::string message, Response &response, server
         response.setTextBody(customHtml);
         response.setContentLength(customHtml.size());
     }
+    response.setProgress(CREATE_HEADERS_STREAM);
 }
 
 bool isTokenExist(const std::vector< std::string>& userTokens, const std::string& token) {
@@ -245,6 +246,7 @@ bool isTokenExist(const std::vector< std::string>& userTokens, const std::string
         return (false);
     std::string  session_id = token.substr(strlen("session_id="));
     for (std::vector<std::string>::const_iterator it = userTokens.begin(); it != userTokens.end(); ++it) {
+        std::cout << "===================================================> Comparing: (" << *it << ") with (" << session_id << ")" << std::endl;
         if (*it == session_id) { 
             return true; 
         }
@@ -254,8 +256,17 @@ bool isTokenExist(const std::vector< std::string>& userTokens, const std::string
 
 void handleCGI2(server *serv, Response &response, Request &request) {
     (void)serv;
-    CGI _cgi;
-    _cgi.RunCgi(serv, response, request);
+    if (response.getCGI() == nullptr) {
+        try {
+            CGI *cgi = new CGI();
+            response.setCGI(cgi);
+        } catch (std::bad_alloc &e) {
+            webServLog("Failed to allocate memory for CGI object", ERROR);
+            return (setHttpResponse(500, "Internal Server Error", response, serv));
+        }
+        response.setProgress(CGI_HOLD);
+    }
+    response.getCGI()->RunCgi(serv, response, request);
 }
 
 bool isCgiPath(const std::string& requestTarget) {

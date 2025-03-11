@@ -19,6 +19,8 @@ Response::Response()
     _isFile = true;
     _CGIPIPE[0] = -1;
     _CGIPIPE[1] = -1;
+
+    _cgi = nullptr;
 }
 
 Response::~Response()
@@ -27,6 +29,12 @@ Response::~Response()
     {
         delete _fileBody;
         _fileBody = nullptr;
+    }
+
+    if (_cgi)
+    {
+        delete _cgi;
+        _cgi = nullptr;
     }
 }
 
@@ -150,6 +158,7 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
             setContentLength(length);
             std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Index file found]";
             webServLog(logMessage, INFO);
+            setProgress(CREATE_HEADERS_STREAM);
             return ;
         }
     }
@@ -173,6 +182,7 @@ void Response::processDirectoryRequest(Request &request, location *locationMatch
         setContentLength(htmlDirectoryListing.size());
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [Directory listing]";
         webServLog(logMessage, INFO);
+        setProgress(CREATE_HEADERS_STREAM);
         return ;
     }
     else
@@ -194,6 +204,7 @@ void Response::processGET(Request &request, std::string &path)
     setContentLength(length);
     std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [200] [OK] [File found]";
     webServLog(logMessage, INFO);
+    setProgress(CREATE_HEADERS_STREAM);
     return ;
 }
 
@@ -210,6 +221,7 @@ void Response::processDELETE(Request &request, server *serv, std::string &path)
         setContentLength(0);
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [204] [No Content] [File deleted]";
         webServLog(logMessage, INFO);
+        setProgress(CREATE_HEADERS_STREAM);
         return ;
     }
     else
@@ -246,20 +258,7 @@ void Response::buildResponse(Request &request, server *serv)
     }
 
     if (isCgiPath(request.getRequestTarget()))
-    {
-        if (getProgress() == POST_HOLD) {
-            if (request.getMethod() != "POST")
-            {
-                // Unexpected state Error
-                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
-                webServLog(logMessage, ERROR);
-                throw server::InternalServerError();
-            }
-            if (request.getState() != DONE) // Still reading body
-                return ;
-        }
         return (handleCGI2(serv, *this, request));
-    }
 
     if (getProgress() == POST_HOLD)
     {
@@ -274,7 +273,7 @@ void Response::buildResponse(Request &request, server *serv)
             return ;
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
         webServLog(logMessage, INFO);
-        setProgress(BUILD_RESPONSE);
+        // setProgress(BUILD_RESPONSE);
         return (setHttpResponse(201, "Created", *this, serv));
     }
 
@@ -342,6 +341,8 @@ void Response::buildResponse(Request &request, server *serv)
 
 void Response::createResponseStream(std::string &connectionHeader)
 {
+    if (_progress != CREATE_HEADERS_STREAM)
+        return ;
     if (_headerStream.empty())
     {
         // Build the response line

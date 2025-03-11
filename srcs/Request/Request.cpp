@@ -375,7 +375,9 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         case CONTLEN :
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             if (writeInPipe == true)
+            {
                 write(fd ,buffer + i, toBeConsumed);
+            }
             else if (!contentFile.is_open()) 
             {
                 _contentFile = generateFilePath();

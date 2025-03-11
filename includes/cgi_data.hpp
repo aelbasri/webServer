@@ -13,27 +13,50 @@
 
 
 #define CGI_PATH "/cgi-bin/"
+#define CGI_TIMEMOUT_SECONDS 10
 
 class server;
 
 class Response;
 
+enum CGIStatus
+{
+    CGI_SETUP,
+    CGI_BODY_READING,
+    CGI_FORKING,
+    CGI_RUNNING,
+    CGI_DONE,
+};
+
 class CGI
 {
-private:
-    std::string _path;
-    int _ExitStatus;
+    private:
+        std::string scriptPath;
+        std::string pathInfo;
+        std::string interpreter;
 
-public:
-    CGI(std::string __path);
-    CGI();
-    ~CGI();
+        int stdin_pipe[2];
+        int stdout_pipe[2];
+        int stderr_pipe[2];
+        time_t _start_time;
+        CGIStatus _status;
+        pid_t _pid;
+        std::ostringstream _response;
 
-    void SetPath(std::string __type);
-    
-    std::string GetPath() const;
-    int GetExitStatus() const;
 
-    void RunCgi(server *serv, Response &response, Request &request);
+    public:
+        CGI();
+        ~CGI();
+
+        void setScriptPath(std::string __scriptPath);
+        void setPathInfo(std::string __pathInfo);
+        bool pipesNotSet() const;
+
+        void RunCgi(server *serv, Response &response, Request &request);
+        void setupCGI(server *serv, Response &response, Request &request);
+        void processSuccessfulResponse(server *serv, Response &response, Request &request);
+        void closeAllPipes();
+        bool processTimedOut() const;
+        void forkChild(server *serv, Response &response, Request &request);
 };
 

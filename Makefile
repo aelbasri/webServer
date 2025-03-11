@@ -10,8 +10,8 @@ INCLUDES = -I "includes/"
 CONFIGFILE = ./conf/config_file.yaml
 
 SRCS := $(addprefix $(SRC_DIR)/, main.cpp \
-	$(addprefix CGI/, cgi_data.cpp) \
-	$(addprefix Config/, Conf.cpp utils.cpp) \
+	$(addprefix CGI/, cgi_data.cpp cgi_utils.cpp) \
+	$(addprefix Config/, Conf.cpp utils.cpp Conf2.cpp) \
 	$(addprefix Connection/, Connection.cpp) \
 	$(addprefix Errors/, error_pages.cpp) \
 	$(addprefix Location/, location.cpp) \
@@ -39,9 +39,13 @@ NAME = webserv
 
 all : $(NAME)
 
-debug: re
+memory: all
 	clear
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME) $(CONFIGFILE)
+
+valgrind: all
+	clear
+	valgrind ./$(NAME) $(CONFIGFILE)
 
 hrun: re
 	clear
