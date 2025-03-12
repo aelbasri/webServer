@@ -14,6 +14,8 @@ server:
       404: ./assets/errors/404.html
       500: ./assets/errors/50x.html
       302:  ./assets/errors/302.html
+      403:  ./assets/errors/403.html
+      504:  ./assets/errors/504.html
     location :
       type : /
       directoryListing : on
@@ -24,6 +26,38 @@ server:
         - GET
       index  : index.html
       index  : index2.html
+
+    location :
+      type : /errors
+      directoryListing : on
+      root_directory: ./assets/
+      allowed_methods:
+        - GET
+
+    location :
+      type : /auth
+      directoryListing : on
+      root_directory: ./assets/
+      allowed_methods:
+        - GET
+      index: login.html
+
+
+    location :
+      type : /welcome
+      allowed_methods:
+        - GET
+      root_directory: ./assets/welcome-folder/              
+      index  : index.html
+
+    location :
+      type : /home
+      directoryListing : on
+      allowed_methods:
+        - GET
+      root_directory: ./assets/home-folder/
+      index  : index.html
+
 
     CGI:
       path :  ./cgi-bin/
@@ -79,3 +113,11 @@ server:
         - GET
       root_directory: ./assets/welcome-folder/              
       index  : index.html
+
+    location :
+      type : /auth
+      directoryListing : on
+      allowed_methods:
+        - POST
+        - GET
+      root_directory: ./assets/

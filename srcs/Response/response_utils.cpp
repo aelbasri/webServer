@@ -241,12 +241,12 @@ void setHttpResponse(int status, std::string message, Response &response, server
 }
 
 bool isTokenExist(const std::vector< std::string>& userTokens, const std::string& token) {
-    size_t findIt = token.find("session_id=");
+    std::string key = "session_id=";
+    size_t findIt = token.find(key);
     if (findIt == std::string::npos)
         return (false);
-    std::string  session_id = token.substr(strlen("session_id="));
+    std::string  session_id = token.substr(findIt + key.size());
     for (std::vector<std::string>::const_iterator it = userTokens.begin(); it != userTokens.end(); ++it) {
-        std::cout << "===================================================> Comparing: (" << *it << ") with (" << session_id << ")" << std::endl;
         if (*it == session_id) { 
             return true; 
         }

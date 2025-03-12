@@ -13,7 +13,7 @@
 
 
 #define CGI_PATH "/cgi-bin/"
-#define CGI_TIMEMOUT_SECONDS 10
+#define CGI_TIMEMOUT_SECONDS 5
 
 class server;
 
