@@ -106,25 +106,6 @@ void Response::processPOST(Request &request, location *locationMatch)
     }
 }
 
-void Response::processCGIPOST(Request &request)
-{
-    if (request.getState() == WAIT)
-    {
-        // changing state for request to start reading body
-        request.setWriteInPipe(true);
-        request.setState(BODY);
-        setProgress(POST_HOLD);
-        return ;
-    }
-    else
-    {
-        // Unexpected state error
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
-        webServLog(logMessage, ERROR);
-        throw server::InternalServerError();
-    }
-}
-
 void Response::processDirectoryRequest(Request &request, location *locationMatch, server *serv, std::string &path)
 {
     if (!path.empty() && path[path.size() - 1] != '/')
@@ -273,7 +254,8 @@ void Response::buildResponse(Request &request, server *serv)
             return ;
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [201] [Created] [POST request]";
         webServLog(logMessage, INFO);
-        // setProgress(BUILD_RESPONSE);
+        std::string filename = request.getContentFile();
+        addHeader(std::string("File-Name"), filename.substr(filename.find_last_of("/") + 1));
         return (setHttpResponse(201, "Created", *this, serv));
     }
 

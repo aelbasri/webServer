@@ -58,6 +58,14 @@ server:
       root_directory: ./assets/home-folder/
       index  : index.html
 
+    location :
+      type : /uploads
+      directoryListing : on
+      allowed_methods:
+        - GET
+        - DELETE
+      root_directory: ./assets/
+
 
     CGI:
       path :  ./cgi-bin/
