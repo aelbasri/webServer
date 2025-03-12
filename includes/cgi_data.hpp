@@ -37,7 +37,6 @@ class CGI
 
         int stdin_pipe[2];
         int stdout_pipe[2];
-        int stderr_pipe[2];
         time_t _start_time;
         CGIStatus _status;
         pid_t _pid;

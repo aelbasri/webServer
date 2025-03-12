@@ -1,6 +1,7 @@
 #include "cgi_data.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include <unistd.h>
 
 std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requestTarget);
 std::string getInterpreter(const std::string& filePath);
@@ -28,12 +29,10 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
         // Child process
         dup2(stdin_pipe[0], STDIN_FILENO);
         dup2(stdout_pipe[1], STDOUT_FILENO);
-        // dup2(stderr_pipe[1], STDERR_FILENO);
         
         // Close unused pipe ends
         close(stdin_pipe[1]);
         close(stdout_pipe[0]);
-        close(stderr_pipe[0]);
 
         std::map<std::string, std::string> env;
         env["REQUEST_METHOD"] = request.getMethod();
@@ -85,8 +84,6 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
 
         execve(args[0], const_cast<char* const*>(&args[0]), &envp[0]);
 
-        // If execve returns, there was an error - write a single character to stderr
-        write(stderr_pipe[1], "E", 1); // 'E' for Error
         exit(EXIT_FAILURE);
     }
     
@@ -94,7 +91,6 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
     // Close unused pipe ends
     close(stdin_pipe[0]);
     close(stdout_pipe[1]);
-    close(stderr_pipe[1]);
     
     // Set start time for timeout checking
     _start_time = time(NULL);
@@ -118,7 +114,6 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [404] [Not Found] [CGI script not found or not executable]";
         webServLog(logMessage, ERROR);
-        // response.setProgress(BUILD_RESPONSE);
         return (setHttpResponse(404, "Not Found", response, serv));
     }
     
@@ -129,7 +124,8 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
         {
             close(stdin_pipe[0]);
             close(stdin_pipe[1]);
-            // response.setProgress(BUILD_RESPONSE);
+            std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [403] [Forbidden] [User not logged in]";
+            webServLog(logMessage, WARNING);
             return (setHttpResponse(403, "Forbidden", response, serv));
         }
     }
@@ -143,8 +139,8 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
     
     if (pipesNotSet())
     {
-        // Create pipes for stdin, stdout, and stderr
-        if (pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0 || pipe(stderr_pipe) < 0)
+        // Create pipes for stdin, stdout
+        if (pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
         {
             std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [500] [Internal Server Error] [Failed to create pipes]";
             webServLog(logMessage, ERROR);
@@ -154,12 +150,10 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
     }
     
     // Set the pipes to non-blocking mode
-    fcntl(stdin_pipe[0], F_SETFL, O_NONBLOCK);
+    // fcntl(stdin_pipe[0], F_SETFL, O_NONBLOCK);
     fcntl(stdin_pipe[1], F_SETFL, O_NONBLOCK);
     fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK);
-    fcntl(stdout_pipe[1], F_SETFL, O_NONBLOCK);
-    fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK);
-    fcntl(stderr_pipe[1], F_SETFL, O_NONBLOCK);
+    // fcntl(stdout_pipe[1], F_SETFL, O_NONBLOCK);
     
     // If it's a POST request and we need to write the body to the CGI script
     if (request.getMethod() == "POST" && request.getState() == WAIT)
@@ -191,7 +185,6 @@ bool CGI::processTimedOut() const
         
         // Clean up
         close(stdout_pipe[0]);
-        close(stderr_pipe[0]);
         
         return (true);
     }
@@ -206,8 +199,6 @@ void CGI::closeAllPipes()
     close(stdin_pipe[1]);
     close(stdout_pipe[0]);
     close(stdout_pipe[1]);
-    close(stderr_pipe[0]);
-    close(stderr_pipe[1]);
 }
 
 void CGI::RunCgi(server *serv, Response &response, Request &request)

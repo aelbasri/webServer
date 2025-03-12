@@ -10,8 +10,6 @@ CGI::CGI(){
     stdin_pipe[1] = -1;
     stdout_pipe[0] = -1;
     stdout_pipe[1] = -1;
-    stderr_pipe[0] = -1;
-    stderr_pipe[1] = -1;
     _start_time = 0;
     _response.str("");
     scriptPath = "";
@@ -29,7 +27,7 @@ void CGI::setPathInfo(std::string __pathInfo){
 
 bool CGI::pipesNotSet() const
 {
-    return (stdin_pipe[0] == -1 && stdin_pipe[1] == -1 && stdout_pipe[0] == -1 && stdout_pipe[1] == -1 && stderr_pipe[0] == -1 && stderr_pipe[1] == -1);
+    return (stdin_pipe[0] == -1 && stdin_pipe[1] == -1 && stdout_pipe[0] == -1 && stdout_pipe[1] == -1);
 }
 
 CGI::~CGI(){}
@@ -106,6 +104,11 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
         scriptEnd = pyPos + 3;
     else if (phpPos != std::string::npos) 
         scriptEnd = phpPos + 4;
+    
+    // only `/` or `?` allowed after extension
+    if (scriptEnd != std::string::npos && requestTarget[scriptEnd] != '/' && requestTarget[scriptEnd] != '?') {
+        scriptEnd = std::string::npos;
+    }
     
     if (scriptEnd == std::string::npos) {
         scriptPath += requestTarget;
