@@ -4,8 +4,8 @@ server:
     host: 127.0.0.1
     port:   3000
     port:   4000
+    port:   6001
     port:   5000
-    port:   6000
 
 
     max_body_size :       1456
@@ -71,61 +71,73 @@ server:
       path :  ./cgi-bin/
 
 
+# server:
+#     name           :           "zaki el khadir"     
+#     host: 127.0.0.1
+#     port:   3000
+#     port:   4000
+#     port:   6001
+#     port:   5000
 
-server:
-    name           :           "zaki el khadir"     
-    host: 127.0.0.5
-    port:   3000
-    port:   4000
-    port:   5000
-    port:   6000
+
+#     max_body_size :       1456
+
+#     error_pages:
+#       404: ./assets/errors/404.html
+#       500: ./assets/errors/50x.html
+#       302:  ./assets/errors/302.html
+#       403:  ./assets/errors/403.html
+#       504:  ./assets/errors/504.html
+#     location :
+#       type : /
+#       directoryListing : on
+#       root_directory: ./assets/web-folder/web
+#       allowed_methods:
+#         - POST
+#         - DELETE
+#         - GET
+#       index  : index.html
+#       index  : index2.html
+
+#     location :
+#       type : /errors
+#       directoryListing : on
+#       root_directory: ./assets/
+#       allowed_methods:
+#         - GET
+
+#     location :
+#       type : /auth
+#       directoryListing : on
+#       root_directory: ./assets/
+#       allowed_methods:
+#         - GET
+#       index: login.html
 
 
-    max_body_size :       1456
+#     location :
+#       type : /welcome
+#       allowed_methods:
+#         - GET
+#       root_directory: ./assets/welcome-folder/              
+#       index  : index.html
 
-    error_pages:
-      404: ./assets/errors/404.html
-      500: ./assets/errors/50x.html
-      302:  ./assets/errors/302.html
-  location :
-      type : /
-      directoryListing : on
-      root_directory: ./assets/web-folder/web
-      allowed_methods:
-        - POST
-        - DELETE
-        - GET
-      index  : index.html
-      index  : index2.html
+#     location :
+#       type : /home
+#       directoryListing : on
+#       allowed_methods:
+#         - GET
+#       root_directory: ./assets/home-folder/
+#       index  : index.html
 
-    CGI:
+#     location :
+#       type : /uploads
+#       directoryListing : on
+#       allowed_methods:
+#         - GET
+#         - DELETE
+#       root_directory: ./assets/
+
+
+#     CGI:
       path :  ./cgi-bin/
-    
-    location :
-      type : /home
-      directoryListing : on
-      root_directory:  ./assets/home-folder/             
-      allowed_methods:
-        - POST
-        # - DELETE
-        - GET
-      index  : index.html
-      index  : index1.html
-      
-
-    location :
-      type : /welcome
-      allowed_methods:
-        - POST
-        - DELETE
-        - GET
-      root_directory: ./assets/welcome-folder/              
-      index  : index.html
-
-    location :
-      type : /auth
-      directoryListing : on
-      allowed_methods:
-        - POST
-        - GET
-      root_directory: ./assets/

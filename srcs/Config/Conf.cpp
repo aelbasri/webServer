@@ -27,6 +27,8 @@ Config::Config(std::string file): _server(nullptr){
     if (loidingFile(file))
         throw std::runtime_error("failed to load config file!");
     _nembre_of_server = CheckNumberOfServer();
+    if (_nembre_of_server < 1)
+        throw std::runtime_error("invalid syntax in configfile");
     _server =  new server[_nembre_of_server];
     
 }
@@ -75,8 +77,9 @@ int Config::loidingFile(std::string file){
         return -1;
     }
     while (getline(f, s)){
-
+        if (s.find("#") != std::string::npos) continue;
         setFileContent() += s;
+
         if (!s.empty())
             setFileContent().push_back('\n');
     }
