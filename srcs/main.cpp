@@ -22,9 +22,8 @@ int main(int ac, char **av)
      }
      catch (std::exception &e)
      {
-         std::string error = "[L***A JAAAY! KHSER] [" + error + e.what() + "] [ERRNO: " + strerror(errno) + "]";
+        std::string error = "[L***A JAAAY! KHSER] [" + std::string(e.what()) + "] [ERRNO: " + std::string(strerror(errno)) + "]";
          webServLog(error, ERROR);
-         std::cerr << strerror(errno) << std::endl;
         return (1);
      }
     return (0);
