@@ -1,4 +1,6 @@
 #include "Conf.hpp"
+#include <cmath>
+#include <cstring>
 #include <exception>
 #include <iostream>
 #include "log.hpp"
@@ -18,9 +20,10 @@ int main(int ac, char **av)
         _Server.loadContentServer();
         _Server.SetupServers();
      }
-     catch (std::runtime_error &e)
+     catch (std::exception &e)
      {
-         std::cerr << "L***A JAAAY! KHSER " << e.what() << std::endl;
+        std::string error = "[L***A JAAAY! KHSER] [" + std::string(e.what()) + "] [ERRNO: " + std::string(strerror(errno)) + "]";
+         webServLog(error, ERROR);
         return (1);
      }
     return (0);

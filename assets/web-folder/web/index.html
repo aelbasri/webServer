@@ -50,11 +50,21 @@
         
         <div class="method-card">
           <h3>POST Method</h3>
-          <p>Submit data to the server</p>
+          <p>Submit data and files to the server</p>
           <div class="test-form">
             <input type="text" id="post-url" placeholder="Resource path (e.g., /upload)" value="/upload">
+            
+            <div class="file-upload-container">
+              <label for="file-input" class="file-label">
+                <i class="fas fa-file"></i> Select File(s)
+              </label>
+              <input type="file" id="file-input" multiple class="file-input">
+              <span id="file-name" class="file-name">No file selected</span>
+            </div>
+            
             <textarea id="post-data" placeholder="{'key': 'value'}"></textarea>
-            <button id="test-post" class="method-btn post-btn">
+            
+            <button id="test-post" class="method-btn post-btn" onclick="testPostMethod()">
               <i class="fas fa-upload"></i> Test POST
             </button>
           </div>

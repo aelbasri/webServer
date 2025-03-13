@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>504 Gateway Timeout</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #ffaa00;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 4rem;
+            animation: fade-in 1.5s ease-in-out;
+        }
+        p {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            opacity: 0;
+            animation: fade-in 2s ease-in-out 1s forwards;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .timeout {
+            margin-top: 30px;
+            font-size: 1.2rem;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <h1>504 Gateway Timeout</h1>
+    <p>The server took too long to respond.</p>
+    <p class="timeout">Please try again later.</p>
+</body>
+</html>
+

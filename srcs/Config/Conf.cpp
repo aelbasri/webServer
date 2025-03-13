@@ -27,6 +27,8 @@ Config::Config(std::string file): _server(nullptr){
     if (loidingFile(file))
         throw std::runtime_error("failed to load config file!");
     _nembre_of_server = CheckNumberOfServer();
+    if (_nembre_of_server < 1)
+        throw std::runtime_error("invalid syntax in configfile");
     _server =  new server[_nembre_of_server];
     
 }
@@ -75,8 +77,9 @@ int Config::loidingFile(std::string file){
         return -1;
     }
     while (getline(f, s)){
-
+        if (s.find("#") != std::string::npos) continue;
         setFileContent() += s;
+
         if (!s.empty())
             setFileContent().push_back('\n');
     }
@@ -146,6 +149,7 @@ void Config::creatPoll()
     if (ep == -1)
     {
         // Throw exception
+        throw std::runtime_error("epoll_create failed");
         return;
     }
 
@@ -159,6 +163,7 @@ void Config::creatPoll()
             if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock()[y].second, &ev) == -1)
             {
                 // Throw exception )
+                throw std::runtime_error("epoll_ctl failed");
                 return;
             }
          }
@@ -297,6 +302,7 @@ void Config::creatPoll()
     }
 
 }
+
 // Function to recursively remove directory contents
 void removeDirectoryContents(const std::string& path) {
     DIR* dir = opendir(path.c_str());
@@ -360,7 +366,8 @@ int Config::SetupServers()
             throw std::runtime_error("Failed to open directory");
     }
     removeAndRecreateDirectory(UPLOAD_DIRECTORY);
-    creatPoll();
+    // creatPoll();
+    creatPoll2();
     return (0);
 }
 

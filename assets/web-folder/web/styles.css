@@ -525,6 +525,41 @@ footer {
               0 0 15px rgba(0, 195, 255, 0.4);
 }
 
+.file-upload-container {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.file-label {
+  display: inline-block;
+  padding: 8px 12px;
+  background-color: #3b4384;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.file-label:hover {
+  background-color: #320f0f;
+}
+
+.file-input {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.file-name {
+  margin-left: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
 @media (max-width: 768px) {
   h1 {
     font-size: 2.8rem;

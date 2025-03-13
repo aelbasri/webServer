@@ -28,6 +28,7 @@ class error_pages;
 class config_file;
 class location;
 class server;
+class Connection;
 
 
 #include "location.hpp"
@@ -52,6 +53,14 @@ public:
     int CheckNumberOfServer();
     void creatPoll();
 
+    void creatPoll2();
+    void pollLoop(int ep, std::map<int, Connection*>& connections);
+    int handleErrorEvent(int ep, int fd, std::map<int, Connection*>& connections);
+    int handleWriteEvent(int ep, int fd, std::map<int, Connection*>& connections);
+    int handleReadEvent(int ep, int fd, std::map<int, Connection*>& connections);
+    void handleNewConnection(int ep, int server_fd, server* tmp, std::map<int, Connection*>& connections);
+    void addSocketsToEpoll(int ep);
+    int createEpollInstance();
     
     server *getServer() const;
     int get_nembre_of_server() const;
@@ -73,3 +82,4 @@ void CheckKey(const std::string& key);
 bool hasSpace(const std::string& str);
 bool startsWithSlash(const std::string& str);
 std::string intToString(int num);
+void deleteTimedoutSockets(std::map<int, Connection* > &connections, int ep);

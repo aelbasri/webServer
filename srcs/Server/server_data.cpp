@@ -6,7 +6,7 @@
 /*   By: zel-khad <zel-khad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/22 10:58:24 by zel-khad          #+#    #+#             */
-/*   Updated: 2025/02/25 11:02:49 by zel-khad         ###   ########.fr       */
+/*   Updated: 2025/03/13 00:56:20 by aelbasri         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ server::server(){
     _location = nullptr;
     _indixL = 0;
     _max_body_size = 1048576;
-    _host = "127.0.0.0";
+    _host = "127.0.0.1";
 }
 
 server::~server() {
@@ -371,37 +371,33 @@ int server::run()
         hints.ai_socktype = SOCK_STREAM;
 
         if ((addI = getaddrinfo(_host.c_str(), _sock[y].first.c_str(), &hints, &res)) != 0)
-        {
-            std::cerr << gai_strerror(addI) << std::endl;
-            return -1;
-        }
+		throw std::runtime_error("getaddrinfo() failed");
 
         for(p = res; p; p = p->ai_next)
         {
             if ((_sock[y].second = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-                continue;
+            {
+                freeaddrinfo(res); 
+                throw std::runtime_error("socket() failed");
+            }
             if ((setsockopt(_sock[y].second, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))) == -1)
             {
-                perror("setsockopt");
-                return (-1);
+                freeaddrinfo(res); 
+                throw std::runtime_error("setsockopt() failed");
             }
             if (bind(_sock[y].second, res->ai_addr, res->ai_addrlen) == -1)
-                continue;
+            {
+                freeaddrinfo(res); 
+                throw std::runtime_error("bind() failed");
+            }
             break;
         }
 
         freeaddrinfo(res); 
         if (!p)
-        {
-            perror("bind failed");
-            return (-1);
-        }
-
+            throw std::runtime_error("bind() failed");
         if (listen(_sock[y].second, 10) == -1)
-        {
-            perror("listen() failed");
-            return (-1);
-        }
+            throw std::runtime_error("listen() failed");
         std::string logMessage = "[SERVER LISTENING ON: " + _host + ":" + _sock[y].first + "]";
         webServLog(logMessage, INFO);
     }

@@ -1,5 +1,6 @@
 #include "Request.hpp"
 #include "Response.hpp"
+#include "server_data.hpp"
 
 std::map<std::string, std::string> initializeReverseMimeTypes() {
     std::map<std::string, std::string> reverseMimeTypes;
@@ -26,6 +27,45 @@ std::string getExtension(const std::string& contentType) {
 }
 
 
+std::string generateUniqueFilename(const std::string& contentType = "") {
+    // Get current timestamp
+    time_t rawtime;
+    struct tm* timeinfo;
+    char buffer[80];
+    
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    
+    // Format timestamp: YYYYMMDD_HHMMSS
+    strftime(buffer, 80, "%Y%m%d_%H%M%S", timeinfo);
+    std::string timestamp(buffer);
+    
+    // Generate random string (6 characters)
+    const std::string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    std::string randomStr;
+    
+    // Initialize random seed
+    srand(static_cast<unsigned int>(time(NULL) ^ clock()));
+    
+    for (int i = 0; i < 6; ++i) {
+        int index = rand() % chars.size();
+        randomStr += chars[index];
+    }
+    
+    // Build filename: upload_YYYYMMDD_HHMMSS_[random]
+    std::string filename = std::string(UPLOAD_DIRECTORY) + "upload_" + timestamp + "_" + randomStr;
+    
+    // Add appropriate extension based on Content-Type if provided
+    if (!contentType.empty()) {
+        filename += getExtension(contentType);
+    } else {
+        // No content type provided, use generic extension
+        filename += ".bin";
+    }
+    
+    return filename;
+}
+
 std::string Request::getRequestTarget(void) const
 {
     return(requestTarget);
@@ -37,13 +77,6 @@ std::string Request::getMethod(void) const
 std::string Request::getHttpVersion(void) const
 {
     return (httpVersion);
-}
-
-std::string generateFilePath() {
-    static int counter = 0;
-    std::ostringstream oss;
-    oss << UPLOAD_DIRECTORY << "file_" << counter++;
-    return oss.str();
 }
 
 bool isWhiteSpace(char c)
@@ -375,11 +408,12 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         case CONTLEN :
             toBeConsumed = std::min(bytesRec - i, contentLength - consumed);      
             if (writeInPipe == true)
+            {
                 write(fd ,buffer + i, toBeConsumed);
+            }
             else if (!contentFile.is_open()) 
             {
-                _contentFile = generateFilePath();
-                _contentFile += getExtension(getHeader("Content-Type"));
+                _contentFile = generateUniqueFilename(getHeader("Content-Type"));
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     throw server::InternalServerError();
@@ -399,8 +433,7 @@ void Request::parseBody(char *buffer, long &i, long bytesRec)
         case CHUNK_HEADER:
             if (writeInPipe == false && !contentFile.is_open())
             {
-                _contentFile = generateFilePath();
-                _contentFile += getExtension(getHeader("Content-Type"));
+                _contentFile = generateUniqueFilename(getHeader("Content-Type"));
                 contentFile.open(_contentFile.c_str(), std::ios::binary);
                 if (!contentFile.is_open())
                     throw server::InternalServerError();

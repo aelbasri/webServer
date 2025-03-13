@@ -17,6 +17,19 @@ document.addEventListener('DOMContentLoaded', function() {
     member.addEventListener('mouseout', resetAvatar);
   });
   
+  // Update the file name display when files are selected
+document.getElementById('file-input').addEventListener('change', function() {
+  const fileNameDisplay = document.getElementById('file-name');
+  if (this.files.length > 0) {
+    if (this.files.length === 1) {
+      fileNameDisplay.textContent = this.files[0].name;
+    } else {
+      fileNameDisplay.textContent = `${this.files.length} files selected`;
+    }
+  } else {
+    fileNameDisplay.textContent = 'No file selected';
+  }
+});
   // Add click effect to all social buttons (GitHub and LinkedIn)
   const socialButtons = document.querySelectorAll('.social-btn');
   socialButtons.forEach(button => {
@@ -224,49 +237,102 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         });
     }
-
-  function testPostMethod() {
-    const url = document.getElementById('post-url').value;
-    const data = document.getElementById('post-data').value;
-    const resultBox = document.getElementById('post-result');
-    
-    resultBox.innerHTML = '<p>Sending POST request...</p>';
-    resultBox.classList.add('active');
-    
-    // Send the actual POST request using fetch
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json', // Adjust the content type as needed
-        },
-        body: data, // Send data directly, no need to stringify twice
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.text(); // Parse the response as text
-    })
-    .then(responseData => {
-        // Display the successful response
-        resultBox.innerHTML = `
-            <p><strong>Status:</strong> 200 OK</p>
-            <p><strong>URL:</strong> ${url}</p>
-            <p><strong>Data sent:</strong></p>
-            <pre>${data || '(empty)'}</pre>
-            <p><strong>Response:</strong></p>
-            <pre>${responseData}</pre>
-        `;
-    })
-    .catch(error => {
-        // Handle errors (e.g., network issues, invalid URL, etc.)
-        resultBox.innerHTML = `
-            <p><strong>Error:</strong> ${error.message}</p>
-            <p><strong>URL:</strong> ${url}</p>
-            <p><strong>Data sent:</strong></p>
-            <pre>${data || '(empty)'}</pre>
-        `;
-    });
+    function testPostMethod() {
+      const url = document.getElementById('post-url').value;
+      const data = document.getElementById('post-data').value;
+      const fileInput = document.getElementById('file-input');
+      const resultBox = document.getElementById('post-result');
+      
+      resultBox.innerHTML = '<p>Preparing request...</p>';
+      resultBox.classList.add('active');
+      
+      // Check if files are selected
+      if (fileInput && fileInput.files.length > 0) {
+          // File upload approach with FormData
+          const formData = new FormData();
+          
+          // Add the JSON data if provided
+          if (data) {
+              formData.append('json', data);
+          }
+          
+          // Add files
+          for (let i = 0; i < fileInput.files.length; i++) {
+              formData.append('file', fileInput.files[i]);
+          }
+          
+          resultBox.innerHTML = '<p>Uploading file(s) and sending POST request...</p>';
+          
+          // Send with FormData (multipart/form-data)
+          fetch(url, {
+              method: 'POST',
+              // No Content-Type header - browser sets it automatically with boundary
+              body: formData
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.text();
+          })
+          .then(responseData => {
+              const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+              resultBox.innerHTML = `
+                  <p><strong>Status:</strong> 200 OK</p>
+                  <p><strong>URL:</strong> ${url}</p>
+                  <p><strong>Files:</strong> ${fileNames}</p>
+                  <p><strong>JSON data:</strong></p>
+                  <pre>${data || '(empty)'}</pre>
+                  <p><strong>Response:</strong></p>
+                  <pre>${responseData}</pre>
+              `;
+          })
+          .catch(error => {
+              const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+              resultBox.innerHTML = `
+                  <p><strong>Error:</strong> ${error.message}</p>
+                  <p><strong>URL:</strong> ${url}</p>
+                  <p><strong>Files:</strong> ${fileNames}</p>
+                  <p><strong>JSON data:</strong></p>
+                  <pre>${data || '(empty)'}</pre>
+              `;
+          });
+      } else {
+          // Original JSON-only approach
+          resultBox.innerHTML = '<p>Sending POST request...</p>';
+          
+          fetch(url, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: data, // Send data directly as in your original function
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.text();
+          })
+          .then(responseData => {
+              resultBox.innerHTML = `
+                  <p><strong>Status:</strong> 200 OK</p>
+                  <p><strong>URL:</strong> ${url}</p>
+                  <p><strong>Data sent:</strong></p>
+                  <pre>${data || '(empty)'}</pre>
+                  <p><strong>Response:</strong></p>
+                  <pre>${responseData}</pre>
+              `;
+          })
+          .catch(error => {
+              resultBox.innerHTML = `
+                  <p><strong>Error:</strong> ${error.message}</p>
+                  <p><strong>URL:</strong> ${url}</p>
+                  <p><strong>Data sent:</strong></p>
+                  <pre>${data || '(empty)'}</pre>
+              `;
+          });
+      }
   }
     function testDeleteMethod() {
       const url = document.getElementById('delete-url').value;
