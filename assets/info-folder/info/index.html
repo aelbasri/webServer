@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webserv Project - 1337 Coding School</title>
+    <link rel="stylesheet" href="styles/info.css">
+</head>
+<body>
+    <header>
+        <h1>Webserv Project</h1>
+        <p>1337 Coding School - Software Engineering</p>
+        <nav>
+            <ul>
+                <li><a href="/home/">Home</a></li>
+                <li><a href="/welcome/" class="active">Welcome</a></li>
+                <li><a href="/info/">Info</a></li>
+                <!-- <li><a href="/admin/">Admin</a></li> -->
+            </ul>
+        </nav>
+    </header>
+
+    <section id="introduction">
+        <h2>Introduction</h2>
+        <p>
+            The <strong>Hypertext Transfer Protocol (HTTP)</strong> is the foundation of data communication for the World Wide Web. 
+            At <strong>1337 Coding School</strong>, the <strong>Webserv project</strong> challenges students to build their own HTTP server from scratch using <strong>C++</strong>. 
+            This project is a deep dive into networking, socket programming, and web server architecture.
+        </p>
+    </section>
+
+    <section id="about-1337">
+        <h2>About 1337 Coding School</h2>
+        <p>
+            1337 is a unique coding school that focuses on peer-to-peer learning and project-based education. 
+            Located in Morocco, it is part of the <strong>42 Network</strong>, which includes campuses worldwide. 
+            The curriculum emphasizes practical skills, creativity, and problem-solving.
+        </p>
+    </section>
+
+    <section id="project-details">
+        <h2>Webserv Project Details</h2>
+        <p>
+            The goal of the <strong>Webserv project</strong> is to create a fully functional HTTP server that can handle requests from web browsers. 
+            The server must support features like:
+        </p>
+        <ul>
+            <li>Handling HTTP methods: <strong>GET</strong>, <strong>POST</strong>, and <strong>DELETE</strong>.</li>
+            <li>Serving static files and handling dynamic content via <strong>CGI</strong>.</li>
+            <li>Managing multiple client connections using <strong>poll()</strong>, <strong>select()</strong>, or <strong>epoll()</strong>.</li>
+            <li>Parsing a configuration file to customize server behavior.</li>
+        </ul>
+    </section>
+
+    <section id="requirements">
+        <h2>Project Requirements</h2>
+        <p>
+            The project has strict requirements to ensure robustness and performance:
+        </p>
+        <ul>
+            <li>The server must be <strong>non-blocking</strong> and handle multiple clients efficiently.</li>
+            <li>It must support <strong>file uploads</strong> and <strong>error pages</strong>.</li>
+            <li>The server should be compatible with modern web browsers.</li>
+            <li>Stress testing is required to ensure the server remains available under heavy load.</li>
+        </ul>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 1337 Coding School - Webserv Project</p>
+    </footer>
+
+    <script src="scripts/info.js"></script>
+</body>
+</html>
