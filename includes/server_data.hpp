@@ -65,6 +65,8 @@ private:
     //session managment
     std::vector<std::string> _UserTokens;
 
+    size_t _numberOfCGI;
+
 public:
     void new_location();
     void Set_number_of_location(int _number_of_location);
@@ -79,6 +81,8 @@ public:
     void setAddI(int newAddI);\
     void SetCgi(std::string __cgi);
     void SetUserToken(std::string __UserToken);
+    void incrementNumberOfRunningCGI();
+    void decrementNumberOfRunningCGI();
     // void SetUserToken(std::string __UserToken);
 
 
@@ -90,6 +94,7 @@ public:
     //  std::vector<std::string> Get_port() { retru};
     long long Get_max_body_size();
     std::string GetCgi();
+    size_t getNumberOfRunningCGI() const;
 
     std::vector<std::pair<std::string, int> >  getSock() ;
     struct addrinfo &getHints() ;

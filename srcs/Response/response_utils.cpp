@@ -257,6 +257,12 @@ bool isTokenExist(const std::vector< std::string>& userTokens, const std::string
 void handleCGI2(server *serv, Response &response, Request &request) {
     (void)serv;
     if (response.getCGI() == nullptr) {
+        if (serv->getNumberOfRunningCGI() > 5)
+        {
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [503] [Service Unavailable] [Too many CGIs]";
+            webServLog(logMessage, ERROR);
+            return (setHttpResponse(503, "Service Unavailable", response, serv));
+        }
         try {
             CGI *cgi = new CGI();
             response.setCGI(cgi);
@@ -264,10 +270,14 @@ void handleCGI2(server *serv, Response &response, Request &request) {
             webServLog("Failed to allocate memory for CGI object", ERROR);
             return (setHttpResponse(500, "Internal Server Error", response, serv));
         }
+        serv->incrementNumberOfRunningCGI();
         response.setProgress(CGI_HOLD);
     }
     response.getCGI()->RunCgi(serv, response, request);
+    if (response.getCGI()->getCGIstatus() == CGI_DONE)
+        serv->decrementNumberOfRunningCGI();
 }
+
 
 bool isCgiPath(const std::string& requestTarget) {
     if (requestTarget.find(".py") != std::string::npos ||

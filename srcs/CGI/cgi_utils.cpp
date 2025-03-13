@@ -1,4 +1,5 @@
 #include "cgi_data.hpp"
+#include "Conf.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include <unistd.h>
@@ -112,6 +113,7 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
         args.push_back(NULL);
 
         execve(args[0], const_cast<char* const*>(&args[0]), &envp[0]);
+        std::cerr << "+++++++++++++++== FAILEDAT" << std::endl;
 
         exit(EXIT_FAILURE);
     }
@@ -144,6 +146,7 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
     {
         std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [404] [Not Found] [CGI script not found or not executable]";
         webServLog(logMessage, ERROR);
+        _status = CGI_DONE;
         return (setHttpResponse(404, "Not Found", response, serv));
     }
     
@@ -156,6 +159,7 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
             close(stdin_pipe[1]);
             std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [403] [Forbidden] [User not logged in]";
             webServLog(logMessage, WARNING);
+            _status = CGI_DONE;
             return (setHttpResponse(403, "Forbidden", response, serv));
         }
     }
@@ -164,6 +168,7 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
     interpreter = getInterpreter(scriptPath);
     if (interpreter.empty())
     {
+        _status = CGI_DONE;
         return (setHttpResponse(404, "Not Found", response, serv));
     }
     
@@ -175,6 +180,7 @@ void CGI::setupCGI(server *serv, Response &response, Request &request)
             std::string logMessage = "[" + request.getMethod() + "] [" + requestTarget + "] [500] [Internal Server Error] [Failed to create pipes]";
             webServLog(logMessage, ERROR);
             // response.setProgress(BUILD_RESPONSE);
+            closeAllPipes();
             throw server::InternalServerError();
         }
     }
@@ -225,10 +231,22 @@ bool CGI::processTimedOut() const
 
 void CGI::closeAllPipes()
 {
-    close(stdin_pipe[0]);
-    close(stdin_pipe[1]);
-    close(stdout_pipe[0]);
-    close(stdout_pipe[1]);
+    if (stdin_pipe[0] >= 0) {
+        close(stdin_pipe[0]);
+        stdin_pipe[0] = -1;
+    }
+    if (stdin_pipe[1] >= 0) {
+        close(stdin_pipe[1]);
+        stdin_pipe[1] = -1;
+    }
+    if (stdout_pipe[0] >= 0) {
+        close(stdout_pipe[0]);
+        stdout_pipe[0] = -1;
+    }
+    if (stdout_pipe[1] >= 0) {
+        close(stdout_pipe[1]);
+        stdout_pipe[1] = -1;
+    }
 }
 
 void CGI::RunCgi(server *serv, Response &response, Request &request)
@@ -262,40 +280,93 @@ void CGI::RunCgi(server *serv, Response &response, Request &request)
         std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [504] [Gateway Timeout] [CGI script timed out]";
         webServLog(logMessage, ERROR);
         closeAllPipes();
+        _status = CGI_DONE;
         return setHttpResponse(504, "Gateway Timeout", response, serv);
     }
 
-    char buffer[1024];
-    ssize_t bytesRead = read(stdout_pipe[0], buffer, 1024);
-    if (bytesRead > 0)
-        _response.write(buffer, bytesRead);
+    // Check if pipe is readable to avoid blocking
+    fd_set readSet;
+    FD_ZERO(&readSet);
+    FD_SET(stdout_pipe[0], &readSet);
 
-    int status;
-    int ret = waitpid(_pid, &status, WNOHANG);
-    if (ret < 0) {
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to wait for CGI script]";
-        webServLog(logMessage, ERROR);
-        closeAllPipes();
-        return setHttpResponse(500, "Internal Server Error", response, serv);
-    }
-    else if (ret == _pid) {
-        if (WIFEXITED(status)) {
-            if (WEXITSTATUS(status) == 0) {
-                processSuccessfulResponse(serv, response, request);
-                closeAllPipes();
-            } else {
-                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited with non-zero status]";
-                webServLog(logMessage, ERROR);
-                closeAllPipes();
-                return setHttpResponse(500, "Internal Server Error", response, serv);
-            }
-        } else {
-            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited abnormally]";
-            webServLog(logMessage, ERROR);
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    int selectResult = select(stdout_pipe[0] + 1, &readSet, NULL, NULL, &timeout);
+    if (selectResult > 0 && FD_ISSET(stdout_pipe[0], &readSet)) {
+        char buffer[1024];
+        ssize_t bytesRead = read(stdout_pipe[0], buffer, 1024);
+        // Process bytesRead as before
+        if (bytesRead > 0)
+            _response.write(buffer, bytesRead);
+
+        int status;
+        int ret = waitpid(_pid, &status, WNOHANG);
+        if (ret < 0) {
+            _status = CGI_DONE;
             closeAllPipes();
+            /*serv->decrementNumberOfRunningCGI();*/
+            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to wait for CGI script]";
+            webServLog(logMessage, ERROR);
+            _status = CGI_DONE;
             return setHttpResponse(500, "Internal Server Error", response, serv);
         }
+        else if (ret == _pid) {
+            _status = CGI_DONE;
+            closeAllPipes();
+            /*serv->decrementNumberOfRunningCGI();*/
+            if (WIFEXITED(status)) {
+                if (WEXITSTATUS(status) == 0) {
+                    processSuccessfulResponse(serv, response, request);
+                } else {
+                    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited with non-zero status]";
+                    webServLog(logMessage, ERROR);
+                    _status = CGI_DONE;
+                    return setHttpResponse(500, "Internal Server Error", response, serv);
+                }
+            } else {
+                std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited abnormally]";
+                webServLog(logMessage, ERROR);
+                _status = CGI_DONE;
+                return setHttpResponse(500, "Internal Server Error", response, serv);
+            }
+        }
     }
+
+    /*char buffer[1024];*/
+    /*ssize_t bytesRead = read(stdout_pipe[0], buffer, 1024);*/
+    /*if (bytesRead > 0)*/
+    /*    _response.write(buffer, bytesRead);*/
+    /**/
+    /*int status;*/
+    /*int ret = waitpid(_pid, &status, WNOHANG);*/
+    /*if (ret < 0) {*/
+    /*    _status = CGI_DONE;*/
+    /*    closeAllPipes();*/
+    /*    serv->decrementNumberOfRunningCGI();*/
+    /*    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to wait for CGI script]";*/
+    /*    webServLog(logMessage, ERROR);*/
+    /*    return setHttpResponse(500, "Internal Server Error", response, serv);*/
+    /*}*/
+    /*else if (ret == _pid) {*/
+    /*    _status = CGI_DONE;*/
+    /*    closeAllPipes();*/
+    /*    serv->decrementNumberOfRunningCGI();*/
+    /*    if (WIFEXITED(status)) {*/
+    /*        if (WEXITSTATUS(status) == 0) {*/
+    /*            processSuccessfulResponse(serv, response, request);*/
+    /*        } else {*/
+    /*            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited with non-zero status]";*/
+    /*            webServLog(logMessage, ERROR);*/
+    /*            return setHttpResponse(500, "Internal Server Error", response, serv);*/
+    /*        }*/
+    /*    } else {*/
+    /*        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited abnormally]";*/
+    /*        webServLog(logMessage, ERROR);*/
+    /*        return setHttpResponse(500, "Internal Server Error", response, serv);*/
+    /*    }*/
+    /*}*/
     // else, CGI script is still running
 }
 

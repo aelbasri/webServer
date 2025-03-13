@@ -5,6 +5,7 @@
 // CGI::CGI(){}
 
 CGI::CGI(){
+    signal(SIGPIPE, SIG_IGN);
     _status = CGI_SETUP;
     stdin_pipe[0] = -1;
     stdin_pipe[1] = -1;
@@ -16,6 +17,8 @@ CGI::CGI(){
     pathInfo = "";
     interpreter = "";
 };
+
+enum CGIStatus CGI::getCGIstatus() const { return _status; };
 
 void CGI::setScriptPath(std::string __scriptPath){
     scriptPath = __scriptPath;
@@ -30,7 +33,15 @@ bool CGI::pipesNotSet() const
     return (stdin_pipe[0] == -1 && stdin_pipe[1] == -1 && stdout_pipe[0] == -1 && stdout_pipe[1] == -1);
 }
 
-CGI::~CGI(){}
+CGI::~CGI()
+{
+    closeAllPipes();
+    // Kill any remaining process
+    if (_pid > 0) {
+        kill(_pid, SIGKILL);
+        _pid = -1;
+    }
+}
 
 bool isFileValid(const std::string& filePath) {
     return (access(filePath.c_str(), F_OK) == 0);

@@ -33,6 +33,7 @@ server& server::operator=(const server &server)
     res = server.res;
     p = server.p;
     addI = server.addI;
+    _numberOfCGI = server._numberOfCGI;
     return *this;
 }
 
@@ -44,6 +45,7 @@ server::server(){
     _indixL = 0;
     _max_body_size = 1048576;
     _host = "127.0.0.1";
+    _numberOfCGI = 0;
 }
 
 server::~server() {
@@ -419,3 +421,17 @@ int server::run()
     return (0);
 }
 
+void server::incrementNumberOfRunningCGI()
+{
+    _numberOfCGI++;
+}
+
+void server::decrementNumberOfRunningCGI()
+{
+    _numberOfCGI--;
+}
+
+size_t server::getNumberOfRunningCGI() const
+{
+    return (_numberOfCGI);
+}

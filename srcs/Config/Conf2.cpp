@@ -7,6 +7,71 @@
 #include "colors.hpp"
 #include "log.hpp"
 
+bool safelyAddToEpoll(int epollFd, int fd, uint32_t events) {
+    struct epoll_event ev;
+    ev.data.fd = fd;
+    ev.events = events;
+    
+    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        std::string errorMsg = "epoll_ctl ADD failed for fd " + intToString(fd) + 
+                              ": " + std::string(strerror(errno));
+        webServLog(errorMsg, ERROR);
+        return false;
+    }
+    return true;
+}
+
+bool safelyModifyInEpoll(int epollFd, int fd, uint32_t events) {
+    struct epoll_event ev;
+    ev.data.fd = fd;
+    ev.events = events;
+    
+    if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        if (errno == ENOENT) {
+            // If descriptor is not found, try to add it instead
+            return safelyAddToEpoll(epollFd, fd, events);
+        } else {
+            std::string errorMsg = "epoll_ctl MOD failed for fd " + intToString(fd) + 
+                                  ": " + std::string(strerror(errno));
+            webServLog(errorMsg, ERROR);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool safelyRemoveFromEpoll(int epollFd, int fd) {
+    if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+        if (errno != EBADF && errno != ENOENT) {
+            std::string errorMsg = "epoll_ctl DEL failed for fd " + intToString(fd) + 
+                                  ": " + std::string(strerror(errno));
+            webServLog(errorMsg, ERROR);
+            return false;
+        }
+        // EBADF (bad file descriptor) or ENOENT (not found) are acceptable when removing
+    }
+    return true;
+}
+
+bool safelyCloseFd(int fd) {
+    if (fd >= 0) {
+        if (close(fd) == -1) {
+            std::string errorMsg = "close failed for fd " + intToString(fd) + 
+                                  ": " + std::string(strerror(errno));
+            webServLog(errorMsg, ERROR);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool KeyExists(std::map<int, Connection*> connections, int key)
+{
+    std::map<int, Connection*>::iterator it = connections.find(key);
+    return (it != connections.end());
+}
+
 // --------------------
 int Config::createEpollInstance()
 {
@@ -24,8 +89,9 @@ void Config::addSocketsToEpoll(int ep)
             struct epoll_event ev;
             ev.data.fd = _server[i].getSock()[y].second;
             ev.events = EPOLLIN;
-            if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock()[y].second, &ev) == -1) {
-                throw std::runtime_error("epoll_ctl failed");
+            if (!safelyAddToEpoll(ep, _server[i].getSock()[y].second, EPOLLIN)) {
+                safelyCloseFd(_server[i].getSock()[y].second);
+                throw std::runtime_error("epoll_ctl failed 1");
             }
         }
     }
@@ -51,8 +117,9 @@ void Config::handleNewConnection(int ep, int server_fd, server* tmp, std::map<in
     ev.data.fd = new_fd;
     ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
 
-    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1) {
-        throw std::runtime_error("epoll_ctl failed");
+    if (!safelyAddToEpoll(ep, new_fd, EPOLLIN | EPOLLHUP | EPOLLERR)) {
+        safelyCloseFd(new_fd);
+        throw std::runtime_error("epoll_ctl failed 1");
     }
 
     if (fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
@@ -66,9 +133,12 @@ int Config::handleReadEvent(int ep, int fd, std::map<int, Connection*>& connecti
     if (connections[fd]->sockRead() == -1) {
         delete connections[fd];
         connections.erase(fd);
-        if (epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL) == -1 && errno != EFAULT)
-            throw std::runtime_error("epoll_ctl failed");
-        close(fd);
+        if (!safelyRemoveFromEpoll(ep, fd))
+        {
+            safelyCloseFd(fd);
+            throw std::runtime_error("epoll_ctl failed 1");
+        }
+        safelyCloseFd(fd);
         std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
         webServLog(logMessage, INFO);
         return (-1);
@@ -78,9 +148,12 @@ int Config::handleReadEvent(int ep, int fd, std::map<int, Connection*>& connecti
         struct epoll_event ev;
         ev.data.fd = fd;
         ev.events = EPOLLOUT | EPOLLIN | EPOLLHUP | EPOLLERR;
-        if (epoll_ctl(ep, EPOLL_CTL_MOD, fd, &ev) == -1) {
-            throw std::runtime_error("epoll_ctl failed");
+        if (!safelyModifyInEpoll(ep, fd, EPOLLOUT | EPOLLIN | EPOLLHUP | EPOLLERR))
+        {
+            safelyCloseFd(fd);
+            throw std::runtime_error("epoll_ctl failed 1");
         }
+
     }
     return (0);
 }
@@ -100,17 +173,23 @@ int Config::handleWriteEvent(int ep, int fd, std::map<int, Connection*>& connect
                 std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(fd) + "]";
                 webServLog(logMessage, INFO);
             } catch (const std::bad_alloc& e) {
-                if (epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL) == -1 && errno != EFAULT)
-                    std::runtime_error("epoll_ctl failed");
-                close(fd);
+                if (!safelyRemoveFromEpoll(ep, fd))
+                {
+                    safelyCloseFd(fd);
+                    throw std::runtime_error("epoll_ctl failed 1");
+                }
+                safelyCloseFd(fd);
                 std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]" + " [Memory allocation failed]";
                 webServLog(logMessage, ERROR);
                 return (-1);
             }
         } else {
-            if (epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL) == -1 && errno != EFAULT)
-                throw std::runtime_error("epoll_ctl failed");
-            close(fd);
+            if (!safelyRemoveFromEpoll(ep, fd))
+            {
+                safelyCloseFd(fd);
+                throw std::runtime_error("epoll_ctl failed 1");
+            }
+            safelyCloseFd(fd);
             std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
             webServLog(logMessage, INFO);
         }
@@ -122,12 +201,26 @@ int Config::handleErrorEvent(int ep, int fd, std::map<int, Connection*>& connect
 {
     delete connections[fd];
     connections.erase(fd);
-    if (epoll_ctl(ep, EPOLL_CTL_DEL, fd, NULL) == -1 && errno != EFAULT)
-        throw std::runtime_error("epoll_ctl failed");
-    close(fd);
+    if (!safelyRemoveFromEpoll(ep, fd))
+    {
+        safelyCloseFd(fd);
+        throw std::runtime_error("epoll_ctl failed 1");
+    }
+    safelyCloseFd(fd);
     std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
     webServLog(logMessage, INFO);
     return (0);
+}
+
+void cleanupZombieProcesses() {
+    int status;
+    pid_t result;
+    
+    // Non-blocking wait for any child process
+    while ((result = waitpid(-1, &status, WNOHANG)) > 0) {
+        std::string logMessage = "[ZOMBIE PROCESS CLEANED] [PID: " + intToString(result) + "]";
+        webServLog(logMessage, INFO);
+    }
 }
 
 void Config::pollLoop(int ep, std::map<int, Connection*>& connections)
@@ -135,6 +228,7 @@ void Config::pollLoop(int ep, std::map<int, Connection*>& connections)
     struct epoll_event evlist[MAX_EVENT];
 
     while (1) {
+        cleanupZombieProcesses();
         deleteTimedoutSockets(connections, ep);
         int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
         if (nbrReady < 0) {
@@ -161,17 +255,23 @@ void Config::pollLoop(int ep, std::map<int, Connection*>& connections)
                     handleNewConnection(ep, server_fd, tmp, connections);
                     continue;
                 } else {
+                    if (!KeyExists(connections, fd))
+                        continue;
                     if (handleReadEvent(ep, fd, connections) == -1)
                         continue;
                 }
             }
 
             if (evlist[i].events & EPOLLOUT) {
+                if (!KeyExists(connections, fd))
+                    continue;
                 if (handleWriteEvent(ep, fd, connections) == -1)
                     continue;
             }
 
             if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR) {
+                if (!KeyExists(connections, fd))
+                    continue;
                 handleErrorEvent(ep, fd, connections);
             }
         }

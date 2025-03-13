@@ -19,6 +19,7 @@ class Connection
     public:
         Connection() : _server(nullptr), _readyToWrite(false) {};
         Connection(int sock, server *serv);
+        ~Connection(){};
         int sockRead();
         int getSocket() const ;
         server *getServer() ;

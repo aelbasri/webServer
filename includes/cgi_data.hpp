@@ -50,6 +50,7 @@ class CGI
         void setScriptPath(std::string __scriptPath);
         void setPathInfo(std::string __pathInfo);
         bool pipesNotSet() const;
+        enum CGIStatus getCGIstatus() const;
 
         void RunCgi(server *serv, Response &response, Request &request);
         void setupCGI(server *serv, Response &response, Request &request);
