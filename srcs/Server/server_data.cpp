@@ -114,6 +114,20 @@ void server::setSock(std::string port,int sock) {
 	}
 }
 
+
+std::string server::GetPort(int sock) {
+	for (size_t i = 0; i < _sock.size(); i++)
+	{
+		std::pair<std::string, int> tmp = _sock[i];
+        if (tmp.second == sock)
+        {
+            return(tmp.first);
+        }
+	}
+    return "";
+}
+
+
 struct addrinfo &server::getHints()  {
     return hints;
 }

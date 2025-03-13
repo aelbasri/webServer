@@ -43,6 +43,35 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
         if (!pathInfo.empty())
             env["PATH_INFO"] = pathInfo;
 
+            // Required CGI variables
+        env["GATEWAY_INTERFACE"] = "CGI/1.1";
+        env["SERVER_PROTOCOL"] = "HTTP/1.1";
+        env["REDIRECT_STATUS"] = "200"; // Required specifically for PHP-CGI to work properly
+
+        // Server information
+        env["SERVER_NAME"] = request.getHeader("Host"); // Or use your server's configured hostname
+        env["SERVER_PORT"] = serv->GetPort(response.getSocket());
+        env["SERVER_SOFTWARE"] = "WebServer/1.0"; // Replace with your server name/version
+
+        // Script information using your variables
+        env["SCRIPT_FILENAME"] = scriptPath;
+        // Extract SCRIPT_NAME from request.getRequestTarget() by removing PATH_INFO
+        std::string scriptName = request.getRequestTarget();
+        if (!pathInfo.empty()) {
+            size_t pos = scriptName.find(pathInfo);
+            if (pos != std::string::npos) {
+                scriptName = scriptName.substr(0, pos);
+            }
+        }
+        env["SCRIPT_NAME"] = scriptName;
+        env["DOCUMENT_ROOT"] = serv->GetCgi();
+        env["REQUEST_URI"] = request.getRequestTarget();
+        env["PHP_SELF"] = scriptName;
+
+        // Client information
+        // env["REMOTE_ADDR"] = clientIp;
+        // env["REMOTE_PORT"] = clientPort;
+
         const std::map<std::string, std::string>& headers = request.getHeaders();
         std::map<std::string, std::string>::const_iterator it;
         for (it = headers.begin(); it != headers.end(); ++it) {
@@ -101,6 +130,7 @@ void CGI::forkChild(server *serv, Response &response, Request &request)
 
 void CGI::setupCGI(server *serv, Response &response, Request &request)
 {
+ 
     // Check if the CGI script exists
     std::string requestTarget = request.getRequestTarget();
     std::string _scriptPath = serv->GetCgi();

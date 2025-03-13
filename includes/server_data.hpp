@@ -98,6 +98,7 @@ public:
     struct addrinfo* &getP();
     int getAddI();
     std::vector<std::string> GetUserToken() const ;
+    std::string GetPort(int sock);
 
     // std::vector<std::string> GetUserToken() const;
 

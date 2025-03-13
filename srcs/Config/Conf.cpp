@@ -230,6 +230,8 @@ void Config::creatPoll()
                 }
                 else
                 {
+                    if (!keyExist(connections, _fd))
+                        continue;
                     if (connections[_fd]->sockRead() == -1)
                     {
                         close(_fd);
@@ -256,6 +258,8 @@ void Config::creatPoll()
             }
             if (evlist[i].events & EPOLLOUT)
             {
+                if (!keyExist(connections, _fd))
+                        continue;
                 if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
                 {
                     bool keepAlive = connections[_fd]->keepAlive();
@@ -289,6 +293,8 @@ void Config::creatPoll()
             }
             if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
             {
+                if (!keyExist(connections, _fd))
+                        continue;
                 close(_fd);
                 delete connections[_fd];
                 connections.erase(_fd);

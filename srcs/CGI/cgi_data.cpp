@@ -42,9 +42,8 @@ std::string getInterpreter(const std::string& filePath) {
 
     interpreterMap[".py"] = "/usr/bin/python3"; 
     interpreterMap[".sh"] = "/bin/bash";       
-    interpreterMap[".php"] = "/usr/bin/php";     
+    interpreterMap[".php"] = "/usr/bin/php-cgi";     
     interpreterMap[".pl"] = "/usr/bin/perl";     
-    interpreterMap[".rb"] = "/usr/bin/ruby";     
 
     std::string::size_type dotPos = filePath.find_last_of(".");
     if (dotPos == std::string::npos) {
@@ -97,11 +96,17 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
     
     size_t pyPos = requestTarget.find(".py");
     size_t phpPos = requestTarget.find(".php");
-    
+    size_t shpPos = requestTarget.find(".sh");
+    size_t plpPos = requestTarget.find(".pl");
+
     size_t scriptEnd = std::string::npos;
 
     if (pyPos != std::string::npos)
         scriptEnd = pyPos + 3;
+    else if (shpPos != std::string::npos)
+        scriptEnd = shpPos + 3;
+    else if (plpPos != std::string::npos)
+        scriptEnd = plpPos + 3;
     else if (phpPos != std::string::npos) 
         scriptEnd = phpPos + 4;
     
