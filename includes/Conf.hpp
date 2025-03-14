@@ -53,7 +53,6 @@ public:
     int CheckNumberOfServer();
     void creatPoll();
 
-    void creatPoll2();
     void pollLoop(int ep, std::map<int, Connection*>& connections);
     int handleErrorEvent(int ep, int fd, std::map<int, Connection*>& connections);
     int handleWriteEvent(int ep, int fd, std::map<int, Connection*>& connections);

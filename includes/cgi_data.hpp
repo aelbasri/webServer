@@ -60,3 +60,9 @@ class CGI
         void forkChild(server *serv, Response &response, Request &request);
 };
 
+std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requestTarget);
+std::string getInterpreter(const std::string& filePath);
+std::string convertQueryMapToString(const std::map<std::string, std::string>& query);
+std::map<std::string, std::string> extractHeaders(const std::string& output);
+std::string extractBody(const std::string& output);
+

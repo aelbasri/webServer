@@ -43,10 +43,6 @@ CGI::~CGI()
     }
 }
 
-bool isFileValid(const std::string& filePath) {
-    return (access(filePath.c_str(), F_OK) == 0);
-}
-
 std::string getInterpreter(const std::string& filePath) {
     typedef std::map<std::string, std::string> InterpreterMap;
     InterpreterMap interpreterMap;
@@ -143,139 +139,7 @@ std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requ
 }
 
 
-
-
-void setupEnvironment(Request &request, std::map<std::string, std::string> &env, const std::string &pathInfo) {
-    env["REQUEST_METHOD"] = request.getMethod();
-    env["QUERY_STRING"] = convertQueryMapToString(request.getQuery());
-    env["CONTENT_TYPE"] = request.getHeader("Content-Type");
-    env["CONTENT_LENGTH"] = request.getHeader("Content-Length");
-    env["HTTP_COOKIE"] = request.getHeader("Cookie");
-    if (!pathInfo.empty())
-        env["PATH_INFO"] = pathInfo;
-
-    const std::map<std::string, std::string>& headers = request.getHeaders();
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        std::string envVar = "HTTP_" + it->first;
-        
-        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
-            if (*charIt == '-') {
-                *charIt = '_';
-            }
-        }
-        
-        for (std::string::iterator charIt = envVar.begin(); charIt != envVar.end(); ++charIt) {
-            if (*charIt >= 'a' && *charIt <= 'z') {
-                *charIt = *charIt - 32;
-            }
-        }
-        
-        env[envVar] = it->second;
-    }
-}
-
-bool validateScriptPath(server *serv, Response &response, Request &request, int *stdin_pipe, std::string &scriptPath) {
-    if (!isFileValid(scriptPath.c_str())) {
-        close(stdin_pipe[0]);
-        close(stdin_pipe[1]);
-        // response.setProgress(BUILD_RESPONSE);
-        setHttpResponse(404, "Not Found", response, serv);
-        return false;
-    }
-
-    if (request.getRequestTarget() == "/home.py") {
-        if (!isTokenExist(serv->GetUserToken(), request.getHeader("Cookie"))) {
-            close(stdin_pipe[0]);
-            close(stdin_pipe[1]);
-            // response.setProgress(BUILD_RESPONSE);
-            setHttpResponse(403, "Forbidden", response, serv);
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-bool setupPipes(int *stdin_pipe, int *stdout_pipe, int *status_pipe, Response &response, Request &request) {
-    (void)response;
-    if (pipe(stdout_pipe) == -1) {
-        close(stdin_pipe[0]);
-        close(stdin_pipe[1]);
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + 
-                               "] [500] [Internal Server Error] [Failed to create stdout pipe]";
-        webServLog(logMessage, ERROR);
-        // response.setProgress(BUILD_RESPONSE);
-        throw server::InternalServerError();
-        return false;
-    }
-    
-    if (pipe(status_pipe) == -1) {
-        close(stdin_pipe[0]);
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        close(stdout_pipe[1]);
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + 
-                               "] [500] [Internal Server Error] [Failed to create status pipe]";
-        webServLog(logMessage, ERROR);
-        // response.setProgress(BUILD_RESPONSE);
-        throw server::InternalServerError();
-        return false;
-    }
-    
-    return true;
-}
-
-void handleChildProcess(int *stdin_pipe, int *stdout_pipe, int *status_pipe, 
-                          std::map<std::string, std::string> &env, 
-                          const std::string &interpreter, 
-                          const std::string &scriptPath,
-                          Request &request) {
-    close(stdin_pipe[1]);
-    close(stdout_pipe[0]);
-    close(status_pipe[0]);
-    
-    dup2(stdin_pipe[0], STDIN_FILENO);
-    close(stdin_pipe[0]);
-    
-    dup2(stdout_pipe[1], STDOUT_FILENO);
-    close(stdout_pipe[1]);
-    
-    std::vector<std::string> envStrings;
-    std::vector<char*> envp;
-    
-    for (std::map<std::string, std::string>::const_iterator envIt = env.begin(); envIt != env.end(); ++envIt) {
-        std::string envString = envIt->first + "=" + envIt->second;
-        envStrings.push_back(envString);
-    }
-    
-    for (std::vector<std::string>::iterator strIt = envStrings.begin(); strIt != envStrings.end(); ++strIt) {
-        envp.push_back(const_cast<char*>(strIt->c_str()));
-    }
-    envp.push_back(NULL);
-    
-    std::vector<const char*> args;
-    
-    if (!interpreter.empty()) {
-        args.push_back(interpreter.c_str());
-    }
-    args.push_back(scriptPath.c_str());
-    args.push_back(NULL);
-    
-    execve(args[0], const_cast<char* const*>(&args[0]), &envp[0]);
-    
-    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + 
-                           "] [500] [Internal Server Error] [Unsupported script type]";
-    webServLog(logMessage, ERROR);
-    
-    char error_msg = 1;
-    write(status_pipe[1], &error_msg, 1);
-    close(status_pipe[1]);
-
-    std::cerr << "============= irrelevant =============" << std::endl;
-    
-    exit(3);
-}
-
+ 
 void processSuccessfulResponse(server *serv, Response &response, Request &request, 
                                   const std::string &outputStr) {
     std::map<std::string, std::string> headers = extractHeaders(outputStr);
@@ -302,28 +166,3 @@ void processSuccessfulResponse(server *serv, Response &response, Request &reques
     webServLog(logMessage, INFO);
 }
 
-void handleTimeoutError(pid_t pid, Response &response, Request &request) {
-    kill(pid, SIGTERM);
-    
-    struct timeval grace_period;
-    grace_period.tv_sec = 1;
-    grace_period.tv_usec = 0;
-    select(0, NULL, NULL, NULL, &grace_period);
-    
-    int status;
-    if (waitpid(pid, &status, WNOHANG) == 0) {
-        kill(pid, SIGKILL);
-        waitpid(pid, NULL, 0);
-    }
-    
-    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + 
-                           "] [504] [Gateway Timeout] [CGI script timed out]";
-    webServLog(logMessage, ERROR);
-    
-    response.setProgress(BUILD_RESPONSE);
-    response.setStatusCode(504);
-    response.setReasonPhrase("Gateway Timeout");
-    response.setHttpVersion(HTTP_VERSION);
-    response.setTextBody("CGI process exceeded the time limit.");
-    response.setContentLength(strlen("CGI process exceeded the time limit."));
-}

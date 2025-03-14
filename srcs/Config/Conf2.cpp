@@ -28,7 +28,7 @@ bool safelyModifyInEpoll(int epollFd, int fd, uint32_t events) {
     
     if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &ev) == -1) {
         if (errno == ENOENT) {
-            // If descriptor is not found, try to add it instead
+            // If descriptor is not found try to add it instead
             return safelyAddToEpoll(epollFd, fd, events);
         } else {
             std::string errorMsg = "epoll_ctl MOD failed for fd " + intToString(fd) + 
@@ -212,23 +212,11 @@ int Config::handleErrorEvent(int ep, int fd, std::map<int, Connection*>& connect
     return (0);
 }
 
-void cleanupZombieProcesses() {
-    int status;
-    pid_t result;
-    
-    // Non-blocking wait for any child process
-    while ((result = waitpid(-1, &status, WNOHANG)) > 0) {
-        std::string logMessage = "[ZOMBIE PROCESS CLEANED] [PID: " + intToString(result) + "]";
-        webServLog(logMessage, INFO);
-    }
-}
-
 void Config::pollLoop(int ep, std::map<int, Connection*>& connections)
 {
     struct epoll_event evlist[MAX_EVENT];
 
     while (1) {
-        cleanupZombieProcesses();
         deleteTimedoutSockets(connections, ep);
         int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
         if (nbrReady < 0) {
@@ -278,7 +266,7 @@ void Config::pollLoop(int ep, std::map<int, Connection*>& connections)
     }
 }
 
-void Config::creatPoll2() {
+void Config::creatPoll() {
     int ep = createEpollInstance();
     addSocketsToEpoll(ep);
 

@@ -100,7 +100,7 @@ void Response::processPOST(Request &request, location *locationMatch)
     else
     {
         // Unexpected state error
-        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected state]";
+        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Unexpected statefefee]";
         webServLog(logMessage, ERROR);
         throw server::InternalServerError();
     }
@@ -336,8 +336,11 @@ void Response::createResponseStream(std::string &connectionHeader)
         responseStream << "Date: " << getDate() << "\r\n";
         std::map<std::string, std::string>::const_iterator it;
         for (it = _headers.begin(); it != _headers.end(); it++)
-            responseStream << it->first << ": " << it->second << "\r\n";
-        if (connectionHeader == "close")
+        {
+            if (it->first != "Connection")
+                responseStream << it->first << ": " << it->second << "\r\n";
+        }
+        if (_statusCode >= 400 || connectionHeader == "close")
             responseStream << "Connection: close" << "\r\n";
         else
             responseStream << "Connection: keep-alive" << "\r\n"; 

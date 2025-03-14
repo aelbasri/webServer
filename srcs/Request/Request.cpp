@@ -508,6 +508,8 @@ void Request::handle_request(char *buffer)
                 break;
             case HEADER:
                 parseHeader(buffer, offset);
+                if (getState() == DONE && getMethod() == "POST" )
+                    throw badRequest();
                 break;
             case WAIT:
                 flag = 1;

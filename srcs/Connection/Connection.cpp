@@ -27,7 +27,7 @@ void Connection::setStartTime(time_t _start_time) {
 
 bool Connection::keepAlive() const {
     std::string conn = "Connection";
-        return _request.getHeader(conn) != "close";
+        return _request.getHeader(conn) != "close" && _response.getStatusCode() < 400;
 }
 
 ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkFormat)

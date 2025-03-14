@@ -4,11 +4,7 @@
 #include "Response.hpp"
 #include <unistd.h>
 
-std::string ScriptPath_PathInfo(std::string& scriptPath, const std::string& requestTarget);
-std::string getInterpreter(const std::string& filePath);
-std::string convertQueryMapToString(const std::map<std::string, std::string>& query);
-std::map<std::string, std::string> extractHeaders(const std::string& output);
-std::string extractBody(const std::string& output);
+
 
 void CGI::forkChild(server *serv, Response &response, Request &request)
 {
@@ -333,44 +329,8 @@ void CGI::RunCgi(server *serv, Response &response, Request &request)
             }
         }
     }
-
-    /*char buffer[1024];*/
-    /*ssize_t bytesRead = read(stdout_pipe[0], buffer, 1024);*/
-    /*if (bytesRead > 0)*/
-    /*    _response.write(buffer, bytesRead);*/
-    /**/
-    /*int status;*/
-    /*int ret = waitpid(_pid, &status, WNOHANG);*/
-    /*if (ret < 0) {*/
-    /*    _status = CGI_DONE;*/
-    /*    closeAllPipes();*/
-    /*    serv->decrementNumberOfRunningCGI();*/
-    /*    std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [Failed to wait for CGI script]";*/
-    /*    webServLog(logMessage, ERROR);*/
-    /*    return setHttpResponse(500, "Internal Server Error", response, serv);*/
-    /*}*/
-    /*else if (ret == _pid) {*/
-    /*    _status = CGI_DONE;*/
-    /*    closeAllPipes();*/
-    /*    serv->decrementNumberOfRunningCGI();*/
-    /*    if (WIFEXITED(status)) {*/
-    /*        if (WEXITSTATUS(status) == 0) {*/
-    /*            processSuccessfulResponse(serv, response, request);*/
-    /*        } else {*/
-    /*            std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited with non-zero status]";*/
-    /*            webServLog(logMessage, ERROR);*/
-    /*            return setHttpResponse(500, "Internal Server Error", response, serv);*/
-    /*        }*/
-    /*    } else {*/
-    /*        std::string logMessage = "[" + request.getMethod() + "] [" + request.getRequestTarget() + "] [500] [Internal Server Error] [CGI script exited abnormally]";*/
-    /*        webServLog(logMessage, ERROR);*/
-    /*        return setHttpResponse(500, "Internal Server Error", response, serv);*/
-    /*    }*/
-    /*}*/
-    // else, CGI script is still running
 }
 
-// Helper method to process successful CGI response
 void CGI::processSuccessfulResponse(server *serv, Response &response, Request &request)
 {
     std::map<std::string, std::string> headers = extractHeaders(_response.str());

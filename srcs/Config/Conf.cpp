@@ -111,12 +111,6 @@ int Config::CheckNumberOfServer(){
     return words;
 }
 
-bool keyExist(std::map<int, Connection*> connections, int key)
-{
-    std::map<int, Connection*>::iterator it = connections.find(key);
-    return (it != connections.end());
-}
-
 void deleteTimedoutSockets(std::map<int, Connection* > &connections, int ep)
  {
      std::vector<Connection*> toDelete;
@@ -140,174 +134,6 @@ void deleteTimedoutSockets(std::map<int, Connection* > &connections, int ep)
             connections.erase(_fd);
         }
  }
-
-void Config::creatPoll()
-{
-    struct epoll_event evlist[MAX_EVENT];
-
-    int ep = epoll_create(1);
-    if (ep == -1)
-    {
-        // Throw exception
-        throw std::runtime_error("epoll_create failed");
-        return;
-    }
-
-    for(size_t i = 0; i < _nembre_of_server; i++)
-    {
-         for (std::vector<std::string>::size_type y = 0; y < _server[i].getSock().size();  y++){
-
-            struct epoll_event ev;
-            ev.data.fd = _server[i].getSock()[y].second;
-            ev.events = EPOLLIN;
-            if (epoll_ctl(ep, EPOLL_CTL_ADD, _server[i].getSock()[y].second, &ev) == -1)
-            {
-                // Throw exception )
-                throw std::runtime_error("epoll_ctl failed");
-                return;
-            }
-         }
-
-    }
-
-    std::map<int, Connection*> connections;
-
-    while(1)
-    {
-        deleteTimedoutSockets(connections, ep);
-        int nbrReady = epoll_wait(ep, evlist, MAX_EVENT, -1);
-        if(nbrReady < 0)
-        {
-            // Throw exception
-            throw std::runtime_error("epoll_wait failed");
-            // return;
-        }
-        for(int i = 0; i < nbrReady; i++)
-        {
-            int _fd = evlist[i].data.fd;
-            if(evlist[i].events & EPOLLIN)
-            {
-                int server_fd = -1;
-                server *tmp;
-            
-                for(size_t j = 0; j < _nembre_of_server; j++)
-                {
-                    for (std::vector<std::string>::size_type y = 0; y < _server[j].getSock().size();  y++){
-                        if (_fd == _server[j].getSock()[y].second)
-                        {
-                            server_fd = _server[j].getSock()[y].second;
-                            tmp = &_server[j];
-                            break;
-                        }
-                    }
-
-                }
-                if (server_fd != -1)
-                {
-                    int new_fd = accept(server_fd, NULL,  0);
-                    struct timeval timeout;
-                    timeout.tv_sec = 10;
-                    timeout.tv_usec = 0;
-                    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-                    std::string logMessage = "[NEW CONNECTION] [SOCKET_FD: " + intToString(new_fd) + "]";
-                    webServLog(logMessage, INFO);
-
-                    struct epoll_event ev;
-                    ev.data.fd = new_fd;
-                    ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-
-                    if (epoll_ctl(ep, EPOLL_CTL_ADD, new_fd, &ev) == -1)
-                    {
-
-                        // Throw exception
-                        throw std::runtime_error("epoll_ctl failed");
-                        // return;
-                    }
-                    fcntl(new_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-                    connections[new_fd] = new Connection(new_fd, tmp);
-                    connections[new_fd]->setStartTime(time(NULL));
-                }
-                else
-                {
-                    if (!keyExist(connections, _fd))
-                        continue;
-                    if (connections[_fd]->sockRead() == -1)
-                    {
-                        close(_fd);
-                        delete connections[_fd];
-                        connections.erase(_fd);
-                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
-                        webServLog(logMessage, INFO);
-                        continue;
-                    }
-                    if (connections[_fd]->readyToWrite())
-                    {
-                        struct epoll_event ev;
-                        ev.data.fd = _fd;
-                        ev.events = EPOLLOUT |  EPOLLIN  | EPOLLHUP | EPOLLERR;
-                        if (epoll_ctl(ep, EPOLL_CTL_MOD, _fd, &ev) == -1)
-                        {
-                            // Throw exception
-                            throw std::runtime_error("epoll_ctl failed");
-                            // return ;
-                        }
-                    }
-                }
-            }
-            if (evlist[i].events & EPOLLOUT)
-            {
-                if (!keyExist(connections, _fd))
-                        continue;
-                if (connections[_fd]->sockWrite() == -1 || connections[_fd]->toBeClosed())
-                {
-                    bool keepAlive = connections[_fd]->keepAlive();
-                    server *tmp = connections[_fd]->getServer();
-                    delete connections[_fd];
-                    connections.erase(_fd);
-
-                    if (keepAlive)
-                    {
-                        try {
-                            connections[_fd] = new Connection(_fd, tmp);
-                            connections[_fd]->setStartTime(time(NULL));
-                            std::string logMessage = "[KEEP ALIVE] [SOCKET_FD: " + intToString(_fd) + "]";
-                            webServLog(logMessage, INFO);
-                        } catch (const std::bad_alloc &e) {
-                            epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                            close(_fd);
-                            std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]" + " [Memory allocation failed]";
-                            webServLog(logMessage, ERROR);
-                        }
-                    }
-                    else
-                    {
-                        epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                        close(_fd);
-                        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
-                        webServLog(logMessage, INFO);
-                    }
-                    continue;
-                }
-            }
-            if (evlist[i].events & EPOLLHUP || evlist[i].events & EPOLLERR)
-            {
-                if (!keyExist(connections, _fd))
-                        continue;
-                close(_fd);
-                delete connections[_fd];
-                connections.erase(_fd);
-                epoll_ctl(ep, EPOLL_CTL_DEL, _fd, NULL);
-                std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(_fd) + "]";
-                webServLog(logMessage, INFO);
-                continue;
-
-            }
-        }
-    }
-
-}
 
 // Function to recursively remove directory contents
 void removeDirectoryContents(const std::string& path) {
@@ -372,8 +198,7 @@ int Config::SetupServers()
             throw std::runtime_error("Failed to open directory");
     }
     removeAndRecreateDirectory(UPLOAD_DIRECTORY);
-    // creatPoll();
-    creatPoll2();
+    creatPoll();
     return (0);
 }
 
