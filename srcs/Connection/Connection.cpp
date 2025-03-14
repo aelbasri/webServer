@@ -41,9 +41,19 @@ ssize_t sendChunk(const char *buffer, size_t size, int socket, bool sendInChunkF
         std::string chunk = sizeInHex + "\r\n";
         chunk.append(buffer, size);
         chunk.append("\r\n");
-        return send(socket, chunk.c_str(), chunk.size(), MSG_NOSIGNAL);
+        ssize_t bytesSent = send(socket, chunk.c_str(), chunk.size(), MSG_NOSIGNAL);
+        std::cout << "SENT: " << bytesSent << " of: " << chunk.size() << std::endl;
+        std::cout <<  chunk.c_str() << std::endl;
+        std::cout << "=================" << std::endl;
+        return (bytesSent);
+        /*return send(socket, chunk.c_str(), chunk.size(), MSG_NOSIGNAL);*/
     }
-    return send(socket, buffer, size, MSG_NOSIGNAL);
+    ssize_t bytesSent = send(socket, buffer, size, MSG_NOSIGNAL);
+    std::cout << "SENT: " << bytesSent << " of: " << size << std::endl;
+    std::cout <<  buffer << std::endl;
+    std::cout << "=================" << std::endl;
+    return (bytesSent);
+    /*return send(socket, buffer, size, MSG_NOSIGNAL);*/
 }
 
 bool Connection::sendRawBody()
@@ -54,6 +64,9 @@ bool Connection::sendRawBody()
     ssize_t bytesSent = send(_socket, _response.getTextBody().data(), _response.getTextBody().size(), MSG_NOSIGNAL);
     if (bytesSent < 0)
         throw server::InternalServerError();
+    std::cout << "SENT: " << bytesSent << std::endl;
+    std::cout <<  _response.getTextBody().data() << std::endl;
+    std::cout << "=================" << std::endl;
 
     _response.setTextBody(_response.getTextBody().erase(0, bytesSent));
     return _response.getTextBody().empty(); // return true if all data sent
@@ -161,8 +174,8 @@ int Connection::sockRead()
 
 int Connection::sockWrite()
 {
-    if (_response.getProgress() == FINISHED)
-        return (-1);
+    /*if (_response.getProgress() == FINISHED)*/
+    /*    return (-1);*/
     if ((_request.getState() != DONE && _request.getState() != WAIT) || _response.getProgress() == FINISHED)
         return (0);
     if (_response.getProgress() == BUILD_RESPONSE || _response.getProgress() == POST_HOLD || _response.getProgress() == CGI_HOLD)
@@ -185,6 +198,9 @@ int Connection::sockWrite()
         ssize_t bytesSent = send(_socket, _response.getHeaderStream().c_str() + _response.getTotalBytesSent(), _response.getHeaderStream().size() - _response.getTotalBytesSent(), MSG_NOSIGNAL);
         if (bytesSent == -1)
             return (-1);
+        std::cout << "SENT: " << bytesSent << std::endl;
+        std::cout << _response.getHeaderStream().c_str() + _response.getTotalBytesSent() << std::endl;
+        std::cout << "=================" << std::endl;
         _response.setTotalBytesSent(_response.getTotalBytesSent() + bytesSent);
         if (_response.getTotalBytesSent() == _response.getHeaderStream().size())
             _response.setProgress(SEND_BODY);

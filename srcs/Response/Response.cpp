@@ -238,8 +238,8 @@ void Response::buildResponse(Request &request, server *serv)
         throw Request::badRequest();
     }
 
-    if (isCgiPath(request.getRequestTarget()))
-        return (handleCGI2(serv, *this, request));
+    /*if (isCgiPath(request.getRequestTarget()))*/
+    /*    return (handleCGI2(serv, *this, request));*/
 
     if (getProgress() == POST_HOLD)
     {

@@ -7,6 +7,8 @@
 #include "colors.hpp"
 #include "log.hpp"
 
+/*#define MAX_CONNECTIONS 1000*/
+
 bool safelyAddToEpoll(int epollFd, int fd, uint32_t events) {
     struct epoll_event ev;
     ev.data.fd = fd;
@@ -54,7 +56,8 @@ bool safelyRemoveFromEpoll(int epollFd, int fd) {
 }
 
 bool safelyCloseFd(int fd) {
-    if (fd >= 0) {
+    usleep(100);
+    if (fd >= 2) {
         if (close(fd) == -1) {
             std::string errorMsg = "close failed for fd " + intToString(fd) + 
                                   ": " + std::string(strerror(errno));
@@ -90,7 +93,8 @@ void Config::addSocketsToEpoll(int ep)
             ev.data.fd = _server[i].getSock()[y].second;
             ev.events = EPOLLIN;
             if (!safelyAddToEpoll(ep, _server[i].getSock()[y].second, EPOLLIN)) {
-                safelyCloseFd(_server[i].getSock()[y].second);
+                /*safelyCloseFd(_server[i].getSock()[y].second);*/
+                close(_server[i].getSock()[y].second);
                 throw std::runtime_error("epoll_ctl failed 1");
             }
         }
@@ -99,6 +103,16 @@ void Config::addSocketsToEpoll(int ep)
 
 void Config::handleNewConnection(int ep, int server_fd, server* tmp, std::map<int, Connection*>& connections)
 {
+
+    // Check if we've reached connection limit
+    /*if (connections.size() >= MAX_CONNECTIONS) {*/
+    /*    webServLog("Maximum connections reached, rejecting new connection", WARNING);*/
+    /*    int temp_fd = accept(server_fd, NULL, 0);*/
+    /*    if (temp_fd != -1)*/
+    /*        safelyCloseFd(temp_fd);*/
+    /*    return;*/
+    /*}*/
+
     int new_fd = accept(server_fd, NULL, 0);
     if (new_fd == -1) {
         throw std::runtime_error("accept failed");
@@ -118,7 +132,8 @@ void Config::handleNewConnection(int ep, int server_fd, server* tmp, std::map<in
     ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
 
     if (!safelyAddToEpoll(ep, new_fd, EPOLLIN | EPOLLHUP | EPOLLERR)) {
-        safelyCloseFd(new_fd);
+        /*safelyCloseFd(new_fd);*/
+        close(new_fd);
         throw std::runtime_error("epoll_ctl failed 1");
     }
 
@@ -135,11 +150,13 @@ int Config::handleReadEvent(int ep, int fd, std::map<int, Connection*>& connecti
         connections.erase(fd);
         if (!safelyRemoveFromEpoll(ep, fd))
         {
-            safelyCloseFd(fd);
+            /*safelyCloseFd(fd);*/
+            close(fd);
             throw std::runtime_error("epoll_ctl failed 1");
         }
-        safelyCloseFd(fd);
-        std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
+        /*safelyCloseFd(fd);*/
+        close(fd);
+        std::string logMessage = "[CONNECTION CLOSED READ] [SOCKET_FD: " + intToString(fd) + "]";
         webServLog(logMessage, INFO);
         return (-1);
     }
@@ -150,7 +167,8 @@ int Config::handleReadEvent(int ep, int fd, std::map<int, Connection*>& connecti
         ev.events = EPOLLOUT | EPOLLIN | EPOLLHUP | EPOLLERR;
         if (!safelyModifyInEpoll(ep, fd, EPOLLOUT | EPOLLIN | EPOLLHUP | EPOLLERR))
         {
-            safelyCloseFd(fd);
+            /*safelyCloseFd(fd);*/
+            close(fd);
             throw std::runtime_error("epoll_ctl failed 1");
         }
 
@@ -175,22 +193,26 @@ int Config::handleWriteEvent(int ep, int fd, std::map<int, Connection*>& connect
             } catch (const std::bad_alloc& e) {
                 if (!safelyRemoveFromEpoll(ep, fd))
                 {
-                    safelyCloseFd(fd);
+                    /*safelyCloseFd(fd);*/
+                    close(fd);
                     throw std::runtime_error("epoll_ctl failed 1");
                 }
-                safelyCloseFd(fd);
-                std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]" + " [Memory allocation failed]";
+                /*safelyCloseFd(fd);*/
+                close(fd);
+                std::string logMessage = "[CONNECTION CLOSED WRITE] [SOCKET_FD: " + intToString(fd) + "]" + " [Memory allocation failed]";
                 webServLog(logMessage, ERROR);
                 return (-1);
             }
         } else {
             if (!safelyRemoveFromEpoll(ep, fd))
             {
-                safelyCloseFd(fd);
+                /*safelyCloseFd(fd);*/
+                close(fd);
                 throw std::runtime_error("epoll_ctl failed 1");
             }
-            safelyCloseFd(fd);
-            std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
+            /*safelyCloseFd(fd);*/
+            close(fd);
+            std::string logMessage = "[CONNECTION CLOSED WRITE] [SOCKET_FD: " + intToString(fd) + "]";
             webServLog(logMessage, INFO);
         }
     }
@@ -203,11 +225,13 @@ int Config::handleErrorEvent(int ep, int fd, std::map<int, Connection*>& connect
     connections.erase(fd);
     if (!safelyRemoveFromEpoll(ep, fd))
     {
-        safelyCloseFd(fd);
+        /*safelyCloseFd(fd);*/
+        close(fd);
         throw std::runtime_error("epoll_ctl failed 1");
     }
-    safelyCloseFd(fd);
-    std::string logMessage = "[CONNECTION CLOSED] [SOCKET_FD: " + intToString(fd) + "]";
+    /*safelyCloseFd(fd);*/
+    close(fd);
+    std::string logMessage = "[CONNECTION CLOSED ERROR] [SOCKET_FD: " + intToString(fd) + "]";
     webServLog(logMessage, INFO);
     return (0);
 }
