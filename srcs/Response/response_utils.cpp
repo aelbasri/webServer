@@ -281,10 +281,7 @@ void handleCGI2(server *serv, Response &response, Request &request) {
 
 bool isCgiPath(const std::string& requestTarget) {
     if (requestTarget.find(".py") != std::string::npos ||
-        requestTarget.find(".php") != std::string::npos|| 
-        requestTarget.find(".sh") != std::string::npos ||
-        requestTarget.find(".pl") != std::string::npos) {
+        requestTarget.find(".php") != std::string::npos)
         return true;
-    }
     return false;
 }
